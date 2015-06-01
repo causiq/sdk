@@ -4,10 +4,6 @@ This is the JavaScript logger for capturing errors in web browsers and reporting
 
 Logary is a free and open source logging framework. Most of the code in this repo was created by airbrake.io.
 
-This repo is basically a remix that I made specifically for Logary, because sometimes you don't want to betray your users by giving a 3rd party company all details.
-
-Evermore so when it comes to a company in the USA, being ruled by a plutocratic 1%. It has an establishment/government which has proven itself increasingly hostile and detrimental to the IT-security and privacy for the rest of the world.
-
 ## Installation
 
 ``` bash
