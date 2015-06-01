@@ -1,6 +1,6 @@
 {
   "name": "logary-js",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Notify Logary on JavaScript exceptions",
   "author": "Henrik Feldt",
   "license": "MIT",
@@ -47,7 +47,8 @@
   "main": "dist/client.js",
   "files": [
     "dist/client.js",
-    "dist/instrumentation/jquery.js"
+    "dist/instrumentation/jquery.js",
+    "dist/instrumentation/onerror.js"
   ],
   "scripts": {
     "test": "grunt test",
