@@ -10,6 +10,6 @@ report = (logline, opts) ->
   req.send(payload)
   req.onreadystatechange = ->
     if req.readyState == 4 and req.status == 201 and console?.debug?
-      console.debug("logary: error #%s was reported: %s", req.response.id, req.response.url)
+      console.debug("logary: error #%s was reported: %s", req.response.id)
 
 module.exports = report
