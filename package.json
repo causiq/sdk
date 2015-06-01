@@ -1,6 +1,6 @@
 {
   "name": "logary-js",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "description": "Notify Logary on JavaScript exceptions",
   "author": "Henrik Feldt",
   "license": "MIT",
