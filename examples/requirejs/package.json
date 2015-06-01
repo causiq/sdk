@@ -1,7 +1,7 @@
 {
   "name": "logary-js-example",
   "devDependencies": {
-    "airbrake-js": "0.5.0",
+    "logary-js": "0.5.2",
     "requirejs": "^2.1.16"
   }
 }

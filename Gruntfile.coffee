@@ -1,5 +1,7 @@
 module.exports = (grunt) ->
   pkgData = grunt.file.readJSON('package.json')
+  wp       = require('webpack')
+  wpConfig = require('./webpack.config.js')
 
   # Interpolates pkg variables into files during browserification.
   addPackageVars = (file) ->
@@ -18,36 +20,21 @@ module.exports = (grunt) ->
   grunt.initConfig
     pkg: pkgData
 
-    browserify:
-      options:
-        transform: ['coffeeify', addPackageVars]
-
-      client:
-        options:
-          browserifyOptions:
-            extensions: ['.coffee']
-            standalone: 'logary-js.Client'
-
-        src: ['src/client.coffee']
-        dest: 'dist/client.js'
-
-      instrumentation_jquery:
-        options:
-          browserifyOptions:
-            extensions: ['.coffee']
-            standalone: 'logary-js.instrumentation.jquery'
-
-        src: ['src/instrumentation/jquery.coffee']
-        dest: 'dist/instrumentation/jquery.js'
-
-      instrumentation_onerror:
-        options:
-          browserifyOptions:
-            extensions: ['.coffee']
-            standalone: 'logary-js.instrumentation.onerror'
-
-        src: ['src/instrumentation/onerror.coffee']
-        dest: 'dist/instrumentation/onerror.js'
+    webpack:
+      options: wpConfig
+      build:
+        plugins:
+          (wpConfig.plugins? || []).concat(
+            new wp.DefinePlugin(
+              "process.env":
+                "NODE_ENV": JSON.stringify("production")
+            ),
+            new wp.optimize.DedupePlugin(),
+            new wp.optimize.UglifyJsPlugin()
+          )
+      "build-dev":
+        devtool: "sourcemap"
+        debug: true
 
     watch:
       test_only:
@@ -97,8 +84,8 @@ module.exports = (grunt) ->
 
   # Running the `serve` command starts up a webserver.
   grunt.registerTask('serve', ['connect'])
-  grunt.registerTask('build', ['browserify'])
-  grunt.registerTask('default', ['build'])
+  grunt.registerTask('build', ['webpack:build'])
+  grunt.registerTask('default', ['webpack:build'])
 
   # Push distribution libraries to CDN.
   # Build and publish distribution site.

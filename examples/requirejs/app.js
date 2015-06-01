@@ -1,10 +1,4 @@
-require.config({
-  paths: {
-    logaryJs: 'node_modules/logary-js/dist'
-  }
-});
-
-require(['logaryJs/client', 'logaryJs/instrumentation/jquery'],
+require(['logary-js', 'logary-js/jquery.instrumentation.js'],
         function (LogaryClient, instrumentJQuery) {
   var logary = new LogaryClient({});
   if (window.jQuery) {
