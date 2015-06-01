@@ -43,6 +43,7 @@
     "requirejs": "^2.1.16",
     "sinon": "~1.12.2",
     "sinon-chai": "~2.7.0",
+    "string-replace-webpack-plugin": "0.0.1",
     "through": "~2.3.6",
     "webpack": "^1.9.10",
     "webpack-dev-server": "^1.9.0"

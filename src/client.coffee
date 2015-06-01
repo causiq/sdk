@@ -38,7 +38,7 @@ class Client
       logline =
         logger:
           name: 'logary-' + name
-          version: '<%= pkg.version %>'
+          version: '@@VERSION@@'
           url: 'https://github.com/logary/logary-js'
         errors: [errInfo]
         context: merge(defContext, @config.context, err.context)

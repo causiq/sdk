@@ -1,21 +1,7 @@
 module.exports = (grunt) ->
-  pkgData = grunt.file.readJSON('package.json')
+  pkgData  = grunt.file.readJSON('package.json')
   wp       = require('webpack')
-  wpConfig = require('./webpack.config.js')
-
-  # Interpolates pkg variables into files during browserification.
-  addPackageVars = (file) ->
-    through = require('through')
-
-    write = (buf) ->
-      data += grunt.template.process(String(buf), {pkg: pkgData})
-
-    end = ->
-      @queue(data)
-      @queue(null)
-
-    data = ''
-    return through(write, end)
+  wpConfig = require('./webpack.config.js')(pkgData.version)
 
   grunt.initConfig
     pkg: pkgData
@@ -24,7 +10,7 @@ module.exports = (grunt) ->
       options: wpConfig
       build:
         plugins:
-          (wpConfig.plugins? || []).concat(
+          wpConfig.plugins.concat(
             new wp.DefinePlugin(
               "process.env":
                 "NODE_ENV": JSON.stringify("production")
@@ -84,8 +70,8 @@ module.exports = (grunt) ->
 
   # Running the `serve` command starts up a webserver.
   grunt.registerTask('serve', ['connect'])
-  grunt.registerTask('build', ['webpack:build'])
-  grunt.registerTask('default', ['webpack:build'])
+  grunt.registerTask('build', 'webpack:build')
+  grunt.registerTask('default', 'webpack:build')
 
   # Push distribution libraries to CDN.
   # Build and publish distribution site.
