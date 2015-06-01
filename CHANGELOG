@@ -1,3 +1,12 @@
+# v0.5.0
+
+- Support creating client in an immutable way rather than supporting
+  mutation.
+- Transform lib to being used by default with Logary. Still MIT licensed.
+- Remove unused source map code
+- Rename params -> data
+- Remove 'environment': this is secret, should not be logged
+
 # v0.3.12
 
 - Improve exception message when notice can't be converted to JSON.

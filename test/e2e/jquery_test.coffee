@@ -28,7 +28,7 @@ define ['client', 'instrumentation/jquery'], (Client, instrumentJq) ->
       expect(requests.length).to.equal(1)
       req = requests[0]
       expect(req.method).to.equal('POST')
-      expect(req.url).to.equal('https://api.airbrake.io/api/v3/projects/0/notices?key=')
+      expect(req.url).to.equal('/i/logary/loglines')
       body = JSON.parse(req.requestBody)
       expect(body.errors[0].message).to.equal('Error: onload test exception')
 
@@ -54,7 +54,7 @@ define ['client', 'instrumentation/jquery'], (Client, instrumentJq) ->
       expect(requests.length).to.equal(1)
       req = requests[0]
       expect(req.method).to.equal('POST')
-      expect(req.url).to.equal('https://api.airbrake.io/api/v3/projects/0/notices?key=')
+      expect(req.url).to.equal('/i/logary/loglines')
       body = JSON.parse(req.requestBody)
       expect(body.errors[0].message).to.equal('Error: promise test exception')
 
@@ -81,7 +81,7 @@ define ['client', 'instrumentation/jquery'], (Client, instrumentJq) ->
       expect(requests.length).to.equal(1)
       req = requests[0]
       expect(req.method).to.equal('POST')
-      expect(req.url).to.equal('https://api.airbrake.io/api/v3/projects/0/notices?key=')
+      expect(req.url).to.equal('/i/logary/loglines')
       body = JSON.parse(req.requestBody)
       expect(body.errors[0].message).to.equal('Error: button test exception')
 
@@ -111,6 +111,6 @@ define ['client', 'instrumentation/jquery'], (Client, instrumentJq) ->
       expect(requests.length).to.equal(1)
       req = requests[0]
       expect(req.method).to.equal('POST')
-      expect(req.url).to.equal('https://api.airbrake.io/api/v3/projects/0/notices?key=')
+      expect(req.url).to.equal('/i/logary/loglines')
       body = JSON.parse(req.requestBody)
       expect(body.errors[0].message).to.equal('Error: click test exception')

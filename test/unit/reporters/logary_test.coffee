@@ -1,7 +1,7 @@
 expect = require("chai").expect
 sinon = require("sinon")
 
-reporter = require("../../../src/reporters/xhr")
+reporter = require("../../../src/reporters/logary")
 
 MockXhr = ->
 MockXhr.prototype = {
@@ -21,12 +21,12 @@ describe "XhrReporter", ->
   describe "report", ->
     it "opens async POST to url", ->
       spy = sinon.spy(global.XMLHttpRequest.prototype, 'open')
-      reporter({}, {projectId: '[project_id]', projectKey: '[project_key]', host: 'https://api.airbrake.io'})
-      expect(spy).to.have.been.calledWith("POST", "https://api.airbrake.io/api/v3/projects/[project_id]/notices?key=[project_key]", true)
+      reporter({}, {projectId: '[project_id]', projectKey: '[project_key]', host: 'https://example.com'})
+      expect(spy).to.have.been.calledWith("POST", "https://example.com/i/logary/loglines", true)
       global.XMLHttpRequest.prototype.open.restore()
 
     it "opens POST to custom url", ->
       spy = sinon.spy(global.XMLHttpRequest.prototype, 'open')
-      reporter({}, {projectId: '[project_id]', projectKey: '[project_key]', host: 'https://custom.domain.com'})
-      expect(spy).to.have.been.calledWith("POST", "https://custom.domain.com/api/v3/projects/[project_id]/notices?key=[project_key]", true)
+      reporter({})
+      expect(spy).to.have.been.calledWith("POST", "/i/logary/loglines", true)
       global.XMLHttpRequest.prototype.open.restore()

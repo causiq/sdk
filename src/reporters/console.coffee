@@ -11,10 +11,8 @@ formatError = (err) ->
     s += '\n'
   return s
 
-
-report = (notice) ->
-  for err in notice.errors
+report = (logline) ->
+  for err in logline.errors
     console?.log?(formatError(err))
-
 
 module.exports = report

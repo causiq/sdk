@@ -26,7 +26,7 @@ module.exports = (grunt) ->
         options:
           browserifyOptions:
             extensions: ['.coffee']
-            standalone: 'airbrake-js.Client'
+            standalone: 'logary-js.Client'
 
         src: ['src/client.coffee']
         dest: 'dist/client.js'
@@ -35,10 +35,19 @@ module.exports = (grunt) ->
         options:
           browserifyOptions:
             extensions: ['.coffee']
-            standalone: 'airbrake-js.instrumentation.jquery'
+            standalone: 'logary-js.instrumentation.jquery'
 
         src: ['src/instrumentation/jquery.coffee']
         dest: 'dist/instrumentation/jquery.js'
+
+      instrumentation_onerror:
+        options:
+          browserifyOptions:
+            extensions: ['.coffee']
+            standalone: 'logary-js.instrumentation.onerror'
+
+        src: ['src/instrumentation/onerror.coffee']
+        dest: 'dist/instrumentation/onerror.js'
 
     watch:
       test_only:

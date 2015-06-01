@@ -1,17 +1,17 @@
 {
-  "name": "airbrake-js",
-  "version": "0.4.0-alpha.2",
-  "description": "Notify Airbrake on JavaScript exceptions",
-  "author": "Airbrake",
+  "name": "logary-js",
+  "version": "0.5.0",
+  "description": "Notify Logary on JavaScript exceptions",
+  "author": "Henrik Feldt",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git://github.com/airbrake/airbrake-js.git"
+    "url": "git://github.com/logary/logary-js.git"
   },
   "keywords": [
     "exception",
     "error",
-    "airbrake",
+    "logary",
     "exceptional"
   ],
   "devDependencies": {
@@ -47,10 +47,11 @@
   "main": "dist/client.js",
   "files": [
     "dist/client.js",
-    "dist/instrumentation/jquery.js",
-    "LICENSE"
+    "dist/instrumentation/jquery.js"
   ],
   "scripts": {
-    "test": "grunt test"
+    "test": "grunt test",
+    "prepublish": "grunt build",
+    "integration-test": "grunt karma"
   }
 }

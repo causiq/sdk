@@ -1,36 +1,37 @@
 expect = require('chai').expect
 sinon = require('sinon')
 
-jsonifyNotice = require('../../../src/internal/jsonify_notice')
+jsonifyLogline = require('../../../src/internal/jsonify_logline')
 
 
-describe 'jsonify_notice', ->
-  context 'when called with notice', ->
-    obj = {
-      params: {arguments: []},
-      environment: {env1: 'value1'},
-      session: {session1: 'value1'},
-    }
+describe 'jsonify_logline', ->
+  context 'when called with logline', ->
+    obj =
+      params: {arguments: []}
+      environment: {env1: 'value1'}
+      session: {session1: 'value1'}
     json = null
 
     beforeEach ->
-      json = jsonifyNotice(obj)
+      json = jsonifyLogline(obj)
 
     it 'produces valid JSON', ->
       expect(JSON.parse(json)).to.deep.equal(obj)
 
-  context 'when called with huge notice', ->
+  context 'when called with huge logline', ->
     obj = null
     json = null
     maxLength = 30000
 
     beforeEach ->
-      obj = {
-        params: {arr: []},
-      }
+      obj =
+        data:
+          arr: []
+
       for i in [0..1000]
-        obj.params.arr.push(Array(100).join('x'))
-      json = jsonifyNotice(obj, 1000, maxLength)
+        obj.data.arr.push(Array(100).join('x'))
+
+      json = jsonifyLogline(obj, 1000, maxLength)
 
     it 'limits json size', ->
       expect(json.length).to.be.below(maxLength)
@@ -41,9 +42,9 @@ describe 'jsonify_notice', ->
 
     beforeEach ->
       obj = {
-        params: {str: Array(100000).join('x')},
+        data: {str: Array(100000).join('x')},
       }
-      json = jsonifyNotice(obj, 1000, maxLength)
+      json = jsonifyLogline(obj, 1000, maxLength)
 
     it 'limits json size', ->
       expect(json.length).to.be.below(maxLength)
@@ -53,19 +54,19 @@ describe 'jsonify_notice', ->
     maxLength = 30000
 
     beforeEach ->
-      obj = {
+      obj =
         errors: [{
           message: Array(100000).join('x')
-        }],
-      }
+        }]
+
       fn = ->
-        jsonifyNotice(obj, 1000, maxLength)
+        jsonifyLogline(obj, 1000, maxLength)
 
     it 'throws an exception', ->
-      expect(fn).to.throw('airbrake-js: cannot jsonify notice (length=100068 maxLength=30000)')
+      expect(fn).to.throw('logary-js: cannot jsonify logline (length=100049 maxLength=30000)')
 
     it 'throws an exception with `json` property', ->
       try
         fn()
       catch err
-        expect(err.params.json).to.be.defined
+        expect(err.data.json).to.be.defined

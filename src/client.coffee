@@ -1,96 +1,59 @@
 require('./internal/compat')
 merge = require('./internal/merge')
-
+# config -> reporterOpts
 
 class Client
-  constructor: (opts={}) ->
-    @_projectId = opts.projectId || 0
-    @_projectKey = opts.projectKey || ''
+  constructor: (config) ->
+    defaultConfig =
+      # optional host (otherwise sends to path at current domain)
+      host:      ""
+      # optional query string
+      query:     ""
+      # optional 
+      # err -> (name * {type,message,backtrace:string list} -> unit) -> unit
+      processor: require('./processors/stack')
+      reporters: [ require('./reporters/logary'),
+                   require('./reporters/console')
+                 ]
+      filters:   []
+      context:   {}
+      data:      {}
+      session:   {}
+    @config = merge({}, defaultConfig, config)
 
-    @_host = 'https://api.airbrake.io'
-
-    @_context = {}
-    @_params = {}
-    @_env = {}
-    @_session = {}
-
-    @_processor = null
-    @_reporters = []
-    @_filters = []
-
-    if opts.processor != undefined
-      @_processor = opts.processor
-    else
-      @_processor = require('./processors/stack')
-
-    if opts.reporter != undefined
-      @addReporter(opts.reporter)
-    else
-      if 'withCredentials' of new global.XMLHttpRequest()
-        reporter = require('./reporters/xhr')
-      else
-        reporter = require('./reporters/jsonp')
-      @addReporter(reporter)
-
-  setProject: (id, key) ->
-    @_projectId = id
-    @_projectKey = key
-
-  setHost: (host) ->
-    @_host = host
-
-  addContext: (context) ->
-    merge(@_context, context)
-
-  setEnvironmentName: (envName) ->
-    @_context.environment = envName
-
-  addParams: (params) ->
-    merge(@_params, params)
-
-  addEnvironment: (env) ->
-    merge(@_env, env)
-
-  addSession: (session) ->
-    merge(@_session, session)
-
-  addReporter: (reporter) ->
-    @_reporters.push(reporter)
-
-  addFilter: (filter) ->
-    @_filters.push(filter)
+  _configFilter: (config) ->
+    host:  config.host
+    query: config.query
 
   push: (err) ->
-    defContext = {
-      language: 'JavaScript',
-      sourceMapEnabled: true
-    }
+    defContext =
+      language: 'JavaScript'
+
     if global.navigator?.userAgent
       defContext.userAgent = global.navigator.userAgent
     if global.location
       defContext.url = String(global.location)
 
-    @_processor err.error or err, (name, errInfo) =>
-      notice =
-        notifier:
-          name: 'airbrake-js-' + name
+    @config.processor err.error or err, (name, errInfo) =>
+      logline =
+        logger:
+          name: 'logary-' + name
           version: '<%= pkg.version %>'
-          url: 'https://github.com/airbrake/airbrake-js'
+          url: 'https://github.com/logary/logary-js'
         errors: [errInfo]
-        context: merge(defContext, @_context, err.context)
-        params: merge({}, @_params, err.params)
-        environment: merge({}, @_env, err.environment)
-        session: merge({}, @_session, err.session)
+        context: merge(defContext, @config.context, err.context)
+        data: merge({}, @config.data, err.data)
+        session: merge({}, @config.session, err.session)
 
-      for filterFn in @_filters
-        if not filterFn(notice)
+      for filterFn in @config.filters
+        if not filterFn(logline)
           return
 
-      for reporterFn in @_reporters
-        reporterFn(notice, {projectId: @_projectId, projectKey: @_projectKey, host: @_host})
+      for reporterFn in @config.reporters
+        opts = @_configFilter @config
+        reporterFn logline, opts
 
       return
-
 
   _wrapArguments: (args) ->
     for arg, i in args
@@ -99,28 +62,27 @@ class Client
     return args
 
   wrap: (fn) ->
-    if fn.__airbrake__
+    if fn.__logary__
       return fn
 
     self = this
 
-    airbrakeWrapper = ->
+    errorWrapper = ->
       args = self._wrapArguments(arguments)
       try
         return fn.apply(this, args)
       catch exc
         args = Array.prototype.slice.call(arguments)
-        self.push({error: exc, params: {arguments: args}})
+        self.push({error: exc, data: {arguments: args}})
         return null
 
     for prop of fn
       if fn.hasOwnProperty(prop)
-        airbrakeWrapper[prop] = fn[prop]
+        errorWrapper[prop] = fn[prop]
 
-    airbrakeWrapper.__airbrake__ = true
-    airbrakeWrapper.__inner__ = fn
+    errorWrapper.__logary__ = true
+    errorWrapper.__inner__ = fn
 
-    return airbrakeWrapper
-
+    return errorWrapper
 
 module.exports = Client

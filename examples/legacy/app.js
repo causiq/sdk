@@ -1,10 +1,10 @@
-var airbrake = new airbrakeJs.Client({projectId: 1, projectKey: 'abc'});
+var logary = new logaryJs.Client({}});
 if (window.jQuery) {
-  airbrakeJs.instrumentation.jquery(airbrake, jQuery);
+  logary.instrumentation.jquery(logary, jQuery);
 }
 
 try {
-  throw new Error('hello from airbrake-js');
+  throw new Error('hello from logary-js');
 } catch (err) {
-  airbrake.push(err);
+  logary.push(err);
 }

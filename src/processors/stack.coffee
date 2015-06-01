@@ -183,11 +183,12 @@ processor = (e, cb) ->
     else
       type = ''
 
-  return cb(processorName, {
-    'type': type,
-    'message': msg,
-    'backtrace': backtrace,
-  })
+  data =
+   type: type,
+   message: msg,
+   backtrace: backtrace
+
+  cb processorName, data
 
 
 module.exports = processor
