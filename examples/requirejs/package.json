@@ -1,7 +1,7 @@
 {
   "name": "logary-js-example",
   "devDependencies": {
-    "logary-js": "0.5.2",
+    "logary-js": "^0.5.3",
     "requirejs": "^2.1.16"
   }
 }

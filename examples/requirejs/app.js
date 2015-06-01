@@ -1,4 +1,4 @@
-require(['logary-js', 'logary-js/jquery.instrumentation.js'],
+require(['logary', 'logary/lib/jquery.instrumentation.js'],
         function (LogaryClient, instrumentJQuery) {
   var logary = new LogaryClient({});
   if (window.jQuery) {
