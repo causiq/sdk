@@ -1,0 +1,10 @@
+{
+  "name": "logary-js-example",
+  "devDependencies": {
+    "jquery": "^2.1.4",
+    "jsx-loader": "^0.13.2",
+    "logary-js": "^0.5.5",
+    "requirejs": "^2.1.16",
+    "style-loader": "^0.12.3"
+  }
+}
