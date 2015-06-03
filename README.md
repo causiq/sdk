@@ -98,7 +98,7 @@ or if you're using WebPack or similar:
 
     var logary              = new LogaryClient({ session: { principalId: 1234, tenantId: 4321 } }),
         errorHandlerFactory = require('logary/lib/logary.onerror'),
-        handleError         = errorHandlerFactory logary;
+        handleError         = errorHandlerFactory(logary);
 
     window.onerror = handleError;
 
