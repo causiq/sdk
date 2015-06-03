@@ -51,14 +51,14 @@
   "peerDependencies": {
     "jquery": "2.x"
   },
-  "main": "lib/logary.js",
+  "main": "lib/client.js",
   "directories": {
     "lib": "lib"
   },
   "files": [
-    "lib/logary.js",
-    "lib/jquery.instrumentation.js",
-    "lib/window.onerror.js"
+    "lib/client.js",
+    "lib/logary.jquery.js",
+    "lib/logary.onerror.js"
   ],
   "scripts": {
     "test": "grunt test",
