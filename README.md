@@ -20,11 +20,11 @@ Notifier uses [standalone browserify build](http://www.forbeslindesay.co.uk/post
 
 First you need to initialize notifier:
 
-    var logary = new LogaryClient({projectId: 1, projectKey: 'abc'});
+    var logary = new LogaryClient();
 
 Or if you have a customer (recommended):
 
-    var logary = new LogaryClient({ context: { principalId: 1234, tenantId: 4321 } })
+    var logary = new LogaryClient({ session: { principalId: 1234, tenantId: 4321 } })
 
 The simplest method is to report errors directly:
 
@@ -96,7 +96,11 @@ Instead of exception you can pass error object constructed manually. For example
 
 or if you're using WebPack or similar:
 
-    window.onerror = require('logary/lib/logary.onerror')
+    var logary              = new LogaryClient({ session: { principalId: 1234, tenantId: 4321 } }),
+        errorHandlerFactory = require('logary/lib/logary.onerror'),
+        handleError         = errorHandlerFactory logary;
+
+    window.onerror = handleError;
 
 ### Source map
 

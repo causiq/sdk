@@ -1,0 +1,15 @@
+<form>
+	<button id="btn">
+		Error on click, yeah?
+	</button>
+</form>
+<script>
+var el = window.document.getElementById('btn');
+el.onclick = function(evt) {
+  try {
+    throw new Error('button test exception');
+  } catch (e) {
+    handleError('Error: button test exception', 'window_onerror.html', 10, 6, e);
+  }
+}
+</script>
