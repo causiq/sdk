@@ -6,7 +6,7 @@ module.exports = (config) ->
     files: [
       {pattern: 'test/e2e/main_test.coffee'},
 
-      {pattern: 'dist/**/*.js', included: false},
+      {pattern: 'lib/**/*.js', included: false},
 
       {pattern: 'test/e2e/*.coffee', included: false},
       {pattern: 'test/e2e/fixtures/*'},

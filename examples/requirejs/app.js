@@ -5,7 +5,7 @@ window.onload = function() {
     }
   });
 
-  require(['logary/logary', 'logary/jquery.instrumentation'],
+  require(['client', 'logary/lib/logary.jquery'],
           function (LogaryClient, instrumentJQuery) {
     var logary = new LogaryClient({});
     if (window.jQuery) {

@@ -1,6 +1,6 @@
-var LogaryClient = require('logary-js'),
+var LogaryClient = require('logary'),
     jQuery       = require('jquery'),
-    fixJq        = require('logary-js/lib/jquery.instrumentation');
+    fixJq        = require('logary/lib/logary.jquery');
 
 (function() {
   // this by default both logs to server & console

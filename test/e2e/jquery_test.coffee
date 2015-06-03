@@ -1,4 +1,4 @@
-define ['client', 'instrumentation/jquery'], (Client, instrumentJq) ->
+define ['client', 'logary.jquery'], (Client, instrumentJq) ->
   describe 'requirejs', ->
     it 'works', ->
       expect(Client).to.be.defined

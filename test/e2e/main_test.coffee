@@ -4,10 +4,9 @@ for file of window.__karma__.files
     if /test\.js$/.test(file)
       tests.push(file)
 
-
 requirejs.config({
   # Karma serves files from '/base'
-  baseUrl: '/base/dist',
+  baseUrl: '/base/lib',
 
   # ask Require.js to load these files (all our tests)
   deps: tests,
