@@ -96,7 +96,7 @@ Instead of exception you can pass error object constructed manually. For example
 
 or if you're using WebPack or similar:
 
-    window.onerror = require('logary-js/instrumentation/onerror')
+    window.onerror = require('logary/lib/logary.onerror')
 
 ### Source map
 

@@ -6,15 +6,15 @@ module.exports = function(version) {
   return {
     cache: true,
     entry: {
-      "logary": './src/client.coffee',
-      "jquery.instrumentation": './src/instrumentation/jquery.coffee',
-      "window.onerror": './src/instrumentation/onerror.coffee'
+      "client": './src/client.coffee',
+      "logary.jquery": './src/lib/jquery.coffee',
+      "logary.onerror": './src/lib/onerror.coffee'
     },
     output: {
       path: path.join(__dirname, "lib"),
       filename: '[name].js',
       libraryTarget: "umd",
-      library: "logary-js"
+      library: "logary"
     },
     module: {
       loaders: [
