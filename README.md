@@ -12,7 +12,9 @@ npm install logary-js --save-dev
 
 ## Setup
 
-Notifier uses [standalone browserify build](http://www.forbeslindesay.co.uk/post/46324645400/standalone-browserify-builds) and can be used with:
+Notifier uses [webpack's UMD compilation target](https://webpack.github.io/docs/configuration.html#output-librarytarget) and can be used with:
+
+- [Webpack/CommonJS](examples/webpack/app.js)
 - [RequireJS](examples/requirejs/app.js).
 - [Global/Window](examples/legacy/app.js).
 
