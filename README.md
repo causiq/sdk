@@ -166,3 +166,11 @@ grunt karma
 # License
 
 MIT, see `LICENSE` in the source tree.
+
+# Roadmap
+
+ - Consider adding support for logging w/ [source-map support][sms] from logary-js.
+ - Remove /lib/ infix from require paths (how to...?)
+ - Better docs (wiki for wrapping functions, e.g.)
+ 
+ [sms]: https://github.com/ryanseddon/sourcemap-onerror/blob/master/js/lookup-error.js
