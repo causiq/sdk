@@ -12,7 +12,10 @@
     "exception",
     "error",
     "logary",
-    "exceptional"
+    "fsharp",
+    "logging",
+    "logs",
+    "monitoring"
   ],
   "devDependencies": {
     "chai": "<2",
@@ -57,8 +60,11 @@
   },
   "files": [
     "lib/client.js",
+    "lib/client.js.map",
     "lib/logary.jquery.js",
-    "lib/logary.onerror.js"
+    "lib/logary.jquery.js.map",
+    "lib/logary.onerror.js",
+    "lib/logary.onerror.js.map"
   ],
   "scripts": {
     "test": "grunt test",

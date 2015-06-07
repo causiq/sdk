@@ -32,6 +32,7 @@ module.exports = function(version) {
       // you can now require('file') instead of require('file.coffee')
       extensions: ['', '.js', '.coffee'] 
     },
+    devtool: 'source-map',
     plugins: [
       new StringReplacePlugin()
     ]
