@@ -6,6 +6,12 @@ module.exports = {
     filename: "bundle.js"
   },
   module: {
+    preLoaders: [
+      {
+        test: /(logary\..+|client)\.js$/,
+        loader: "source-map-loader"
+      }
+    ],
     loaders: [
       { test: /\.css$/, loader: "style-loader!css" },
       { test: /\.js$/, loader: "jsx-loader?harmony" }
