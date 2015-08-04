@@ -3,7 +3,6 @@ sinon = require("sinon")
 
 processor = require("../../../src/processors/stack")
 
-
 describe "stack processor", ->
   context "when called with Firefox 30+ stack", ->
     cb = null

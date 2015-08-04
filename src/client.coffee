@@ -1,65 +1,85 @@
-require('./internal/compat')
-merge = require('./internal/merge')
-# config -> reporterOpts
+require './internal/compat'
+merge = require './internal/merge'
+State = require './internal/state'
+{ Tracker } = require './users'
 
 class Client
   constructor: (config) ->
     defaultConfig =
-      # optional host (otherwise sends to path at current domain)
-      host:      ""
-      # optional query string
-      query:     ""
-      # optional 
-      # err -> (name * {type,message,backtrace:string list} -> unit) -> unit
+      # reporter opts
+      ropts:
+        # optional host (otherwise sends to path at current domain)
+        host:      null
+        # optional query string
+        query:     null
+        # optional uri path
+        path:      null
+        # optional uri port
+        port:      null
+      # optional
+      # err -> name * {type,message,backtrace:Object list}
       processor: require('./processors/stack')
+      # (Message -> Message) list
+      enrichers: [ require('./enrichers/context') ]
       reporters: [ require('./reporters/logary'),
                    require('./reporters/console')
                  ]
       filters:   []
       context:   {}
       data:      {}
-      session:   {}
-    @config = merge({}, defaultConfig, config)
+      session:   Tracker.read()
 
-  _configFilter: (config) ->
-    host:  config.host
-    query: config.query
+    @config = merge(State.config, defaultConfig, config)
 
-  push: (err) ->
-    defContext =
-      language: 'JavaScript'
+    State.client =? this # ugh
 
-    if global.navigator?.userAgent
-      defContext.userAgent = global.navigator.userAgent
-    if global.location
-      defContext.url = String(global.location)
+  _send: (message) ->
+    [name, errInfo] = @config.processor err.error or err
 
-    @config.processor err.error or err, (name, errInfo) =>
-      logline =
-        logger:
-          name: 'logary-' + name
-          version: '@@VERSION@@'
-          url: 'https://github.com/logary/logary-js'
-        errors: [errInfo]
-        context: merge(defContext, @config.context, err.context)
-        data: merge({}, @config.data, err.data)
-        session: merge({}, @config.session, err.session)
+    message = merge message,
+      logger:
+        name: 'logary-' + name
+        version: '@@VERSION@@'
+        url: 'https://github.com/logary/logary-js'
+      errors: [ errInfo ]
+      context: merge(ctx, @config.context, err.context)
+      data: merge({}, @config.data, err.data)
+      session: merge({}, @config.session, err.session)
 
-      for filterFn in @config.filters
-        if not filterFn(logline)
-          return
+    message = @config.enrichers.reduce ((msg, f) -> f msg), message
 
-      for reporterFn in @config.reporters
-        opts = @_configFilter @config
-        reporterFn logline, opts
+    for filterFn in @config.filters
+      if not filterFn(logline)
+        return
 
-      return
+    for reporterFn in @config.reporters
+      reporterFn logline, @config.ropts
+
+    message
+
+  event: (name, data) ->
+    msg = merge data,
+      type: 'event'
+      data:
+        eventName: name
+    _send msg
+
+  identify: (principalId) ->
+    tracking = Tracker.read()
+    Tracker.write 'principalId', principalId
+    data = merge tracking, principalId: principalId
+    event 'identify', data
+
+  push: (err) -> _send err
+
+  logger: (defaults) ->
+    new Client(merge(@config, defaults))
 
   _wrapArguments: (args) ->
     for arg, i in args
       if typeof arg == 'function'
-        args[i] = @wrap(arg)
-    return args
+        args[i] = @wrap arg
+    args
 
   wrap: (fn) ->
     if fn.__logary__
@@ -73,7 +93,10 @@ class Client
         return fn.apply(this, args)
       catch exc
         args = Array.prototype.slice.call(arguments)
-        self.push({error: exc, data: {arguments: args}})
+        self.push
+          error: exc
+          data:
+            arguments: args
         return null
 
     for prop of fn

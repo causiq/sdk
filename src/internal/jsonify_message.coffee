@@ -10,7 +10,7 @@ truncateObj = (obj, n=1000) ->
 
 # jsonifyLogline serializes logline to JSON and truncates data,
 # environment and session keys.
-jsonifyLogline = (logline, n=1000, maxLength=64000) ->
+jsonifyMessage = (logline, n=1000, maxLength=64000) ->
   while true
     logline.data = truncateObj logline.data, n=n
     logline.session = truncateObj logline.session, n=n
@@ -30,4 +30,4 @@ jsonifyLogline = (logline, n=1000, maxLength=64000) ->
   throw err
 
 
-module.exports = jsonifyLogline
+module.exports = jsonifyMessage

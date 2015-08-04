@@ -188,7 +188,7 @@ processor = (e, cb) ->
    message: msg,
    backtrace: backtrace
 
-  cb processorName, data
+  return [processorName, data]
 
 
 module.exports = processor
