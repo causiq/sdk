@@ -1,6 +1,6 @@
 {
   "name": "logary-js",
-  "version": "0.6.4",
+  "version": "0.7.0",
   "description": "Notify Logary on JavaScript exceptions",
   "author": "Henrik Feldt",
   "license": "MIT",
@@ -48,11 +48,9 @@
     "sinon-chai": "~2.7.0",
     "string-replace-webpack-plugin": "0.0.1",
     "through": "~2.3.6",
+    "jquery": "2.x",
     "webpack": "^1.9.10",
     "webpack-dev-server": "^1.9.0"
-  },
-  "peerDependencies": {
-    "jquery": "2.x"
   },
   "main": "lib/client.js",
   "directories": {
@@ -61,8 +59,6 @@
   "files": [
     "lib/client.js",
     "lib/client.js.map",
-    "lib/logary.jquery.js",
-    "lib/logary.jquery.js.map",
     "lib/logary.onerror.js",
     "lib/logary.onerror.js.map"
   ],

@@ -31,10 +31,10 @@ class Client
 
     @config = merge(State.config, defaultConfig, config)
 
-    State.client =? this # ugh
+    State.client ?= this # ugh
 
   _send: (message) ->
-    [name, errInfo] = @config.processor err.error or err
+    [name, errInfo] = @config.processor message.error or message
 
     message = merge message,
       logger:
@@ -42,18 +42,18 @@ class Client
         version: '@@VERSION@@'
         url: 'https://github.com/logary/logary-js'
       errors: [ errInfo ]
-      context: merge(ctx, @config.context, err.context)
-      data: merge({}, @config.data, err.data)
-      session: merge({}, @config.session, err.session)
+      context: merge({}, @config.context, message.context)
+      data: merge({}, @config.data, message.data)
+      session: merge({}, @config.session, message.session)
 
     message = @config.enrichers.reduce ((msg, f) -> f msg), message
 
     for filterFn in @config.filters
-      if not filterFn(logline)
+      if not filterFn(message)
         return
 
     for reporterFn in @config.reporters
-      reporterFn logline, @config.ropts
+      reporterFn message, @config.ropts
 
     message
 
@@ -70,7 +70,7 @@ class Client
     data = merge tracking, principalId: principalId
     event 'identify', data
 
-  push: (err) -> _send err
+  push: (err) -> @_send err
 
   logger: (defaults) ->
     new Client(merge(@config, defaults))

@@ -7,8 +7,7 @@ module.exports = function(version) {
     cache: true,
     entry: {
       "client": './src/client.coffee',
-      "logary.jquery": './src/lib/jquery.coffee',
-      "logary.onerror": './src/lib/onerror.coffee'
+      "logary.onerror": './src/instrumentation/onerror.coffee'
     },
     output: {
       path: path.join(__dirname, "lib"),

@@ -1,4 +1,4 @@
-jsonifyLogline = require('../internal/jsonify_logline')
+jsonifyLogline = require('../internal/jsonify_message')
 
 
 cbCount = 0

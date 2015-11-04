@@ -4,11 +4,12 @@ kvs = require './internal/kvs'
 # Util class
 class Identity
   @autogen: ->
+    d = new Date().getTime()
     'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, (c) ->
-      r = Math.random() * 16|0, v = c == 'x' ? r : (r&0x3|0x8)
-      v.toString 16
+      r = (d * Math.random() * 16) % 16 | 0
+      d = Math.floor(d/16)
+      if c == 'x' then r else (r&0x3|0x8)).toString(16)
 
-# Used by Client to restore tracking state
 class Tracker
   # Returns the #session object for the client
   @read: ->

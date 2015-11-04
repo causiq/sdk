@@ -1,7 +1,7 @@
 expect = require('chai').expect
 sinon = require('sinon')
 
-jsonifyLogline = require('../../../src/internal/jsonify_logline')
+jsonifyLogline = require('../../../src/internal/jsonify_message')
 
 
 describe 'jsonify_logline', ->

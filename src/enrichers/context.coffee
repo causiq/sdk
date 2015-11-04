@@ -1,4 +1,4 @@
-merge = require('../../internal/merge')
+merge = require('../internal/merge')
 
 module.exports = (msg) ->
   merge msg,

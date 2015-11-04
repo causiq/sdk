@@ -8,10 +8,7 @@ module.exports = (msg, opts) ->
     path: '/i/logary/messages'
     query: null
 
-  url = "#{opts.host}"
-        + "#{if opts.port? then ':' + opts.port else ''}"
-        + "#{opts.path}"
-        + "#{if opts.query? then '?' + opts.query else ''}"
+  url = "#{opts.host}#{if opts.port? then ':' + opts.port else ''}#{opts.path}#{if opts.query? then '?' + opts.query else ''}"
 
   payload = jsonifyMessage msg
 

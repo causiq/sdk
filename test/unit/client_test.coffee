@@ -68,8 +68,8 @@ describe "Client", ->
   makeClient = null
 
   beforeEach ->
-    processor = sinon.spy (data, cb) ->
-      cb data
+    processor = sinon.spy (errorOrMsg) ->
+      ['testProcessor', errorOrMsg]
     reporter = sinon.spy()
     makeClient = (f, p = processor, r = reporter, rest = {}) ->
       config =
@@ -81,26 +81,24 @@ describe "Client", ->
   describe 'filters', ->
     describe 'addFilter', ->
       it 'can prevent report', ->
-        filter = sinon.spy((logline) -> false)
+        filter = sinon.spy((message) -> false)
         client = makeClient filter
         client.push {}
-        continueFromProcessor = processor.lastCall.args[1]
-        continueFromProcessor('test', {})
+        resArr = processor.lastCall.args[1]
 
         expect(reporter).not.to.have.been.called
         expect(filter).to.have.been.called
 
       it 'can allow report', ->
-        filter = sinon.spy((logline) -> true)
+        filter = sinon.spy((message) -> true)
         client = makeClient filter
 
         client.push {}
-        continueFromProcessor = processor.lastCall.args[1]
-        continueFromProcessor('test', {})
+        resArr = processor.lastCall.args[1]
 
         expect(reporter).to.have.been.called
-        logline = reporter.lastCall.args[0]
-        expect(filter).to.have.been.calledWith(logline)
+        message = reporter.lastCall.args[0]
+        expect(filter).to.have.been.calledWith(message)
 
   describe "push", ->
     exception = do ->
@@ -123,16 +121,19 @@ describe "Client", ->
         expect(reporter).to.have.been.called
         opts = reporter.lastCall.args[1]
         expect(opts).to.deep.equal
-          host: ""
-          query: ""
+          host: null
+          port: null
+          path: null
+          query: null
 
       it "reporter is called with custom host", ->
         client = makeClient null, null, null,
-          host: "https://custom.domain.com"
+          ropts:
+            host: "https://example.com"
         client.push exception
 
         reported = reporter.lastCall.args[1]
-        expect(reported.host).to.equal("https://custom.domain.com")
+        expect(reported.host).to.equal("https://example.com")
 
     describe "custom data sent to reporter", ->
       it "reports context", ->
@@ -142,6 +143,7 @@ describe "Client", ->
         client.push exception
 
         reported = reporter.lastCall.args[0]
+        console.log('context:', reported.context)
         expect(reported.context.context_key).to.equal("[custom_context]")
 
       it "reports data", ->
