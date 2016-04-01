@@ -1,4 +1,4 @@
-# Logary-JS [![Build Status](https://circleci.com/gh/logary/logary-js.png?circle-token=TODO)](https://circleci.com/gh/logary/logary-js)
+# logary.js [![Build Status](https://circleci.com/gh/logary/logary-js.png?circle-token=TODO)](https://circleci.com/gh/logary/logary-js)
 
 This is the JavaScript logger for capturing errors in web browsers and reporting them to [Logary](https://logary.github.io).
 
@@ -7,7 +7,7 @@ Logary is a free and open source logging framework. Most of the code in this rep
 ## Installation
 
 ``` bash
-npm install logary-js --save-dev
+npm install logary --save-dev
 ```
 
 ## Setup
