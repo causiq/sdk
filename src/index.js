@@ -349,7 +349,7 @@ export function ajax(r: Request): Promise {
 
   req.open(r.method, r.uri);
   r.headers.forEach(header =>
-    r.setRequestHeader(header.name, header.values.join(',')));
+    req.setRequestHeader(header.name, header.values.join(',')));
   req.setRequestHeader('content-type', r.content.contentType);
   req.setRequestHeader('content-encoding', r.content.contentEncoding);
   req.send(r.content.data);

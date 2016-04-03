@@ -1,10 +1,14 @@
-import { default as Logary, Targets, getLogger, build } from 'logary';
+import {
+  default as Logary,
+  Targets, Message, getLogger, build,
+  createContent, ajax
+} from 'logary';
 
 // once per site/app
 const target = Targets.logaryService({
   path: '/i/site/logary',
-  serialise: Logary.createContent,
-  send: m => /* IRL: ajax */ Promise.resolve('Sent to server!')
+  serialise: createContent,
+  send: ajax
 });
 
 // save this in the app's context:
