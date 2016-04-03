@@ -1,4 +1,4 @@
-# Logary-JS [![Build Status](https://circleci.com/gh/logary/logary-js.png?circle-token=TODO)](https://circleci.com/gh/logary/logary-js)
+# Logary-JS
 
 This is the JavaScript logger for capturing errors in web browsers and reporting
 them to [Logary](https://logary.github.io).
