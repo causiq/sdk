@@ -12,3 +12,10 @@ all composed from pure functions.
 ``` bash
 npm install logary --save
 ```
+
+## Examples
+
+In `./examples/webpack` is a sample for how to include it with webpack and serve
+using express.js.
+
+
