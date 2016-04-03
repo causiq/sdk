@@ -37,4 +37,8 @@ const logger = build(logary, getLogger(logary, 'MyModule.MySub'));
 logger(Message.event('Initialised App'));
 ```
 
+I also strongly recommend reading the
+[unit tests](https://github.com/logary/logary-js/blob/master/test/unit/logary_test.js)
+which accurately portray the API available.
+
 
