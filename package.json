@@ -66,6 +66,6 @@
     "test": "NODE_ENV=dev mocha-webpack --webpack-config webpack-test.config.js --colors --require source-map-support/register ./test/unit/*.js",
     "test:watch": "NODE_ENV=dev mocha-webpack --webpack-config webpack-test.config.js --colors --require source-map-support/register --watch ./test/unit/*.js",
     "test:integration": "karma start --watch",
-    "prepublish": "npm run build"
+    "preinstall": "npm run build"
   }
 }
