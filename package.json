@@ -54,9 +54,6 @@
     "stacktrace-js": "^1.1.0"
   },
   "main": "dist/logary.js",
-  "directories": {
-    "dist": "dist"
-  },
   "files": [
     "dist/logary.js",
     "dist/logary.js.map"
