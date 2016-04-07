@@ -7,6 +7,9 @@ Logary is a free and open source logging framework. It's also a fully functional
 JavaScript logging framework which is extremely open to extension, because it's
 all composed from pure functions.
 
+Sponsored by
+[qvitoo – A.I. bookkeeping and Logary in production since many years](https://qvitoo.com/?utm_source=github&utm_campaign=logary).
+
 ## Installation
 
 ``` bash
