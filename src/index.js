@@ -152,7 +152,7 @@ export default function Logary(service: string, target, mid) {
   this.middleware = actualMid;
 }
 
-type Logger = (m: Message) => Messsage;
+type Logger = (m: Message) => Message;
 //type Middleware = (m: Message) => Function => Message;
 type FinalLogger = (m: Message) => Promise;
 
