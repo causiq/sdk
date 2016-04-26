@@ -48,6 +48,30 @@ const logger = build(logary, getLogger(logary, 'MyModule.MySub'));
 logger(Message.event('Initialised App'));
 ```
 
+Let's say you wanted to always add some context to the logger, then you'd do something like this:
+
+``` javascript
+// save this in the app's context; it's a state carrier:
+const logary = new Logary('mysite.com', target);
+
+// in your module, or in your functions:
+const parentLogger = getLogger(logary, 'MyModule.MySubModule');
+
+// some middleware for some context in between heaven an earth
+const userIdMid =
+  next => msg => next(merge(msg, {
+    context: {
+      userId: 'haf'
+    }
+  }));
+
+// in your innermost context:
+const logger = build(logary, userIdMid(parentLogger));
+
+// in your functions
+const promiseOfMessage = logger(Message.event('Sign up'));
+```
+
 I also strongly recommend reading the
 [unit tests](https://github.com/logary/logary-js/blob/master/test/unit/logary_test.js)
 which accurately portray the API available.
@@ -55,7 +79,7 @@ which accurately portray the API available.
 ### Features showcased
 
  - Target (second argument to c'tor) of signature: `Message -> Promise`.
- - Middleware (third argument to c'tor) of signature `msg:Message -> next:Middleware -> msg:Message`.
- - logger returns the Promise of the target
+ - Middleware (third argument to c'tor) of signature `next:Middleware -> msg:Message -> msg:Message`.
+ - FinalLogger returns the Promise of the target
  - We'll console.log if you've missed configuring a target
 

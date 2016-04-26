@@ -4,7 +4,7 @@ import StackTrace from 'stacktrace-js';
 
 type Message =
   { name: ?string
-  ; template: string
+  ; template: string // TODO: value: Event|Gauge
   ; timestamp: ?Date|?string
   ; context: ?Object
   ; fields: ?Object
@@ -80,8 +80,10 @@ export const HashUtils = {
   }
 };
 
+type Middleware = (next:Function) => (m: Message) => Message;
+
 export const Middleware = {
-  messageId: msg => next => {
+  messageId: next => msg => {
     // https://github.com/Caligatio/jsSHA
     const hasher = new jsSHA('SHA-256', 'TEXT'),
           messageId = msg.messageId ||
@@ -93,7 +95,7 @@ export const Middleware = {
     });
   },
 
-  stacktrace: msg => next => {
+  stacktrace: next => msg => {
     if (msg.fields && msg.fields.errors && msg.fields.errors.length > 0) {
       const allErrors = msg.fields.errors.map(error => StackTrace.fromError(error));
       return Promise.all(allErrors).
@@ -113,19 +115,17 @@ export const Middleware = {
     }
   },
 
-  timestamp: msg => next => merge(msg, {
+  timestamp: next => msg => merge(msg, {
     timestamp: (typeof msg.timestamp === 'Date' ?
                    (msg.timestamp.getTime() + '000000') :
                    Date.now() + '000000')
   }),
 
   minLevel(level: string) {
-    return function(msg) {
-      return function(next) {
-        const isLess = LogLevel.lessThan(msg.level, level);
-        return isLess ? msg : next(msg);
-      };
-    };
+    return next => msg =>
+        LogLevel.lessThan(msg.level, level) ?
+          msg :
+          next(msg);
   }
 };
 
@@ -153,49 +153,59 @@ export default function Logary(service: string, target, mid) {
 }
 
 type Logger = (m: Message) => Message;
-//type Middleware = (m: Message) => Function => Message;
+
 type FinalLogger = (m: Message) => Promise;
 
-export function compose(
-  next: (message: Message) => Message,
-  enricher: Function): Logger {
-  return function(message) {
-    return enricher(message)(next);
-  };
+/**
+ * Composes single-argument functions from right to left. The rightmost
+ * function can take multiple arguments as it provides the signature for
+ * the resulting composite function.
+ *
+ * @param {...Function} funcs The functions to compose.
+ * @returns {Function} A function obtained by composing the argument functions
+ * from right to left. For example, compose(f, g, h) is identical to doing
+ * (...args) => f(g(h(...args))).
+ */
+export function compose(...funcs) {
+  if (funcs.length === 0) {
+    return arg => arg;
+  } else {
+    const last = funcs[funcs.length - 1];
+    const rest = funcs.slice(0, -1);
+    return (...args) => rest.reduceRight((composed, f) => f(composed), last(...args));
+  }
 };
 
-export function composeAll(
-  next: (message: Message) => Message,
-  ...middleware): Logger {
-  //console.log('composeAll, middleware', middleware);
-  return middleware.reverse().reduce(compose, next);
-};
-
+/**
+ * Compose the logger with the target, to create a FinalLogger.
+ */
 export function thenTarget(
   logger: (message: Message) => Message,
   target: (message: Message) => Promise): FinalLogger {
   return msg => target(logger(msg));
 };
 
+/**
+ * Compose the logger with the Logary state, to build a FinalLogger
+ * with the middleware available in Logary.
+ */
 export function build(
   logary: Logary,
-  logger: (m: Message) => (next: Function) => Message): FinalLogger {
+  logger: (m: Message) => Message): FinalLogger {
   return thenTarget(logger, logary.target);
 };
 
 export function getLogger(logary: Logary, subSection: string): Logger {
-  const logger = function(message) {
-    return merge({
-      context: {
-        service: logary.service,
-        logger: subSection
-      },
-      name: logary.service + '.' + subSection
-    }, message);
-  };
+  const logger = message => merge({
+    context: {
+      service: logary.service,
+      logger: subSection
+    },
+    name: logary.service + '.' + subSection
+  }, message);
 
   //console.log('getLogger middleware', logary.middleware);
-  return composeAll(logger, ...logary.middleware);
+  return compose(...logary.middleware)(logger);
 };
 
 function traverse(o, state, func) {

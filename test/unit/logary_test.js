@@ -3,7 +3,6 @@ import {
   default as Logary,
   getLogger,
   compose,
-  composeAll,
   thenTarget,
   build,
   Message,
@@ -37,6 +36,43 @@ describe('Logary', function() {
 
     it('should be newable', function() {
       expect(logary).to.not.be.null;
+    });
+  });
+
+  describe('#compose', function() {
+    it('calls its functions', function() {
+      const a = x => x + 1,
+            b = x => x + 3,
+            c = x => x + 7,
+            f = compose(a, b, c);
+      expect(f).to.be.a('function');
+      expect(f(1)).to.equal(12);
+    });
+
+    it('can compose higher order f-ns', function() {
+      const calls = [],
+            m1 = next => x => { calls.push('m1'); return next(x); },
+            m2 = next => x => { calls.push('m2'); return next(x); },
+            f3 = y => { calls.push('f3'); return y + 1; };
+
+      const f = compose(m1, m2)(f3);
+      expect(f(2)).to.equal(3);
+      expect(calls).to.deep.equal(['m1', 'm2', 'f3']);
+    });
+
+    it('cannot take end function of different signature', function() {
+      const calls = [],
+            m1 = next => x => { calls.push('m1'); return next(x); },
+            m2 = next => x => { calls.push('m2'); return next(x); },
+            f3 = y => { calls.push('f3'); return y + 1; };
+
+      // this does not work, because m2(f3(2)) turns into
+      // m2(2)
+      // x => 2(x)
+      const callsxx = [], fxx = compose(m1, m2, f3);
+      expect(fxx(2)).to.be.a('function');
+      expect(callsxx).to.deep.equal([]);
+      expect(() => fxx(2)(2)).to.throw();
     });
   });
 
@@ -90,10 +126,15 @@ describe('Logary', function() {
       expect(logger).to.be.a('function');
     });
 
+    it('returns what is passed in', function() {
+      const subject = logger(Message.event('abc'));
+      expect(subject.template).to.equal('abc');
+    });
+
     it('calls Logary middleware', function() {
       const calls = [];
 
-      const mid = msg => next => {
+      const mid = next => msg => {
         calls.push('middleware');
         return next(msg);
       };
@@ -119,13 +160,13 @@ describe('Logary', function() {
     });
 
     it('can be composed', function() {
-      const enricher = msg => next => merge(msg, {
+      const enricher = next => msg => merge(msg, {
         context: {
           principal: 'haf'
         }
       });
 
-      const nextLogger = compose(logger, enricher),
+      const nextLogger = enricher(logger),
             msg = Message.event('Thing occurred');
       //console.log('nextLogger: ', nextLogger(msg).toString());
       expect(nextLogger(msg)).to.be.a('object');
@@ -135,63 +176,58 @@ describe('Logary', function() {
 
   describe('composition', function() {
     var logary, logger;
-    const enricher = msg => next => {
-      const res = next(merge(msg, {
+    const enricher = next => msg =>
+      next(merge(msg, {
         context: {
           user: 'haf'
         }
       }));
-      return res;
-    };
 
-    const enricher2 = msg => next => {
-      const res = next(merge(msg, {
+    const enricher2 = next => msg =>
+      next(merge(msg, {
         context: {
           lastUtmSource: 'adwords'
         }
       }));
-      return res;
-    };
 
     beforeEach('create new logary', function() {
       logary = new Logary('MyWebSite');
-      logger = getLogger(logary, 'AreaX.ComponentA');
       logger = getLogger(logary, 'SubA');
-      logger = compose(logger, enricher);
-      logger = compose(logger, enricher2);
+      logger = enricher(logger);
+      logger = enricher2(logger);
     });
 
-    it('#compose creates logger M => M', function() {
+    it('#compose creates Logger w/ signature M => M', function() {
       expect(logger).to.be.a('function');
       expect(logger(Message.event('Testing'))).to.be.an('object');
     });
 
-    it('#composeAll creates logger M => M', function() {
+    it('#compose creates Logger w/ signature M => M', function() {
       // given
       var calls = [];
       const logger = getLogger(logary, 'AreaY');
-      const e1 = msg => next => {
+      const e1 = next => msg => {
         calls.push('1');
         return next(msg);
       };
-      const e2 = msg => next => {
+      const e2 = next => msg => {
         calls.push('2');
         return msg;
       };
 
       // sanity check
-      const composed = composeAll(logger, e1, e2);
+      const composed = compose(e1, e2)(logger);
       expect(composed).to.be.a('function');
 
       // initial order, e1 calls e2
       const output = composed(Message.event('testing'));
-      expect(output).to.be.a('object');
+      expect(output).to.be.an('object');
       expect(output.template).to.equal('testing');
       expect(calls).to.deep.equal([ '1', '2' ]);
 
       // other order, e2 doesn't call next
       calls = [];
-      const composed2 = composeAll(logger, e2, e1);
+      const composed2 = compose(e2, e1)(logger);
       const output2 = composed2(Message.event('testing'));
       expect(output2.template).to.equal('testing');
       expect(calls).to.deep.equal([ '2' ]);
@@ -238,7 +274,7 @@ describe('Logary', function() {
 
   //////////////////// DOCS: HOW TO USE ///////////////////
   describe('usage', function() {
-    it('supports recommended config', function() {
+    it('supports recommended config', function(done) {
       // once per site/app
       const target = Targets.logaryService({
         path: '/i/site/logary',
@@ -246,25 +282,30 @@ describe('Logary', function() {
         send: m => /* IRL: ajax */ Promise.resolve('Sent to server!')
       });
 
-      // save this in the app's context:
+      // save this in the app's context; it's a state carrier:
       const logary = new Logary('mysite.com', target);
 
       // in your module, or in your functions:
-      const loggerExtras =
-        build(
-          logary,
-          compose(
-            getLogger(logary, 'MyModule.MySubModule'),
-            msg => next => next(merge(msg, {
-              context: {
-                userId: 'haf'
-              }
-            })))),
-        logger = build(logary, getLogger(logary, 'MyModule.MySub'));
+      const parentLogger = getLogger(logary, 'MyModule.MySubModule');
+
+      // some middleware for some context in between heaven an earth
+      const userIdMid =
+        next => msg => next(merge(msg, {
+          context: {
+            userId: 'haf'
+          }
+        }));
+
+      // in your innermost context:
+      const logger = build(logary, userIdMid(parentLogger));
 
       // in your functions
       const subject = logger(Message.event('Sign up'));
-      expect(subject).to.eventually.be.equal('Yey!');
+      expect(subject).to.be.a('Promise');
+      expect(expect(subject).to.eventually.be.fulfilled.
+        then(stubbedValue => {
+          expect(stubbedValue).to.equal('Sent to server!');
+        })).to.notify(done);
     });
   });
   ///////////////////// END DOCS //////////////////////////
@@ -304,9 +345,9 @@ describe('Logary', function() {
       it('should filter', function() {
         const subject = Middleware.minLevel(LogLevel.INFO);
         const msg = Message.create({ template: 'test' });
-        subject(msg)(msg => {
+        subject(msg => {
           expect(msg).to.be.null;
-        });
+        })(msg);
       });
     });
 
@@ -328,12 +369,12 @@ describe('Logary', function() {
 
       it('should accept a message and return a function', function() {
         const msg = Message.create({ template: 'test' });
-        expect(messageId(msg)).to.be.a('function');
+        expect(messageId(x => x)).to.be.a('function');
       });
 
       it('should compute a SHA256 HEX message id', function() {
         const msg = Message.create({ template: 'test' });
-        const res = messageId(msg)(logger);
+        const res = messageId(logger)(msg);
         //console.log(JSON.stringify(res.messageId));
         expect(res.messageId).to.be.a('string');
         expect(res.messageId).to.not.equal(emptyHash);
@@ -341,8 +382,7 @@ describe('Logary', function() {
       });
     });
 
-
-    describe('environment', function() {
+    describe('sanity checks', function() {
       it('has Promise.all', function() {
         expect(Promise.all).to.be.a('function');
       });
@@ -384,7 +424,7 @@ describe('Logary', function() {
 
       it('passes through messages without errors', function() {
         const msg = Message.event('Signup');
-        const res = stacktrace(msg)(logger);
+        const res = stacktrace(logger)(msg);
         expect(res.template).to.equal('Signup');
         expect(res.level).to.equal('INFO');
         expect(res.fields).to.deep.equal({});
@@ -396,7 +436,7 @@ describe('Logary', function() {
 
       it('parses errors in generated errors', function(done) {
         const msg = Message.eventError('Uncomfortable Error', error);
-        const subjectMsg = stacktrace(msg)(logger);
+        const subjectMsg = stacktrace(logger)(msg);
 
         expect(expect(subjectMsg).to.eventually.be.fulfilled.then(msg => {
           expect(msg.fields).to.be.an('object');
@@ -410,7 +450,7 @@ describe('Logary', function() {
         const msg = Message.eventError('Uncomfortable Error', error, {
                 myField: 'abc'
               }),
-              actual = stacktrace(msg)(logger).then(x => x.fields);
+              actual = stacktrace(logger)(msg).then(x => x.fields);
 
         expect(expect(Promise.all([
           actual,
@@ -464,7 +504,7 @@ describe('Logary', function() {
     });
 
     it('sets the stacktrace', function(done) {
-      const composed = compose(logger, Middleware.stacktrace);
+      const composed = Middleware.stacktrace(logger);
       const futureMsg =
         onerror(composed)("XYZ is undefined", "sample.js", 1, 1, err);
 
