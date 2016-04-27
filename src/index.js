@@ -176,6 +176,8 @@ export function compose(...funcs) {
   if (funcs.length === 0) {
     return arg => arg;
   } else {
+    // Alternative formulation with higher-order functions only.
+    // return funcs.reduceRight((composed, f) => f(composed), x => x);
     const last = funcs[funcs.length - 1];
     const rest = funcs.slice(0, -1);
     return (...args) => rest.reduceRight((composed, f) => f(composed), last(...args));
