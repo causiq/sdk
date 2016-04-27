@@ -2,21 +2,25 @@ import merge from './internal/merge';
 import jsSHA from 'jssha';
 import StackTrace from 'stacktrace-js';
 
+type Value = // TODO: Gauge
+  { event: string };
+
 type Message =
-  { name: ?string
-  ; template: string // TODO: value: Event|Gauge
+  { name: ?Array
+  ; value: Value // TODO: value: Event|Gauge
   ; timestamp: ?Date|?string
   ; context: ?Object
   ; fields: ?Object
+  ; session: ?Object // TODO: remove when removed from logary
   ; level: string }
 
 export const LogLevel = {
-  VERBOSE: 'VERBOSE',
-  DEBUG: 'DEBUG',
-  INFO: 'INFO',
-  WARN: 'WARN',
-  ERROR: 'ERROR',
-  FATAL: 'FATAL',
+  VERBOSE: 'verbose',
+  DEBUG: 'debug',
+  INFO: 'info',
+  WARN: 'warn',
+  ERROR: 'error',
+  FATAL: 'fatal',
 
   lessThan(a: string, b: string) {
     const order = {
@@ -27,8 +31,10 @@ export const LogLevel = {
       ERROR: 4,
       FATAL: 5
     };
-    if (order.hasOwnProperty(a) && order.hasOwnProperty(b)) {
-      return order[a] < order[b];
+    const A = a.toUpperCase();
+    const B = b.toUpperCase();
+    if (order.hasOwnProperty(A) && order.hasOwnProperty(B)) {
+      return order[A] < order[B];
     } else return false;
   }
 };
@@ -39,7 +45,7 @@ export const Message = {
 
   create({ template, fields, context, level }) {
     return {
-      template,
+      value: { event: template },
       fields,
       context,
       level: level || this.defaultLevel
@@ -117,8 +123,8 @@ export const Middleware = {
 
   timestamp: next => msg => next(merge(msg, {
     timestamp: (typeof msg.timestamp === 'Date' ?
-                   (msg.timestamp.getTime() + '000000') :
-                   Date.now() + '000000')
+                   Number((msg.timestamp.getTime() + '000000')) :
+                   Number(Date.now() + '000000'))
   })),
 
   minLevel(level: string) {
@@ -201,7 +207,8 @@ export function getLogger(logary: Logary, subSection: string): Logger {
       service: logary.service,
       logger: subSection
     },
-    name: logary.service + '.' + subSection
+    name: (logary.service + '.' + subSection).split('.'),
+    session: {} // this will go in later versions of logary, required now
   }, message);
 
   //console.log('getLogger middleware', logary.middleware);

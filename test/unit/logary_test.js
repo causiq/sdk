@@ -86,17 +86,17 @@ describe('Logary', function() {
         template: 'Hello World'
       });
 
-      expect(subject.level).to.equal('DEBUG');
+      expect(subject.level).to.equal('debug');
     });
 
     it('#event can be called', function() {
       expect(Message.event).to.be.a('function');
     });
 
-    it('#event defaults to INFO', function() {
+    it('#event defaults to info', function() {
       expect(Message.event('User Signed In')).to.deep.equal({
-        template: 'User Signed In',
-        level: 'INFO',
+        value: {event:'User Signed In'},
+        level: 'info',
         fields: {},
         context: {}
       });
@@ -128,7 +128,7 @@ describe('Logary', function() {
 
     it('returns what is passed in', function() {
       const subject = logger(Message.event('abc'));
-      expect(subject.template).to.equal('abc');
+      expect(subject.value.event).to.equal('abc');
     });
 
     it('calls Logary middleware', function() {
@@ -145,7 +145,7 @@ describe('Logary', function() {
             msg = Message.event('Happening'),
             subj = lgr(msg);
 
-      expect(subj.template).to.equal('Happening');
+      expect(subj.value.event).to.equal('Happening');
       expect(calls).to.deep.equal([
         'middleware'
       ]);
@@ -222,14 +222,14 @@ describe('Logary', function() {
       // initial order, e1 calls e2
       const output = composed(Message.event('testing'));
       expect(output).to.be.an('object');
-      expect(output.template).to.equal('testing');
+      expect(output.value.event).to.equal('testing');
       expect(calls).to.deep.equal([ '1', '2' ]);
 
       // other order, e2 doesn't call next
       calls = [];
       const composed2 = compose(e2, e1)(logger);
       const output2 = composed2(Message.event('testing'));
-      expect(output2.template).to.equal('testing');
+      expect(output2.value.event).to.equal('testing');
       expect(calls).to.deep.equal([ '2' ]);
     });
 
@@ -247,7 +247,7 @@ describe('Logary', function() {
 
     it('#compose composes Messages and loggers', function() {
       const now = Date.now();
-      const output = build(logary, logger)(Message.event('App Loaded', 'INFO', {
+      const output = build(logary, logger)(Message.event('App Loaded', 'info', {
         fieldA: 3,
         'prop': 34
       })).then(x => ({ ...x, timestamp: now }));
@@ -255,7 +255,7 @@ describe('Logary', function() {
       expect(output).to.be.a('Promise');
       expect(output).to.eventually.deep.equal({
         name: 'MyWebSite.SubA',
-        level: 'INFO',
+        level: 'info',
         template: 'App Loaded',
         timestamp: now,
         context: {
@@ -329,9 +329,9 @@ describe('Logary', function() {
   });
 
   describe('LogLevel', function() {
-    [ 'VERBOSE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL' ].forEach(level => {
+    [ 'verbose', 'debug', 'info', 'warn', 'error', 'fatal' ].forEach(level => {
       it('should have ' + level + ' as a level', function() {
-        expect(LogLevel[level]).to.equal(level);
+        expect(LogLevel[level.toUpperCase()]).to.equal(level);
       });
     });
 
@@ -378,7 +378,7 @@ describe('Logary', function() {
         //console.log(JSON.stringify(res.messageId));
         expect(res.messageId).to.be.a('string');
         expect(res.messageId).to.not.equal(emptyHash);
-        expect(res.messageId).to.equal('3d0d53606d89acafc37cb5c4d354e75dc7bb0bb9f2ff68a02f550580d1949a7e');
+        expect(res.messageId).to.equal('b74b35fcaef64d4ad970c983e88cb2d2b5972988a7f9435270a0a7c6b16d5f5b');
       });
     });
 
@@ -425,8 +425,8 @@ describe('Logary', function() {
       it('passes through messages without errors', function() {
         const msg = Message.event('Signup');
         const res = stacktrace(logger)(msg);
-        expect(res.template).to.equal('Signup');
-        expect(res.level).to.equal('INFO');
+        expect(res.value.event).to.equal('Signup');
+        expect(res.level).to.equal('info');
         expect(res.fields).to.deep.equal({});
         expect(res.context).to.deep.equal({
           logger: 'AreaX.ComponentA',
@@ -548,7 +548,7 @@ describe('Logary', function() {
             "content": {
               "contentEncoding": "identity",
               "contentType": "application/json; charset=utf-8",
-              "data": "{\"template\":\"Signed Up\",\"fields\":{},\"context\":{},\"level\":\"INFO\"}"
+              "data": "{\"value\":{\"event\":\"Signed Up\"},\"fields\":{},\"context\":{},\"level\":\"info\"}"
             },
             "headers": [
               {
@@ -624,6 +624,44 @@ describe('Logary', function() {
         expect(data).to.equal(serialised);
         expect(contentEncoding).to.equal('identity');
         expect(contentType).to.equal('application/json; charset=utf-8');
+      });
+    });
+
+  });
+
+  describe('serialisation', function() {
+    describe('serialise', function() {
+      var logary, logger, conf, service, send;
+
+      beforeEach('create new logary', function() {
+        logary = new Logary('MyWebSite');
+        logger = getLogger(logary, 'AreaX.ComponentA');
+        conf = {
+          path: '/i/site/logary',
+          serialise: LogaryM.createContent,
+          // in this test we stub the xmlHttpRequest
+          send: req => Promise.resolve(JSON.parse(req.content.data))
+        };
+        service = logaryService(conf);
+        send = build(logary, logger);
+      });
+
+      it('serialises in the expected format', function(done) {
+        const expectedEvent = JSON.parse('{"context":{"logger":"AreaX.ComponentA","service":"MyWebSite"},"fields":{},"level":"info","name":["MyWebSite","AreaX","ComponentA"],"session":{},"timestamp":1461771997775106000,"value":{"event":"a test event"}}');
+
+        const actual = send(Message.event('a test event'));
+
+        expect(
+          expect(actual).to.eventually.be.fulfilled.then(data => {
+            expect(data.timestamp).to.be.a('number');
+            expect(data.messageId).to.be.a('string');
+            // munge the timestamp to allow comparison
+            data.timestamp = expectedEvent.timestamp;
+            // munge the messageId to allow comparison
+            expectedEvent.messageId = data.messageId;
+            expect(data).deep.equal(expectedEvent);
+          })
+        ).to.notify(done);
       });
     });
   });
