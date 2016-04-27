@@ -115,11 +115,11 @@ export const Middleware = {
     }
   },
 
-  timestamp: next => msg => merge(msg, {
+  timestamp: next => msg => next(merge(msg, {
     timestamp: (typeof msg.timestamp === 'Date' ?
                    (msg.timestamp.getTime() + '000000') :
                    Date.now() + '000000')
-  }),
+  })),
 
   minLevel(level: string) {
     return next => msg =>
