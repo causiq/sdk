@@ -207,8 +207,7 @@ export function getLogger(logary: Logary, subSection: string): Logger {
       service: logary.service,
       logger: subSection
     },
-    name: (logary.service + '.' + subSection).split('.'),
-    session: {} // this will go in later versions of logary, required now
+    name: (logary.service + '.' + subSection).split('.')
   }, message);
 
   //console.log('getLogger middleware', logary.middleware);
