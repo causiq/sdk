@@ -647,7 +647,7 @@ describe('Logary', function() {
       });
 
       it('serialises in the expected format', function(done) {
-        const expectedEvent = JSON.parse('{"context":{"logger":"AreaX.ComponentA","service":"MyWebSite"},"fields":{},"level":"info","name":["MyWebSite","AreaX","ComponentA"],"session":{},"timestamp":1461771997775106000,"value":{"event":"a test event"}}');
+        const expectedEvent = JSON.parse('{"context":{"logger":"AreaX.ComponentA","service":"MyWebSite"},"fields":{},"level":"info","name":["MyWebSite","AreaX","ComponentA"],"timestamp":1461771997775106000,"value":{"event":"a test event"}}');
 
         const actual = send(Message.event('a test event'));
 
