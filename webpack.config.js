@@ -24,4 +24,4 @@ var createConfig = function(version) {
   }
 };
 
-module.exports = createConfig('2.0.1');
+module.exports = createConfig('2.0.2');
