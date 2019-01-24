@@ -1,7 +1,7 @@
 // @flow-
 
 /*eslint-disable no-alert, no-unused-expressions */
-import { compose } from '../compose'
+import { compose, merge } from '../utilities'
 import {
   Logary,
   getLogger,
@@ -25,12 +25,11 @@ import {
 } from './index';
 import * as logaryM from './index';
 import type { MessageType } from './index';
-import { createRequest, getContent, emptyResponse } from '../request';
+import { createRequest, getContent, emptyResponse } from './request';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import chai, { expect } from 'chai';
 import { beforeEach, describe, it } from 'mocha';
-import { merge } from 'lib/underscore';
 import chaiAsPromised from 'chai-as-promised';
 import jsSHA from 'jssha';
 import StackTrace from 'stacktrace-js';
