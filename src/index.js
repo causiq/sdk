@@ -160,9 +160,6 @@ export type LogaryType =
   }
 
 export class Logary {
-  service: string
-  target: Target
-  middleware: UntypedMiddleware[]
 
   constructor(service: string, target: Target, mid: ?UntypedMiddleware | ?UntypedMiddleware[] = null) {
     const missingTarget = (msg: MessageType) => {
