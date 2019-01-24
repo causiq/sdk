@@ -1,37 +1,48 @@
+// @flow-
+
 /*eslint-disable no-alert, no-unused-expressions */
+import { compose, merge } from '../utilities'
 import {
-  default as Logary,
+  Logary,
   getLogger,
-  compose,
   thenTarget,
   build,
   Message,
-  Normalise,
-  Middleware,
   onerror,
-  HashUtils,
+  lessThan,
   Targets,
-  LogLevel,
-  Compression
-} from '../../src/index';
-import * as LogaryM from '../../src/index';
+  minLevel,
+  messageId,
+  stacktrace,
+  stubTarget,
+  defaultTarget,
+  VERBOSE,
+  DEBUG,
+  INFO,
+  WARN,
+  ERROR,
+  FATAL,
+} from './index';
+import * as logaryM from './index';
+import type { MessageType } from './index';
+import { createRequest, getContent, emptyResponse } from './request';
+import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import chai, { expect } from 'chai';
+import { beforeEach, describe, it } from 'mocha';
 import chaiAsPromised from 'chai-as-promised';
-import merge from '../../src/internal/merge';
 import jsSHA from 'jssha';
 import StackTrace from 'stacktrace-js';
-const logaryService = Targets.logaryService;
-const LZW = Compression.LZW;
 
 // support Promise
 chai.use(chaiAsPromised);
 
-describe('Logary', function() {
+describe('(Library) Logary', function() {
   describe('initialisation', function() {
     var logary = null;
 
     beforeEach('create new logary', function() {
-      logary = new Logary('MyWebSite');
+      logary = new Logary('MyWebSite', stubTarget);
     });
 
     it('should be newable', function() {
@@ -94,9 +105,12 @@ describe('Logary', function() {
     });
 
     it('#event defaults to info', function() {
-      expect(Message.event('User Signed In')).to.deep.equal({
-        value: {event:'User Signed In'},
-        level: 'info',
+      const m = Message.event('User Signed In');
+      delete m['timestamp'];
+      expect(m).to.deep.equal({
+        name: "",
+        value: 'User Signed In',
+        level: INFO,
         fields: {},
         context: {}
       });
@@ -114,7 +128,7 @@ describe('Logary', function() {
     var logary, logger;
 
     beforeEach('create new logary', function() {
-      logary = new Logary('MyWebSite');
+      logary = new Logary('MyWebSite', stubTarget);
       logger = getLogger(logary, 'AreaX.ComponentA');
     });
 
@@ -126,11 +140,6 @@ describe('Logary', function() {
       expect(logger).to.be.a('function');
     });
 
-    it('returns what is passed in', function() {
-      const subject = logger(Message.event('abc'));
-      expect(subject.value.event).to.equal('abc');
-    });
-
     it('calls Logary middleware', function() {
       const calls = [];
 
@@ -139,13 +148,13 @@ describe('Logary', function() {
         return next(msg);
       };
 
-      const mgr = new Logary('MySite', null, mid);
+      const mgr = new Logary('MySite', stubTarget, mid);
 
       const lgr = getLogger(mgr, 'Comp'),
             msg = Message.event('Happening'),
             subj = lgr(msg);
 
-      expect(subj.value.event).to.equal('Happening');
+      expect(subj.value).to.equal('Happening');
       expect(calls).to.deep.equal([
         'middleware'
       ]);
@@ -175,7 +184,7 @@ describe('Logary', function() {
   });
 
   describe('composition', function() {
-    var logary, logger;
+    var logary, logger, logged;
     const enricher = next => msg =>
       next(merge(msg, {
         context: {
@@ -191,21 +200,28 @@ describe('Logary', function() {
       }));
 
     beforeEach('create new logary', function() {
-      logary = new Logary('MyWebSite');
+      logged = [];
+      logary = new Logary('MyWebSite', msgs => { logged.push(msgs); return stubTarget(msgs) });
       logger = getLogger(logary, 'SubA');
+      expect(logger).to.be.a('function')
       logger = enricher(logger);
+      expect(logger).to.be.a('function')
       logger = enricher2(logger);
+      expect(logger).to.be.a('function')
     });
 
-    it('#compose creates Logger w/ signature M => M', function() {
+    it('enrichers keep function signature', function() {
       expect(logger).to.be.a('function');
-      expect(logger(Message.event('Testing'))).to.be.an('object');
+      const res = logger(Message.event('Testing'));
+      expect(res).to.be.an('object');
     });
 
     it('#compose creates Logger w/ signature M => M', function() {
+
       // given
       var calls = [];
       const logger = getLogger(logary, 'AreaY');
+
       const e1 = next => msg => {
         calls.push('1');
         return next(msg);
@@ -217,19 +233,19 @@ describe('Logary', function() {
 
       // sanity check
       const composed = compose(e1, e2)(logger);
-      expect(composed).to.be.a('function');
+      expect(composed).to.be.a('function', 'compose(e1, e2)(logger)');
 
       // initial order, e1 calls e2
       const output = composed(Message.event('testing'));
       expect(output).to.be.an('object');
-      expect(output.value.event).to.equal('testing');
+      expect(output.value).to.equal('testing');
       expect(calls).to.deep.equal([ '1', '2' ]);
 
       // other order, e2 doesn't call next
       calls = [];
       const composed2 = compose(e2, e1)(logger);
       const output2 = composed2(Message.event('testing'));
-      expect(output2.value.event).to.equal('testing');
+      expect(output2.value).to.equal('testing');
       expect(calls).to.deep.equal([ '2' ]);
     });
 
@@ -237,49 +253,59 @@ describe('Logary', function() {
       const calls = [];
       const composed = thenTarget(logger, msg => {
         calls.push('t');
-        return Promise.resolve('yup');
+        return of(emptyResponse);
       });
       const msg = Message.event('Calling Target');
       return Promise.all([
-        expect(composed(msg)).to.eventually.equal('yup')
+        expect(composed(msg).toPromise()).to.eventually.deep.equal(emptyResponse)
       ]);
     });
 
     it('#compose composes Messages and loggers', function() {
-      const now = Date.now();
-      const output = build(logary, logger)(Message.event('App Loaded', 'info', {
-        fieldA: 3,
-        'prop': 34
-      })).then(x => ({ ...x, timestamp: now }));
+      const now = Date.now(),
+            built = build(logary, logger),
+            msg = Message.event('App Loaded', 'info', {
+              fieldA: 3,
+              'prop': 34
+            }),
+            out = built(msg);
 
-      expect(output).to.be.a('Promise');
-      expect(output).to.eventually.deep.equal({
-        name: 'MyWebSite.SubA',
-        level: 'info',
-        template: 'App Loaded',
-        timestamp: now,
-        context: {
-          service: 'MyWebSite',
-          logger: 'SubA',
-          user: 'haf',
-          lastUtmSource: 'adwords'
-        },
-        fields: {
-          'fieldA': 3,
-          'prop': 34
-        }
+      expect(built).to.be.a('function');
+      expect(out).to.be.instanceof(Observable, 'Should return an Observable: ' + String(out));
+
+      const output = out.pipe(map(x => ({ ...logged[0], timestamp: now })));
+      expect(output).to.be.instanceof(Observable, "Logging after building, should return an Observable");
+
+      return output.toPromise().then(x => {
+        expect(x).to.deep.equal({
+          name: 'MyWebSite.SubA',
+          level: 'info',
+          value: 'App Loaded',
+          timestamp: now,
+          context: {
+            service: 'MyWebSite',
+            logger: 'SubA',
+            user: 'haf',
+            lastUtmSource: 'adwords'
+          },
+          fields: {
+            fieldA: 3,
+            prop: 34,
+            messageId: "e311afba5f641aa8e4dc93c1c424c31e5e17f2b3f4576c3662307c1e37632d7c"
+          }
+        });
       });
-    });
+    })
   });
 
   //////////////////// DOCS: HOW TO USE ///////////////////
   describe('usage', function() {
-    it('supports recommended config', function(done) {
+    it('supports recommended config', function() {
       // once per site/app
       const target = Targets.logaryService({
         path: '/i/site/logary',
-        serialise: LogaryM.createContent,
-        send: m => /* IRL: ajax */ Promise.resolve('Sent to server!')
+        serialise: getContent,
+        send: m => /* IRL: lib/request/send */ of(emptyResponse)
       });
 
       // save this in the app's context; it's a state carrier:
@@ -301,49 +327,25 @@ describe('Logary', function() {
 
       // in your functions
       const subject = logger(Message.event('Sign up'));
-      expect(subject).to.be.a('Promise');
-      expect(expect(subject).to.eventually.be.fulfilled.
-        then(stubbedValue => {
-          expect(stubbedValue).to.equal('Sent to server!');
-        })).to.notify(done);
+      expect(subject).to.be.instanceof(Observable);
+
+      return subject.toPromise().then(stubbedValue => {
+        expect(stubbedValue).to.deep.equal(emptyResponse);
+      });
     });
   });
   ///////////////////// END DOCS //////////////////////////
 
-  describe('HashUtils', function() {
-    const normalise = HashUtils.normalise;
-    it('should be a function', function() {
-      expect(normalise).to.be.a('function');
-    });
-
-    it('should accept an object', function() {
-      expect(normalise({
-        a: 1,
-        b: {
-          b1: 21,
-          b2: 22
-        },
-        c: 3
-      })).to.equal('a	1\nb1	21\nb2	22\nc	3\n');
-    });
-  });
-
   describe('LogLevel', function() {
-    [ 'verbose', 'debug', 'info', 'warn', 'error', 'fatal' ].forEach(level => {
-      it('should have ' + level + ' as a level', function() {
-        expect(LogLevel[level.toUpperCase()]).to.equal(level);
-      });
-    });
-
     it('should have #lessThan', function() {
-      expect(LogLevel.lessThan).to.be.a('function');
+      expect(lessThan).to.be.a('function');
     });
   });
 
   describe('Middleware', function() {
     describe('LogLevel enricher', function() {
       it('should filter', function() {
-        const subject = Middleware.minLevel(LogLevel.INFO);
+        const subject = minLevel(INFO);
         const msg = Message.create({ template: 'test' });
         subject(msg => {
           expect(msg).to.be.null;
@@ -355,13 +357,11 @@ describe('Logary', function() {
       var logary, logger, emptyHash;
 
       beforeEach('create new logary', function() {
-        logary = new Logary('MyWebSite');
+        logary = new Logary('MyWebSite', stubTarget);
         logger = getLogger(logary, 'AreaX.ComponentA');
         const hasher = new jsSHA('SHA-256', 'TEXT');
         emptyHash = hasher.getHash('HEX');
       });
-
-      const messageId = Middleware.messageId;
 
       it('should be a function', function() {
         expect(messageId).to.be.a('function');
@@ -375,41 +375,21 @@ describe('Logary', function() {
       it('should compute a SHA256 HEX message id', function() {
         const msg = Message.create({ template: 'test' });
         const res = messageId(logger)(msg);
+        if (res.fields == null || typeof res.fields !== 'object') throw new Error('Fields is null or not an object');
         //console.log(JSON.stringify(res.messageId));
-        expect(res.messageId).to.be.a('string');
-        expect(res.messageId).to.not.equal(emptyHash);
-        expect(res.messageId).to.equal('b74b35fcaef64d4ad970c983e88cb2d2b5972988a7f9435270a0a7c6b16d5f5b');
-      });
-    });
-
-    describe('sanity checks', function() {
-      it('has Promise.all', function() {
-        expect(Promise.all).to.be.a('function');
-      });
-
-      it('has expect(Promise.all([ .. ])).to.eventually', function() {
-        const a = Promise.resolve(1),
-              b = Promise.resolve(2);
-
-        return expect(Promise.all([ a, b ])).to.eventually.be.fulfilled;
-      });
-
-      it('has Promise.all([ .. ]).then', function() {
-        const a = Promise.resolve(1),
-              b = Promise.resolve(2);
-
-        expect(Promise.all([ a, b ]).then).to.be.a('function');
+        expect(res.fields.messageId).to.be.a('string');
+        expect(res.fields.messageId).to.not.equal(emptyHash);
+        expect(res.fields.messageId).to.equal('01842d4956f94554c26d2e1cd431a27c2aef25dd807d60569d5039cfffa02f8b');
       });
     });
 
     describe('stacktrace enricher', function() {
-      const stacktrace = Middleware.stacktrace,
-            error = new Error("Oh Noes!");
+      const error = new Error("Oh Noes!");
 
       var logary, logger, emptyHash;
 
       beforeEach('create new logary', function() {
-        logary = new Logary('MyWebSite', null, []);
+        logary = new Logary('MyWebSite', stubTarget, []);
         logger = getLogger(logary, 'AreaX.ComponentA');
       });
 
@@ -419,13 +399,13 @@ describe('Logary', function() {
 
       it('should accept a message and return a function', function() {
         const msg = Message.create({ template: 'test' });
-        expect(stacktrace(msg)).to.be.a('function');
+        expect(stacktrace(ignored => msg)).to.be.a('function');
       });
 
       it('passes through messages without errors', function() {
         const msg = Message.event('Signup');
         const res = stacktrace(logger)(msg);
-        expect(res.value.event).to.equal('Signup');
+        expect(res.value).to.equal('Signup');
         expect(res.level).to.equal('info');
         expect(res.fields).to.deep.equal({});
         expect(res.context).to.deep.equal({
@@ -438,27 +418,32 @@ describe('Logary', function() {
         const msg = Message.eventError('Uncomfortable Error', error);
         const subjectMsg = stacktrace(logger)(msg);
 
-        expect(expect(subjectMsg).to.eventually.be.fulfilled.then(msg => {
-          expect(msg.fields).to.be.an('object');
-          expect(msg.fields.errors).to.have.lengthOf(1);
-          expect(msg.fields.errors[0]).to.not.equal(error);
-          expect(msg.fields.errors[0]).to.be.an('Array');
-        })).to.notify(done);
+        if (subjectMsg instanceof Observable) {
+          subjectMsg.subscribe(msg => {
+            expect(msg.fields).to.be.an('object');
+            expect(msg.fields.errors).to.have.lengthOf(1);
+            expect(msg.fields.errors[0]).to.not.equal(error);
+            expect(msg.fields.errors[0]).to.be.an('Array');
+            done();
+          }, done);
+        } else {
+          throw new Error('Expected subjectMsg to be instanceof Observable');
+        }
       });
 
       it('should parse errors into stack traces', function(done) {
         const msg = Message.eventError('Uncomfortable Error', error, {
                 myField: 'abc'
               }),
-              actual = stacktrace(logger)(msg).then(x => x.fields);
+              actual = stacktrace(logger)(msg).pipe(map(x => x.fields));
 
-        expect(expect(Promise.all([
-          actual,
-          StackTrace.fromError(error)
-        ])).to.eventually.be.fulfilled.then(([actualFields, expectedError]) => {
-          expect(actualFields.errors[0]).to.deep.equal(expectedError);
-          expect(actualFields.myField).to.equal('abc');
-        })).to.notify(done);
+        Promise
+          .all([actual.toPromise(), StackTrace.fromError(error)])
+          .then(([ actualFields, expectedError ]) => {
+            expect(actualFields.errors[0]).to.deep.equal(expectedError);
+            expect(actualFields.myField).to.equal('abc');
+            done();
+          }, done);
       });
     });
   });
@@ -467,7 +452,7 @@ describe('Logary', function() {
     var logary, logger;
 
     beforeEach('create new logary', function() {
-      logary = new Logary('MyWebSite', msg => Promise.resolve(msg));
+      logary = new Logary('MyWebSite', msg => of(msg));
       logger = build(logary, getLogger(logary, 'AreaX.ComponentA'));
     });
 
@@ -480,39 +465,60 @@ describe('Logary', function() {
     });
 
     const err = new Error('BAM!');
-    const createMsg = () =>
+    const createMsg: void => Observable<Response> = () =>
       onerror(logger)("XYZ is undefined", "sample.js", 1, 1, err);
 
-    it('can be called with logger + args : Promise', function() {
-      const msg = createMsg();
+    it('can be called with logger + args: Observable', function() {
+      const msg = createMsg().toPromise();
       expect(msg).to.eventually.be.fulfilled;
     });
 
-    it('sets template', function() {
-      const template = createMsg().then(x => x.template);
-      expect(template).to.eventually.equal('Window onerror');
+    it('sets .value', function() {
+      return createMsg().pipe(map(x => x[0].value)).toPromise().then(value => {
+        expect(value).to.equal('XYZ is undefined');
+      });
     });
 
     it('sets level', function() {
-      const level = createMsg().then(x => x.level);
-      expect(level).to.eventually.equal(LogLevel.ERROR);
+      const level = createMsg().pipe(
+        map(x => x[0].level)
+      ).toPromise();
+      expect(level).to.eventually.equal(ERROR);
     });
 
     it('sets errors', function() {
-      const errors = createMsg().then(x => x.fields.errors);
-      expect(errors).to.eventually.have.lengthOf(1);
+      return createMsg().toPromise().then(msgs => {
+        expect(msgs[0].fields).to.be.an('object');
+        expect(msgs[0].fields).not.to.be.undefined;
+        expect(msgs[0].fields.errors).to.have.lengthOf(1);
+      });
     });
 
-    it('sets the stacktrace', function(done) {
-      const composed = Middleware.stacktrace(logger);
-      const futureMsg =
-        onerror(composed)("XYZ is undefined", "sample.js", 1, 1, err);
+    it.skip('sets the stacktrace', function() {
+      const composed = stacktrace(logger);
+      const futureMsg = onerror(composed)("XYZ is undefined", "sample.js", 1, 1, err);
+      expect(futureMsg).to.be.instanceOf(Observable, "Middleware return observables");
 
-      expect(expect(futureMsg).to.eventually.be.fulfilled.then(msg => {
-        expect(msg.fields.errors[0]).to.not.equal(err);
-        expect(msg.fields.errors[0]).to.be.an('Array');
-      })).to.notify(done);
+      return futureMsg.toPromise().then(msgs => {
+        expect(msgs[0].fields).not.to.be.undefined;
+        expect(msgs[0].fields).not.to.be.null;
+        expect(msgs[0].fields.errors).to.be.an('Array', `1: was ${typeof msgs[0].fields.errors}, JSON: ${JSON.stringify(msgs[0].fields.errors)}`);
+        expect(msgs[0].fields.errors[0]).to.be.an('Array', `2: was ${typeof msgs[0].fields.errors[0]}, JSON: ${JSON.stringify(msgs[0].fields.errors[0])}`);
+        expect(msgs[0].fields.errors[0]).to.not.equal(err);
+      });
     });
+
+    const createMuted: void => Observable<MessageType> = () =>
+      onerror(logger)("Script error.", "", 0, 0, null); // as per the spec
+
+    it('recognises muted errors', function() {
+      // See https://stackoverflow.com/questions/5913978/cryptic-script-error-reported-in-javascript-in-chrome-and-firefox
+      // Ref https://www.w3.org/TR/html5/webappapis.html#runtime-script-errors point 6
+      // and https://www.w3.org/TR/html5/webappapis.html#muted-errors
+      const tags = createMuted().pipe(map(x => x[0].fields.tags)).toPromise();
+      expect(tags).to.eventually.contain('muted-error');
+      expect(tags).to.eventually.contain('window-onerror');
+    })
   });
 
   describe('Targets', function() {
@@ -520,15 +526,14 @@ describe('Logary', function() {
       var logary, logger, conf, service;
 
       beforeEach('create new logary', function() {
-        logary = new Logary('MyWebSite');
+        logary = new Logary('MyWebSite', stubTarget);
         logger = getLogger(logary, 'AreaX.ComponentA');
         conf = {
           path: '/i/site/logary',
-          serialise: LogaryM.createContent,
           // in this test we stub the xmlHttpRequest
-          send: req => Promise.resolve(req)
+          send: req => of(req)
         };
-        service = logaryService(conf);
+        service = Targets.logaryService(conf);
       });
 
       it('should be a function', function() {
@@ -537,96 +542,32 @@ describe('Logary', function() {
 
       it('should accept a message and return a function', function() {
         const msg = Message.create({ template: 'test' });
-        expect(service(msg)).to.be.a('Promise');
+        expect(service(msg)).to.be.instanceOf(Observable);
       });
 
-      it('returns a proper request', function(done) {
+      it('returns a proper request', function() {
         const msg = Message.event('Signed Up');
-        expect(expect(service(msg)).to.eventually.be.fulfilled.then(req => {
-          expect(req).to.be.deep.equal({
-            "batchable": true,
-            "content": {
-              "contentEncoding": "identity",
-              "contentType": "application/json; charset=utf-8",
-              "data": "{\"value\":{\"event\":\"Signed Up\"},\"fields\":{},\"context\":{},\"level\":\"info\"}"
-            },
-            "headers": [
-              {
-                "name": "Accept",
-                "values": [
-                  "application/json"
-                ]
-              }
-            ],
-            "method": "POST",
-            "uri": "/i/site/logary"
-          });
-        })).to.notify(done);
+        const now = new Date();
+        const inflight = service(msg);
+
+        expect(inflight).to.be.instanceof(Observable, `Inflight ${inflight} should be observable of response`);
+
+        return inflight.toPromise().then(req => {
+          const expected =
+            createRequest('POST', '/i/site/logary', getContent([{
+              name: 'Qvitoo.App',
+              value: 'Signed Up',
+              fields: {},
+              context: {},
+              level: 'info',
+              timestamp: now
+            }]), {
+              'Accept': 'application/json'
+            });
+          expect(req).to.deep.eq(expected);
+        });
       });
     });
-  });
-
-  describe('Compression', function() {
-    describe('LZW aka. "compress"', function() {
-      it('exists', function() {
-        expect(LZW.compress).to.be.a('function');
-        expect(LZW.decompress).to.be.a('function');
-      });
-
-      it('supports roundtrip', function() {
-        const input = "https://qvitoo.com"
-        const output = LZW.compress(input);
-        expect(LZW.decompress(output)).to.equal(input);
-      });
-
-      it('can be chained with JSON.stringify', function() {
-        const testObj = { a: 3 };
-        const f: ((o: Object) => string) = input =>
-          LZW.compress(JSON.stringify(input));
-        const fx = f(testObj);
-        expect(fx).to.be.an('Array');
-        expect(fx[0]).to.be.a('number');
-      });
-    });
-
-    describe('prepareForHttp', function() {
-      it('works on arrays of numbers', function() {
-        const {
-          contentType,
-          contentEncoding,
-          data
-        } = Compression.prepareForHttp([ 12, 13, 14 ]);
-        expect(contentType).to.equal('application/octet-stream');
-        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding
-        expect(contentEncoding).to.equal('compress');
-        expect(data).to.be.a('uint8array');
-      });
-
-      it('works on byte (uint8) arrays', function() {
-        const bytes = Uint8Array.from([ 1, 2, 3 ]); // not Array.isArray
-        const {
-          contentType,
-          contentEncoding,
-          data
-        } = Compression.prepareForHttp(bytes);
-        expect(data).to.equal(bytes);
-        expect(contentEncoding).to.equal('compress');
-        expect(contentType).to.equal('application/octet-stream');
-      });
-
-      it('works on strings', function() {
-        const {
-          contentType,
-          contentEncoding,
-          data
-        } = Compression.prepareForHttp(JSON.stringify({ a: 1 }));
-        const serialised = '{"a":1}';
-        expect(data).to.equal(serialised);
-        expect(contentEncoding).to.equal('identity');
-        expect(contentType).to.equal('application/json; charset=utf-8');
-      });
-    });
-
   });
 
   describe('serialisation', function() {
@@ -638,30 +579,29 @@ describe('Logary', function() {
         logger = getLogger(logary, 'AreaX.ComponentA');
         conf = {
           path: '/i/site/logary',
-          serialise: LogaryM.createContent,
           // in this test we stub the xmlHttpRequest
-          send: req => Promise.resolve(JSON.parse(req.content.data))
+          send: req => of(req.content != null ? req.content.body : null)
         };
-        service = logaryService(conf);
+        service = Targets.logaryService(conf);
         send = build(logary, logger);
       });
 
-      it('serialises in the expected format', function(done) {
-        const expectedEvent = JSON.parse('{"context":{"logger":"AreaX.ComponentA","service":"MyWebSite"},"fields":{},"level":"info","name":["MyWebSite","AreaX","ComponentA"],"timestamp":1461771997775106000,"value":{"event":"a test event"}}');
+      it('serialises in the expected format', function() {
+        const expectedEvent = JSON.parse('{"context":{"logger":"AreaX.ComponentA","service":"MyWebSite"},"fields":{},"level":"info","name":"MyWebSite.AreaX.ComponentA","timestamp":1461771997775106000,"value":"a test event"}');
 
         const actual = send(Message.event('a test event'));
 
-        expect(
-          expect(actual).to.eventually.be.fulfilled.then(data => {
-            expect(data.timestamp).to.be.a('number');
-            expect(data.messageId).to.be.a('string');
-            // munge the timestamp to allow comparison
-            data.timestamp = expectedEvent.timestamp;
-            // munge the messageId to allow comparison
-            expectedEvent.messageId = data.messageId;
-            expect(data).deep.equal(expectedEvent);
-          })
-        ).to.notify(done);
+        expect(actual).to.be.instanceOf(Observable, 'Should return an observable');
+
+        return actual.toPromise().then(data => {
+          expect(data.timestamp).to.be.a('number');
+          expect(data.fields.messageId).to.be.a('string');
+          // munge the timestamp to allow comparison
+          data.timestamp = expectedEvent.timestamp;
+          // munge the messageId to allow comparison
+          expectedEvent.fields.messageId = data.fields.messageId;
+          expect(data).deep.equal(expectedEvent);
+        });
       });
     });
   });
