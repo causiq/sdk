@@ -10,5 +10,10 @@ module.exports = {
     filename: 'logary.js',
     libraryTarget: 'umd',
     library: "logary"
+  },
+  module: {
+    rules: [
+      { test: /\.js$/, exclude: /node_modules/, loader: "babel-loader" }
+    ]
   }
 }
