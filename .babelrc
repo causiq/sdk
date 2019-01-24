@@ -1,12 +1,11 @@
 {
-  "presets": ["es2015", "stage-2"],
-  "plugins": [
-    ["typecheck", {
-      "disable": {
-        "production": true
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "useBuiltIns": "entry"
       }
-    }],
-    "syntax-flow",
-    "transform-flow-strip-types"
+    ],
+    "@babel/preset-flow"
   ]
 }
