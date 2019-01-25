@@ -1,0 +1,7 @@
+version: '3'
+services:
+  rutta:
+    image: haaf/rutta:latest
+    ports:
+    - 10001:10001
+    command: router --listener http 0.0.0.0:8080 json --target console://./

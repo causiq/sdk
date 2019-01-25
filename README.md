@@ -23,7 +23,7 @@ with Yarn
 ## How to use
 
 ``` javascript
-import Logary, { build, /* send, filter, */ getLogger, defaultTarget, Message } from 'logary'
+import Logary, { build, /* send */ getLogger, defaultTarget, Message } from 'logary'
 // Supply this for your own user
 const user = { id: 'abc', name: 'A B', email: 'a.b@example.com' } 
 
@@ -50,7 +50,7 @@ const sendMessage = build(logary, getLogger(logary, "MyModule"))
 
 // Send a message!
 // You can have one of these whereever you need to track stuff!
-sendMessage(Message.event("App started"))
+sendMessage(Message.event("App started")).subscribe()
 ```
 
 You can spawn Rutta server-side as a docker container, to ingest logs:
