@@ -1,4 +1,4 @@
-# Logary-JS
+# Logary JS
 
 This is the JavaScript logger for capturing errors in web browsers and reporting
 them to [Logary](https://logary.github.io).
@@ -12,74 +12,42 @@ Sponsored by
 
 ## Installation
 
-``` bash
-npm install logary --save
-```
+With NPM
 
-## Examples
+    npm install logary --save
+
+with Yarn
+
+    yarn add logary
+
+## How to use
 
 In `./examples/webpack` is a sample for how to include it with webpack and serve
 using express.js:
 
 ``` javascript
-import {
-  default as Logary,
-  Targets,
-  Message,
-  ajax,
-  getLogger,
-  createContent, 
-  build
-} from 'logary';
+import Logary, { build, /* send, filter, */ getLogger, defaultTarget, Message } from 'logary'
+// Supply this for your own user
+const user = { id: 'abc', name: 'A B', email: 'a.b@example.com' } 
 
-// once per site/app
-const target = Targets.logaryService({
-  path: '/i/site/logary',
-  serialise: createContent,
-  send: ajax
-});
+// Where to send logs?
+const target = defaultTarget; // OR:
 
-// save this in the app's context:
-const logary = new Logary('example.com', target);
+// ALTERNATIVELY: You can have one of these globally per application.
+// const filter = next => req => next(req); // No infrastructure/non-functional requirements on requests
+// const target = Targets.logaryService({
+//   path: '/i/logary',
+//   send: filter(send())
+// })
 
-// in your module, or in your functions, which ends the pipeline in the target
-const logger = build(logary, getLogger(logary, 'MyModule.MySub'));
+// This instance is configured for the example user:
+// You can have one of these prepared when the user logs in, in the user state store.
+const logary = Logary(user, target, "MyWebApp");
 
-logger(Message.event('Initialised App'));
-```
+// With 'build' we get a "live" function that can send to a target/server, use it to log
+// You can have one of these in each of your module "screens"/parents
+const sendMessage = build(logary, getLogger(logary, "MyModule"))
 
-Let's say you wanted to always add some context to the logger, then you'd do something like this:
-
-``` javascript
-// save this in the app's context; it's a state carrier:
-const logary = new Logary('mysite.com', target);
-
-// in your module, or in your functions:
-const parentLogger = getLogger(logary, 'MyModule.MySubModule');
-
-// some middleware for some context in between heaven an earth
-const userIdMid =
-  next => msg => next(merge(msg, {
-    context: {
-      userId: 'haf'
-    }
-  }));
-
-// in your innermost context:
-const logger = build(logary, userIdMid(parentLogger));
-
-// in your functions
-const promiseOfMessage = logger(Message.event('Sign up'));
-```
-
-I also strongly recommend reading the
-[unit tests](https://github.com/logary/logary-js/blob/master/test/unit/logary_test.js)
-which accurately portray the API available.
-
-### Features showcased
-
- - Target (second argument to c'tor) of signature: `Message -> Promise`.
- - Middleware (third argument to c'tor) of signature `next:Middleware -> msg:Message -> msg:Message`.
- - FinalLogger returns the Promise of the target
- - We'll console.log if you've missed configuring a target
-
+// Send a message!
+// You can have one of these whereever you need to track stuff!
+sendMessage(Message.event("App started"))
