@@ -1,6 +1,6 @@
 {
   "name": "logary",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "Notify Logary on JavaScript exceptions",
   "author": "Henrik Feldt",
   "license": "MIT",
@@ -45,7 +45,6 @@
   "module": "src/index.js",
   "scripts": {
     "build": "webpack --mode=production",
-    "prepublish": "npm run build",
     "test": "jest"
   }
 }
