@@ -4,6 +4,10 @@
   "description": "Notify Logary on JavaScript exceptions",
   "author": "Henrik Feldt",
   "license": "MIT",
+  "main": "dist/logary.js",
+  "files": [
+    "dist"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/logary/logary-js.git"
@@ -41,7 +45,7 @@
   "module": "src/index.js",
   "scripts": {
     "build": "webpack --mode=production",
-    "test": "jest",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "test": "jest"
   }
 }
