@@ -1,7 +1,7 @@
 // @flow-
 
 /*eslint-disable no-alert, no-unused-expressions */
-import { compose, merge } from '../utilities'
+import { compose, merge } from './utilities';
 import {
   Logary,
   getLogger,
@@ -29,7 +29,6 @@ import { createRequest, getContent, emptyResponse } from './request';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import chai, { expect } from 'chai';
-import { beforeEach, describe, it } from 'mocha';
 import chaiAsPromised from 'chai-as-promised';
 import jsSHA from 'jssha';
 import StackTrace from 'stacktrace-js';
@@ -41,7 +40,7 @@ describe('(Library) Logary', function() {
   describe('initialisation', function() {
     var logary = null;
 
-    beforeEach('create new logary', function() {
+    beforeEach(function() {
       logary = new Logary('MyWebSite', stubTarget);
     });
 
@@ -127,7 +126,7 @@ describe('(Library) Logary', function() {
   describe('getLogger', function() {
     var logary, logger;
 
-    beforeEach('create new logary', function() {
+    beforeEach(function() {
       logary = new Logary('MyWebSite', stubTarget);
       logger = getLogger(logary, 'AreaX.ComponentA');
     });
@@ -199,7 +198,7 @@ describe('(Library) Logary', function() {
         }
       }));
 
-    beforeEach('create new logary', function() {
+    beforeEach(function() {
       logged = [];
       logary = new Logary('MyWebSite', msgs => { logged.push(msgs); return stubTarget(msgs) });
       logger = getLogger(logary, 'SubA');
@@ -356,7 +355,7 @@ describe('(Library) Logary', function() {
     describe('messageId enricher', function() {
       var logary, logger, emptyHash;
 
-      beforeEach('create new logary', function() {
+      beforeEach(function() {
         logary = new Logary('MyWebSite', stubTarget);
         logger = getLogger(logary, 'AreaX.ComponentA');
         const hasher = new jsSHA('SHA-256', 'TEXT');
@@ -388,7 +387,7 @@ describe('(Library) Logary', function() {
 
       var logary, logger, emptyHash;
 
-      beforeEach('create new logary', function() {
+      beforeEach(function() {
         logary = new Logary('MyWebSite', stubTarget, []);
         logger = getLogger(logary, 'AreaX.ComponentA');
       });
@@ -451,7 +450,7 @@ describe('(Library) Logary', function() {
   describe('onerror', function() {
     var logary, logger;
 
-    beforeEach('create new logary', function() {
+    beforeEach(function() {
       logary = new Logary('MyWebSite', msg => of(msg));
       logger = build(logary, getLogger(logary, 'AreaX.ComponentA'));
     });
@@ -525,7 +524,7 @@ describe('(Library) Logary', function() {
     describe('logaryService', function() {
       var logary, logger, conf, service;
 
-      beforeEach('create new logary', function() {
+      beforeEach(function() {
         logary = new Logary('MyWebSite', stubTarget);
         logger = getLogger(logary, 'AreaX.ComponentA');
         conf = {
@@ -574,7 +573,7 @@ describe('(Library) Logary', function() {
     describe('serialise', function() {
       var logary, logger, conf, service, send;
 
-      beforeEach('create new logary', function() {
+      beforeEach(function() {
         logary = new Logary('MyWebSite');
         logger = getLogger(logary, 'AreaX.ComponentA');
         conf = {
