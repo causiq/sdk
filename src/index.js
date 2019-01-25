@@ -4,7 +4,7 @@ import { concatMap, map } from 'rxjs/operators';
 import StackTrace from 'stacktrace-js';
 import { send, getContent, emptyResponse } from './request';
 import type { Request, RequestContent, Method, Body, Response, ResponseContent } from './request';
-import { merge, hexDigest } from './utilities'
+import { merge, hexDigest, compose } from './utilities'
 
 export type Value = // TO CONSIDER: Gauge/Derived
   { event: string }
@@ -163,7 +163,6 @@ export class Logary {
 
   constructor(service: string, target: Target, mid: ?UntypedMiddleware | ?UntypedMiddleware[] = null) {
     const missingTarget = (msg: MessageType) => {
-      // eslint-disable-next-line
       if (console) { console.warn('No target specified in logary.'); }
       return of(msg);
     }
