@@ -32,8 +32,11 @@ const target = defaultTarget; // OR:
 
 // ALTERNATIVELY: You can have one of these globally per application.
 // const filter = next => req => next(req); // No infrastructure/non-functional requirements on requests
+
+// A CUSTOM TARGET (uncomment send, filter, above):
 // const target = Targets.logaryService({
-//   path: '/i/logary',
+//   path: 'http://localhost:10001/i/logary',
+//   send: send(), // OR:
 //   send: filter(send())
 // })
 
@@ -49,3 +52,14 @@ const sendMessage = build(logary, getLogger(logary, "MyModule"))
 // You can have one of these whereever you need to track stuff!
 sendMessage(Message.event("App started"))
 ```
+
+You can spawn Rutta server-side as a docker container, to ingest logs:
+
+```bash
+$ docker run -p 10001:10001 --rm -it haaf/rutta router --listener http 0.0.0.0:10001 json --target console://./
+
+```
+
+![logary-js-rutta](/Users/h/dev/voi-extras/logary-js/docs/logary-js-rutta.png)
+
+You can choose between the different targets when forwarding the logs (see the main `logary` repo)

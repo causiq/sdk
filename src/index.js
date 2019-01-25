@@ -2,7 +2,10 @@
 import { Observable, Observer, of, from } from 'rxjs';
 import { concatMap, map } from 'rxjs/operators';
 import StackTrace from 'stacktrace-js';
+
 import { send, getContent, emptyResponse } from './request';
+export { send, getContent, emptyResponse }
+
 import type { Request, RequestContent, Method, Body, Response, ResponseContent } from './request';
 import { merge, hexDigest, compose } from './utilities'
 
@@ -340,16 +343,24 @@ function normaliseError(e) {
   return base;
 }
 
-// once per site/app
+/*
+ * once per site/app
+ */
 export const defaultTarget: Target = Targets.logaryService({
   path: '/i/logary',
   serialise: getContent,
   send: send()
 });
 
+/**
+ * A target that logs nothing
+ */
 export const stubTarget: Target = (_) => of(emptyResponse);
 
-const captureErrors = next => msg => {
+/**
+ * Middleware that normalises errors.
+ */
+export const captureErrors = next => msg => {
   if (msg.fields && msg.fields.errors && msg.fields.errors.length > 0) {
     return next({
       ...msg,
@@ -363,7 +374,10 @@ const captureErrors = next => msg => {
   }
 };
 
-const setLocation =
+/**
+ * Middleware that appends the current location to the sent request
+ */
+export const setLocation =
   next => msg => {
     const url = window ? window.location : undefined;
     return next({
@@ -375,10 +389,7 @@ const setLocation =
     });
   };
 
-type LoggedUser =
-  { id: string,
-    email: string,
-    name: ?string }
+type LoggedUser = { id: string, email: string, name: ?string }
 
 export function setUser(user: LoggedUser) {
   return (next: Function) => (msg: Object) => {
