@@ -22,9 +22,6 @@ with Yarn
 
 ## How to use
 
-In `./examples/webpack` is a sample for how to include it with webpack and serve
-using express.js:
-
 ``` javascript
 import Logary, { build, /* send, filter, */ getLogger, defaultTarget, Message } from 'logary'
 // Supply this for your own user
@@ -51,3 +48,4 @@ const sendMessage = build(logary, getLogger(logary, "MyModule"))
 // Send a message!
 // You can have one of these whereever you need to track stuff!
 sendMessage(Message.event("App started"))
+```
