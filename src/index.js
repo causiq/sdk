@@ -4,7 +4,7 @@ import { concatMap, map } from 'rxjs/operators';
 import StackTrace from 'stacktrace-js';
 
 import { send, getContent, emptyResponse } from './request';
-export { send, getContent, emptyResponse }
+export { send, getContent, emptyResponse } from './request'
 
 import type { Request, RequestContent, Method, Body, Response, ResponseContent } from './request';
 import { merge, hexDigest, compose } from './utilities'
