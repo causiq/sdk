@@ -63,3 +63,5 @@ $ docker run -p 10001:10001 --rm -it haaf/rutta router --listener http 0.0.0.0:1
 ![logary-js-rutta](/Users/h/dev/voi-extras/logary-js/docs/logary-js-rutta.png)
 
 You can choose between the different targets when forwarding the logs (see the main `logary` repo)
+
+For details about the object model that you use to log, see https://github.com/logary/logary/blob/master/README.md#tutorial-and-things-around-message
