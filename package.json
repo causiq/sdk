@@ -30,7 +30,7 @@
     "babel-loader": "^8.0.5",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "jest": "^23.6.0",
+    "jest": "^24.9.0",
     "mocha": "^5.2.0",
     "regenerator-runtime": "^0.13.1",
     "webpack": "^4.29.0",
