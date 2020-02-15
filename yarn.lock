@@ -961,6 +961,11 @@
     "@types/yargs" "^15.0.0"
     chalk "^3.0.0"
 
+"@opentelemetry/api@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/api/-/api-0.4.0.tgz#b430325c9f0b460600abbd4040b73feef878c123"
+  integrity sha512-SWT1dx/fHMVmQpMmlHGrAHnpHeNqCC+e/MudmuF0lwqZVdF8u/8Fj8ZJSG3WJaq7OgGboJZEw7c0f5bnl/KqCA==
+
 "@sinonjs/commons@^1.7.0":
   version "1.7.0"
   resolved "https://registry.yarnpkg.com/@sinonjs/commons/-/commons-1.7.0.tgz#f90ffc52a2e519f018b13b6c4da03cbff36ebed6"

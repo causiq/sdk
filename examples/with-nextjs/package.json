@@ -5,9 +5,18 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "@opentelemetry/core": "^0.4.0",
+    "@opentelemetry/exporter-jaeger": "^0.4.0",
+    "@opentelemetry/plugin-document-load": "^0.4.0",
+    "@opentelemetry/plugin-user-interaction": "^0.4.0",
+    "@opentelemetry/plugin-xml-http-request": "^0.4.0",
+    "@opentelemetry/scope-zone": "^0.4.0",
+    "@opentelemetry/web": "^0.4.0",
     "next": "^9.2.1",
     "react": "^16.12.0",
-    "react-dom": "^16.12.0"
+    "react-dom": "^16.12.0",
+    "zone.js": "^0.10.2",
+    "logary": "latest"
   },
   "scripts": {
     "dev": "next",
