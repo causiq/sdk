@@ -3,6 +3,13 @@
 This is the JavaScript logger for capturing errors in web browsers and reporting
 them to [Logary](https://logary.github.io).
 
+# TODO
+- [x] https://jestjs.io/docs/en/getting-started#using-typescript
+  * https://github.com/kulshekhar/ts-jest
+- [x] https://itnext.io/step-by-step-building-and-publishing-an-npm-typescript-package-44fe7164964c
+- [ ] https://classic.yarnpkg.com/en/docs/cli/version/
+
+
 Logary is a free and open source logging framework. It's also a fully functional
 JavaScript logging framework which is extremely open to extension, because it's
 all composed from pure functions.
