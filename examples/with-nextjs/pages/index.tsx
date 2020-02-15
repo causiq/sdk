@@ -24,14 +24,11 @@ async function sendReqs(_: any, navigate: boolean = false) {
   }
 
   const data1 = await getData('https://httpbin.org/get?a=1')
-  console.log('data downloaded 1')
 
   const datas = await Promise.all([
     getData('https://httpbin.org/get?a=2'),
     getData('https://httpbin.org/get?a=3')
   ])
-
-  console.log('downloaded all the datas', data1, datas)
 }
 
 function App() {

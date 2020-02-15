@@ -1,12 +1,10 @@
-import tracer from '../lib/tracer'
+import '../lib/tracer'
 
 type Props = Readonly<{
   children: any
 }>
 
 export default function Layout({ children }: Props) {
-  console.log('tracer', tracer)
-
   return (
     <div>
       {children}
