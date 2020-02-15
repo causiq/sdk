@@ -1,0 +1,21 @@
+{
+  "name": "with-nextjs",
+  "version": "1.0.0",
+  "description": "A sample that demonstrates how to use Logary",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "next": "^9.2.1",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0"
+  },
+  "scripts": {
+    "dev": "next",
+    "build": "next build",
+    "start": "next start"
+  },
+  "devDependencies": {
+    "@types/node": "^13.7.1",
+    "@types/react": "^16.9.19"
+  }
+}
