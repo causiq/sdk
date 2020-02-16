@@ -1,7 +1,7 @@
-import { Templated } from "./formatting/template";
+import { Templated } from './formatting/template';
 
-export type Timestamp = number
-export type LogLevel = 'verbose' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
+export type Timestamp = number;
+export type LogLevel = 'verbose' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
 export type Message = Readonly<{
   timestamp: Timestamp;
@@ -9,4 +9,4 @@ export type Message = Readonly<{
   value: string;
   templated: Templated;
   fields?: Record<string, any>;
-}>
+}>;

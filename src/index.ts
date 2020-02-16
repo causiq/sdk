@@ -1,4 +1,4 @@
-import { Attributes, SpanContext, Status, SpanKind } from '@opentelemetry/api'
+import { Attributes, SpanContext, Status, SpanKind } from '@opentelemetry/api';
 import { LogLevel, Message, Timestamp } from './message';
 
 /**
@@ -45,9 +45,7 @@ export interface SpanOps {
   finish(): void;
 }
 
-
-export interface Span extends SpanData, SpanOps {
-}
+export interface Span extends SpanData, SpanOps {}
 
 /**
  * A SpanLogger is alike a Logger, but is backed with a running Span.
