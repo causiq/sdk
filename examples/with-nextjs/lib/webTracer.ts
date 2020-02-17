@@ -4,10 +4,12 @@ import { WebTracerProvider } from '@opentelemetry/web';
 import { XMLHttpRequestPlugin } from '@opentelemetry/plugin-xml-http-request'
 import { DocumentLoad } from '@opentelemetry/plugin-document-load';
 import { ZoneScopeManager } from '@opentelemetry/scope-zone';
+import { logger } from 'logary'
 
 export const provider = new WebTracerProvider({
   httpTextFormat: new B3Format(),
   scopeManager: new ZoneScopeManager(),
+  logger,
   plugins: [
     new DocumentLoad(),
     new XMLHttpRequestPlugin({

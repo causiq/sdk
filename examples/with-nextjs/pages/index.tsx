@@ -4,6 +4,7 @@ import { TaskForm } from "../components/TaskForm"
 import { TaskList } from "../components/TaskList"
 import { CompletedTaskList } from "../components/CompletedTaskList"
 import Layout from '../components/Layout'
+import { info } from 'logary'
 
 function getData(url) {
   return new Promise(async (resolve, reject) => {
@@ -31,6 +32,7 @@ async function sendReqs(_: any, navigate: boolean = false) {
   ])
 }
 
+
 function App() {
   const [isCompletedListActive, setCompletedListActive] = useState(false)
 
@@ -52,6 +54,10 @@ function App() {
       completed: false
     })
     setTasks([...tasks, newTask])
+
+    info("add_task name={taskName}", {
+      taskName: newTask.name
+    });
   }
 
   const handleTaskChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,6 +122,13 @@ function App() {
       `}</style>
     </Layout>
   )
+}
+
+App.getInitialProps = async () => {
+  if (typeof window === 'undefined') {
+    info("server test");
+  }
+  return {}
 }
 
 export default App
