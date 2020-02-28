@@ -23,7 +23,7 @@
   ],
   "devDependencies": {
     "@babel/core": "^7.8.4",
-    "@babel/preset-env": "^7.8.4",
+    "@babel/preset-env": "^7.8.6",
     "@babel/preset-flow": "^7.0.0",
     "@babel/preset-typescript": "^7.8.3",
     "@types/jest": "^25.1.3",
