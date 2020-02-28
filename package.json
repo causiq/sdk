@@ -32,7 +32,7 @@
     "ts-jest": "^25.2.1",
     "tslint": "^6.0.0",
     "tslint-config-prettier": "^1.18.0",
-    "typedoc": "^0.16.10",
+    "typedoc": "^0.16.11",
     "typescript": "^3.8.2"
   },
   "browserslist": "> 0.5%, not dead",
