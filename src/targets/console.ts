@@ -1,30 +1,30 @@
-import { KeyValue } from '../keyvalue';
+import { KeyValue } from '../keyvalue'
 // import { Logger, SpanLogger } from '..';
-import { Message } from '../message';
+import { Message } from '../message'
 // import { SpanContext, SpanOptions } from '@opentelemetry/api';
 // import { Span } from '..';
 // import template from '../formatting/template';
 // import codec from '../codecs/textMap';
-import { Target } from '../target';
+import { Target } from '../target'
 // import { Subscription } from 'rxjs';
-import { Config } from '../config';
-import RuntimeInfo from '../runtimeInfo';
+import { Config } from '../config'
+import RuntimeInfo from '../runtimeInfo'
 
 function consolePrintKVs(kvs: KeyValue[]) {
-  kvs.forEach(({ key, value }) => console.debug(`${key}:`, value));
+  kvs.forEach(({ key, value }) => console.debug(`${key}:`, value))
 }
 
 function consolePrint(message: Message) {
-  const templated = message.templated;
+  const templated = message.templated
   if (templated.remaining.length > 0) {
-    console.groupCollapsed(templated.message);
-    consolePrintKVs(templated.remaining);
-    console.groupEnd();
+    console.groupCollapsed(templated.message)
+    consolePrintKVs(templated.remaining)
+    console.groupEnd()
   } else {
     if (message.level in console) {
       // @ts-ignore
-      console[message.level](templated.message);
-    } else console.log(templated.message);
+      console[message.level](templated.message)
+    } else console.log(templated.message)
   }
 }
 
@@ -76,7 +76,7 @@ export default class ConsoleTarget implements Target {
   name = 'console'
 
   constructor(noWarn?: boolean) {
-    this.noWarn = noWarn != null ? noWarn : false;
+    this.noWarn = noWarn != null ? noWarn : false
   }
 
   log(messages: Message[]) {

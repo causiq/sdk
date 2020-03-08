@@ -10,7 +10,7 @@ const indexedDB: IDBFactory =
   typeof window !== 'undefined'
     // @ts-ignore
     ? window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB || window.shimIndexedDB
-    : null;
+    : null
 
 const IDBKeyRange =
   typeof window !== 'undefined'
@@ -34,24 +34,24 @@ export function createDatabase(
   onUpgradeNeeded: (arg0: any) => void
 ): Observable<IDBDatabase> {
   return new Observable(o => {
-    const req = indexedDB.open(dbName, schemaVersion);
+    const req = indexedDB.open(dbName, schemaVersion)
     // will happen before onsuccess unless the schema exist
     // @flow-ignore I don't know why it doesn't find the type
     req.onupgradeneeded = (evt: IDBVersionChangeEvent) => {
       //console.debug('onupgradeneeded', evt);
       // OnUpgradeNeeded.IndexedDbRequest.Instance
       // @ts-ignore
-      onUpgradeNeeded(evt.target.result);
-    };
+      onUpgradeNeeded(evt.target.result)
+    }
     req.onsuccess = (evt: Event) => {
       // pass the db instance
       //console.debug('Instantiated database', evt.target.result);
       // @ts-ignore
       o.next(evt.target.result)
       o.complete()
-    };
+    }
     req.onerror = function(evt) {
-      console.error(`Cannot create database '${dbName}'`, evt); // eslint-disable-line no-console
+      console.error(`Cannot create database '${dbName}'`, evt) // eslint-disable-line no-console
       o.error(evt)
       o.complete()
     }
@@ -122,7 +122,7 @@ export function toObservableFromCursorCallback(o: Observer<IDBObjectStore>, req:
     } else {
       o.complete()
     }
-  };
+  }
 
   req.onerror = evt => {
     console.error('Error in toObservableFromCallback (lower level code)', evt)
@@ -168,7 +168,7 @@ export function updateFieldById(db: IDBDatabase, objectStore: string, id: string
     const os = tx.objectStore(objectStore)
     const req = os.get(id)
     toObservableFromCallback(o, req, true, 'getById')
-  });
+  })
 }
 
 export function deleteByPK(os: IDBObjectStore, pk: IDBValidKey) {
@@ -183,7 +183,7 @@ export function deleteByPK(os: IDBObjectStore, pk: IDBValidKey) {
  * Tries to delete the ExpenseDocument by its id from the underlying IndexedDB instance.
  */
 export function deleteById(db: IDBDatabase, objectStore: string, id: string) {
-  if (typeof id == null) throw new Error('Parameter "id" must not be null.');
+  if (typeof id == null) throw new Error('Parameter "id" must not be null.')
   return new Observable<boolean>(o => {
     const tx = db.transaction(objectStore, 'readwrite')
     const os = tx.objectStore(objectStore)
@@ -202,7 +202,7 @@ export function toArrayBufferObservableFromFile(o: Observer<ArrayBuffer>, f: Fil
   reader.readAsArrayBuffer(f)
   reader.onloadend = evt => {
     if (typeof reader.result === 'undefined') {
-      const err = new Error(`toArrayBufferObservableFromFile Result is undefined.`);
+      const err = new Error(`toArrayBufferObservableFromFile Result is undefined.`)
       // @ts-ignore
       err.event = evt
       o.error(err)
@@ -211,7 +211,7 @@ export function toArrayBufferObservableFromFile(o: Observer<ArrayBuffer>, f: Fil
       o.next(reader.result)
     }
     o.complete()
-  };
+  }
   reader.onerror = err => o.error(err)
 }
 

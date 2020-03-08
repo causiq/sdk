@@ -1,5 +1,5 @@
-import { Observable, merge, interval, combineLatest } from "rxjs";
-import { filter, concatMap, tap, bufferWhen } from "rxjs/operators";
+import { Observable, merge, interval, combineLatest } from "rxjs"
+import { filter, concatMap, tap, bufferWhen } from "rxjs/operators"
 import visibilityState from './visibilityState'
 
 const triggerOnChangeTab = () =>

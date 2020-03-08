@@ -16,6 +16,3 @@ export { default as visibilityState } from './visibilityState'
 // implementations:
 import * as indexedDBSchema from './indexedDBSchema'
 export const indexedDB = indexedDBSchema
-
-
-

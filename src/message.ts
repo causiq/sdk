@@ -1,5 +1,5 @@
 import template, { Templated } from './formatting/template'
-import { hexDigest } from './hasher';
+import { hexDigest } from './hasher'
 
 export type Timestamp = number
 

@@ -28,7 +28,7 @@ export default class RuttaTarget implements Target {
       })),
       catchError(err => {
         // Network or other error, handle appropriately
-        console.error(err);
+        console.error(err)
         return of({ error: true, message: err.message })
       })
     ).subscribe()

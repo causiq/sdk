@@ -1,10 +1,10 @@
-import { createSchema, toObservableFromCallback, deleteByPK } from "../indexeddb";
-import { Observable } from "rxjs";
-import { concatMap } from "rxjs/operators";
+import { createSchema, toObservableFromCallback, deleteByPK } from "../indexeddb"
+import { Observable } from "rxjs"
+import { concatMap } from "rxjs/operators"
 
 // Communicator related code – eventual sending of message
 
-export const MessageIndexName = 'mId_IX';
+export const MessageIndexName = 'mId_IX'
 
 /**
  * Creates a schema that's specific to the batched-message-implementation.
@@ -17,7 +17,7 @@ export function createIndexedDBSchema(db: IDBDatabase, objectStore: string) {
       fields: 'messageId',
       opts: { unique: true }
     }
-  ];
+  ]
   return createSchema(db, objectStore, indicies, {
     autoIncrement: true
   })

@@ -1,5 +1,5 @@
-import { LogLevel, Message } from './message';
-import { Logger as OTLogger, LogFunction } from '@opentelemetry/api';
+import { LogLevel, Message } from './message'
+import { Logger as OTLogger, LogFunction } from '@opentelemetry/api'
 
 interface LoggerEx extends Readonly<OTLogger> {
   readonly verbose: LogFunction;

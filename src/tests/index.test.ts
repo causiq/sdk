@@ -1,6 +1,6 @@
 import Logary, { LogLevel } from '..'
 import Message from '../message'
-import StubTarget from '../targets/stub';
+import StubTarget from '../targets/stub'
 
 const newLogary = (stub: StubTarget = new StubTarget()) => {
   return new Logary({

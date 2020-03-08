@@ -1,10 +1,10 @@
-import { Config } from './config';
-import RuntimeInfo from './runtimeInfo';
-import { Subject, Subscription, empty } from 'rxjs';
-import { Message, LogLevel } from './message';
-import { Logger } from './logger';
-import { adaptLogFunction } from './util';
-import { hexDigest } from './hasher';
+import { Config } from './config'
+import RuntimeInfo from './runtimeInfo'
+import { Subject, Subscription, empty } from 'rxjs'
+import { Message, LogLevel } from './message'
+import { Logger } from './logger'
+import { adaptLogFunction } from './util'
+import { hexDigest } from './hasher'
 
 type LogaryState = | 'initial' | 'started' | 'closed'
 

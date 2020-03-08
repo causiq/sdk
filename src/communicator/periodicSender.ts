@@ -1,7 +1,7 @@
-import { Observable } from "rxjs";
-import periodicRequest from "./periodicRequest";
-import connectivityState from "./connectivityState";
-import { tap, concatMap, mapTo } from "rxjs/operators";
+import { Observable } from "rxjs"
+import periodicRequest from "./periodicRequest"
+import connectivityState from "./connectivityState"
+import { tap, concatMap, mapTo } from "rxjs/operators"
 
 /**
  * A function that takes a request factory `sendBatch` and
@@ -15,17 +15,17 @@ import { tap, concatMap, mapTo } from "rxjs/operators";
  * This function's observable should never error.
  */
 export default function periodicSender<TKey extends IDBValidKey = string, TValue = any>(
-    getBatch: () => Observable<[TKey, TValue][]>,
-    sendBatch: (batch: [TKey, TValue][]) => Observable<Response>,
-    afterSent: (keys: TKey[]) => Observable<number>
-  ) {
+  getBatch: () => Observable<[TKey, TValue][]>,
+  sendBatch: (batch: [TKey, TValue][]) => Observable<Response>,
+  afterSent: (keys: TKey[]) => Observable<number>
+) {
   return periodicRequest(
-    connectivityState(),
-    () => getBatch().pipe(
+    connectivityState,
+    getBatch().pipe(
       tap(batch => console.debug('Found unsent batch', batch)),
       concatMap(batch =>
         sendBatch(batch).pipe(
-          tap(batch => console.debug('Sent batch, now deleting from IndexedDB...', batch)),
+          tap(bs => console.debug('Sent batch, now deleting from IndexedDB...', bs)),
           // TODO...
           concatMap(res =>
             afterSent(batch.map(([ key, ]) => key)).pipe(

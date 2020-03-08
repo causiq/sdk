@@ -16,4 +16,3 @@ export default function visibilityState(): Observable<VisibilityState> {
     return () => window.removeEventListener('visibilitychange', handle)
   })
 }
-

@@ -4,15 +4,8 @@ module.exports = {
     "es6": true,
     "node": true
   },
-  "settings": {
-    "react": {
-      "version": "detect"
-    }
-  },
   "extends": [
     "eslint:recommended",
-    "plugin:cypress/recommended",
-    "plugin:react/recommended",
     "plugin:@typescript-eslint/eslint-recommended"
   ],
   "globals": {
@@ -27,12 +20,7 @@ module.exports = {
     "ecmaVersion": 2018,
     "sourceType": "module"
   },
-  "plugins": [
-    "react",
-    "cypress",
-    "@typescript-eslint",
-    "react-hooks"
-  ],
+  "plugins": [ "@typescript-eslint" ],
   "rules": {
     "prefer-template": "warn",
     "no-multiple-empty-lines": ["error", { "max": 2, "maxEOF": 0, "maxBOF": 0 }],
@@ -52,9 +40,5 @@ module.exports = {
       "never"
     ],
     "no-unused-vars": "off",
-    "react/prop-types": "off",
-    "react/react-in-jsx-scope": "off",
-    "react-hooks/rules-of-hooks": "error",
-    "react-hooks/exhaustive-deps": "warn"
   }
 }

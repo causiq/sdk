@@ -1,4 +1,4 @@
-import jsSHA from "jssha";
+import jsSHA from "jssha"
 
 export type HexDigest = string;
 
@@ -6,12 +6,12 @@ function traverse(o: Record<string, any>, state: string, func: (arg0: string, ar
   //console.log('traverse on object', JSON.stringify(o), 'state', JSON.stringify(state));
   return Object.keys(o).sort().reduce((currState, key) => {
     if (o[key] != null && typeof o[key] === "object") {
-      return traverse(o[key], currState, func);
+      return traverse(o[key], currState, func)
     } else {
       // @ts-ignore
-      return func.apply(this, [currState, key, o[key]]);
+      return func.apply(this, [currState, key, o[key]])
     }
-  }, state);
+  }, state)
 }
 /**
  *
@@ -20,8 +20,8 @@ function traverse(o: Record<string, any>, state: string, func: (arg0: string, ar
 function normalise(o: Record<string, any>): string {
   return traverse(o, '', (state, key, value) => {
     //console.log('####### state', JSON.stringify(state), 'key', key, 'value', value);
-    return state + key + "\t" + value + "\n";
-  });
+    return `${state + key  }\t${  value  }\n`
+  })
 }
 /**
  *
