@@ -1,11 +1,14 @@
 import { KeyValue } from '../keyvalue';
-import { Logger } from '../logger'
-import { Target } from '../targets';
-import { Message, Timestamp, LogLevel } from '../message';
-import { SpanContext, SpanOptions } from '@opentelemetry/api';
-import { Span } from '..';
-import template from '../formatting/template';
-import codec from '../codecs/textMap';
+// import { Logger } from '../logger'
+import { Target } from '../target';
+import { Message } from '../message';
+// import { SpanContext, SpanOptions } from '@opentelemetry/api';
+// import { Span } from '..';
+// import template from '../formatting/template';
+// import codec from '../codecs/textMap';
+// import { Subscription } from 'rxjs';
+import { Config } from '../config';
+import RuntimeInfo from '../runtimeInfo';
 
 function consolePrintKVs(kvs: KeyValue[]) {
   kvs.forEach(({ key, value }) => console.debug(`${key}:`, value));
@@ -67,7 +70,10 @@ function consolePrint(message: Message) {
 // }
 
 export default class ConsoleTarget implements Target {
-  noWarn: boolean;
+
+  private noWarn: boolean
+
+  name = 'console'
 
   constructor(noWarn?: boolean) {
     this.noWarn = noWarn != null ? noWarn : false;
@@ -77,12 +83,13 @@ export default class ConsoleTarget implements Target {
     if (typeof window === 'undefined' && !this.noWarn) {
       console.warn(
         'Logging with the default ConsoleLogger server-side; consider using req.logger instead, to capture logs better'
-      );
+      )
     }
 
     messages.forEach(consolePrint)
   }
 
-  shutdown(): void {
+  run(_: Config, ri: RuntimeInfo) {
+    return ri.messages.subscribe(this.log.bind(this))
   }
 }

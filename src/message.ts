@@ -1,20 +1,37 @@
-import { Templated } from './formatting/template';
+import template, { Templated } from './formatting/template'
+import { hexDigest } from './hasher';
 
-export type Timestamp = number;
+export type Timestamp = number
+
 export enum LogLevel {
-  Verbose = 1,
-  Debug = 2,
-  Info = 3,
-  Warn = 4,
-  Error = 5,
-  Fatal = 6
+  verbose = 1,
+  debug = 2,
+  info = 3,
+  warn = 4,
+  error = 5,
+  fatal = 6
 }
 
-export type Message = Readonly<{
-  id?: string;
-  timestamp: Timestamp;
-  level: LogLevel;
-  value: string;
-  templated: Templated;
-  fields?: Record<string, any>;
-}>;
+export interface Message {
+  readonly id?: string;
+  readonly name: string[];
+  readonly timestamp: Timestamp;
+  readonly level: LogLevel;
+  readonly value: string;
+  readonly templated: Templated;
+  readonly fields?: Record<string, any>;
+}
+
+export default class MessageImpl {
+  constructor(
+    public level: LogLevel,
+    public value: string,
+    public fields: Record<string, any> = {},
+    public name: string[] = [],
+    public timestamp: Timestamp = Date.now()) {
+    this.templated = template(value, fields)
+    this.id = hexDigest(this)
+  }
+  templated: Templated
+  id: string
+}

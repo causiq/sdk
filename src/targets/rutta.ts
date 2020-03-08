@@ -1,33 +1,36 @@
-import { Target } from "../targets";
-import { Message } from "../message";
-import periodicRequest from "../communicator/periodicRequest";
-import connectivityState from "../communicator/connectivityState";
-import { empty, Unsubscribable, of } from "rxjs";
+import { Target } from "../target"
+import periodicRequest from "../communicator/periodicRequest"
+import connectivityState from "../communicator/connectivityState"
+import { fromFetch } from 'rxjs/fetch'
+import { Config } from '../config'
+import RuntimeInfo from '../runtimeInfo'
+import { mergeMap, catchError } from 'rxjs/operators'
+import { of } from 'rxjs'
 
 // TODO: implement Rutta target for shipping to Rutta from Browser, or from NodeJS over UDP
 
+type RuttaConfig = Readonly<{ endpoint?: string; }>
+
 export default class RuttaTarget implements Target {
-  constructor () {
-    this._state = typeof window !== 'undefined' ? this.start() : empty().subscribe();
+
+  private endpoint: string;
+
+  constructor({ endpoint = '/i/logary' }: RuttaConfig) {
+    this.endpoint = endpoint
   }
 
-  _state: Unsubscribable
+  name = 'rutta'
 
-  start() {
-    return periodicRequest(
-      connectivityState(),
-      () => {
-        console.log("Would have sent awesomeness to Rutta, for great good", new Date().toISOString())
-        return of(1)
+  run(_: Config, ri: RuntimeInfo) {
+    return periodicRequest(connectivityState, ri.messages).pipe(
+      mergeMap(messages => fromFetch(this.endpoint, {
+        body: JSON.stringify(messages)
+      })),
+      catchError(err => {
+        // Network or other error, handle appropriately
+        console.error(err);
+        return of({ error: true, message: err.message })
       })
-      .subscribe()
-  }
-
-
-  shutdown(): void {
-    this._state.unsubscribe()
-  }
-
-  log(messages: Message[]) {
+    ).subscribe()
   }
 }

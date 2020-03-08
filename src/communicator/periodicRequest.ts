@@ -1,5 +1,5 @@
 import { Observable, merge, interval, combineLatest } from "rxjs";
-import { filter, concatMap, tap } from "rxjs/operators";
+import { filter, concatMap, tap, bufferWhen } from "rxjs/operators";
 import visibilityState from './visibilityState'
 
 const triggerOnChangeTab = () =>
@@ -19,21 +19,17 @@ const triggerOnChangeTab = () =>
  * wake its scheduler.
  */
 export default function periodicRequest<TRes>(
-  connectivityStream: Observable<boolean>,
-  makeRequests: () => Observable<TRes>,
+  connectivityStream: () => Observable<boolean>,
+  makeRequests: Observable<TRes>,
   period: number = 500,
   extraTriggers: () => Observable<string> = triggerOnChangeTab
 ) {
-  return combineLatest([
-    connectivityStream,
-    // this second parameter acts as the trigger, either every broadcast interval, or when the page is hidden
-    merge(
-      interval(period),
-      extraTriggers(),
-    )
-  ])
-    .pipe(
-      filter(([online, _]) => online),
-      concatMap(makeRequests)
-    )
+  const trigger = () =>
+    combineLatest([
+      connectivityStream,
+      // this second parameter acts as the trigger, either every broadcast interval, or when the page is hidden
+      merge(interval(period), extraTriggers())
+    ]).pipe(filter(([online, _]) => online))
+
+  return makeRequests.pipe(bufferWhen(trigger))
 }

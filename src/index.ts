@@ -1,131 +1,59 @@
-import { Attributes, SpanContext, Status, SpanKind, Logger as OTLogger  } from '@opentelemetry/api'
-import { LogLevel, Message, Timestamp } from './message'
-import template from './formatting/template'
+export * from './keyvalue'
+export * from './message'
+export * from './logger'
+export * from './trace'
+
+import Logary from './impl'
+import { LogLevel } from './message'
 import ConsoleTarget from './targets/console'
-import RuttaTarget from './targets/rutta'
-import { Target } from './targets'
+import { Subscription } from 'rxjs'
 import { Logger } from './logger'
-import { hexDigest } from './hasher'
+import { LogFunction } from '@opentelemetry/api'
 
-export default class Logary implements Logger {
-  constructor(
-    public name: string,
-    private targets: Target[],
-    public minLevel: LogLevel = LogLevel.Verbose) {}
+export default Logary
 
-  log(level: LogLevel, message: Message): void {
-    if (level < this.minLevel) return;
 
-    const m = {
-      ...message,
-      id: hexDigest(message)
+// what follows is the convenience API (every logging lib should be easy to get started with!)
+
+let instance: Logary | null
+let sub: Subscription | null
+let logger: Logger | null
+
+/**
+ * Gets the global Logary instance, unless a user-supplied Logary was given.
+ * @param userSupplied The Logary that was user-supplied; the caller owns this instance's lifetime
+ */
+export function getLogaryInstance(userSupplied?: Logary): Logary {
+  if (userSupplied != null) {
+    if (sub != null) {
+      sub.unsubscribe()
+      sub = null
     }
-    this.targets.forEach(target => {
-      target.log([ m ])
+    return instance = userSupplied
+  }
+
+  if (instance == null) {
+    instance = new Logary({
+      minLevel: LogLevel.verbose,
+      serviceName: 'Logary',
+      targets: [new ConsoleTarget()]
     })
+    sub = instance.start()
+    logger = instance.getLogger()
   }
 
-  debug(value: string, ...args: unknown[]): void {
-    this.log(LogLevel.Debug, createMessage(LogLevel.Debug, value, args))
-  }
-
-  info(value: string, ...args: unknown[]): void {
-    this.log(LogLevel.Info, createMessage(LogLevel.Info, value, args))
-  }
-
-  warn(value: string, ...args: unknown[]): void {
-    this.log(LogLevel.Warn, createMessage(LogLevel.Warn, value, args))
-  }
-
-  error(value: string, ...args: unknown[]): void {
-    this.log(LogLevel.Error, createMessage(LogLevel.Error, value, args))
-  }
-
-  shutdown() {
-    this.targets.forEach(t => t.shutdown())
-  }
+  return instance
 }
 
-const emptyFields = {}
-
-function createMessage(level: LogLevel, value: string, inputFields: unknown[]): Message {
-  let fields: Record<string, any> = emptyFields
-
-  if (inputFields.length !== 0 && typeof inputFields[0] !== 'undefined') {
-    switch (typeof inputFields[0]) {
-      case 'object':
-        fields = { ...fields, ...inputFields[0] }
-        break
-      default:
-        break;
-    }
-  }
-
-  return {
-    value,
-    fields,
-    timestamp: Date.now(),
-    level,
-    templated: template(value, fields)
-  }
+function getLogger(): Logger {
+  if (logger != null) return logger
+  const logary = getLogaryInstance()
+  return logger = logary.getLogger()
 }
 
-export let logger: OTLogger = new Logary("console",  [new ConsoleTarget(true), new RuttaTarget()]) // Remember to unsubscribe
-
-export function debug(value: string, fields?: Record<string, any>) {
-  return logger.debug(value, fields)
-}
-
-export function info(value: string, fields?: Record<string, any>) {
-  return logger.info(value, fields)
-}
-
-export function error(value: string, fields?: Record<string, any>) {
-  return logger.error(value, fields)
-}
-
-
-// export function startSpan(label: string, spanOptions: SpanOptions = {}): SpanLogger {
-//   return logger.startSpan(label, spanOptions)
-// }
-
-/**
- * Via:
- * src/Logary/DataModel.Trace.fs
- */
-export interface SpanData {
-  context: SpanContext;
-
-  events: Message[];
-  attrs: Attributes;
-  status: Status;
-  kind: SpanKind;
-  label: string;
-  isDebug: boolean;
-  isSampled: boolean;
-
-  started: Timestamp;
-  finished: Timestamp;
-  isRecording: boolean;
-}
-
-export interface SpanOps {
-  setAttribute(key: string, value: number | boolean | string): void;
-  setStatus(status: Status): void;
-  setLabel(label: string): void;
-  clearFlags(): void;
-  setDebugFlag(): void;
-  setSampledFlag(): void;
-  finish(): void;
-}
-
-export interface Span extends SpanData, SpanOps {}
-
-/**
- * A SpanLogger is alike a Logger, but is backed with a running Span.
- *
- * From https://open-telemetry.github.io/opentelemetry-js/interfaces/tracer.html#bind
- */
-export interface SpanLogger extends Span, Logger {
-  logThrough(): void;
-}
+export const verbose: LogFunction = (m, args) => getLogger().verbose(m, args)
+export const debug: LogFunction = (m, args) => getLogger().debug(m, args)
+export const info: LogFunction = (m, args) => getLogger().info(m, args)
+export const warn: LogFunction = (m, args) => getLogger().warn(m, args)
+export const error: LogFunction = (m, args) => getLogger().error(m, args)
+export const fatal: LogFunction = (m, args) => getLogger().fatal(m, args)
