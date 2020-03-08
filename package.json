@@ -44,6 +44,11 @@
   "bugs": {
     "url": "https://github.com/logary/logary-js/issues"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn test"
+    }
+  },
   "scripts": {
     "build": "rm -rf ./dist && tsc",
     "test": "jest",
