@@ -51,7 +51,7 @@ describe('Message', () => {
     const target = new StubTarget()
     const logary = newLogary(target)
     const sub = logary.start()
-    const logger = logary.getLogger()
+    const logger = logary.getLogger('my component')
 
     logger.info("Hello world")
 

@@ -4,11 +4,17 @@ import { Subject, Subscription, empty } from 'rxjs';
 import { Message, LogLevel } from './message';
 import { Logger } from './logger';
 import { adaptLogFunction } from './util';
+import { hexDigest } from './hasher';
 
 type LogaryState = | 'initial' | 'started' | 'closed'
 
 function ensureName(name: string[]) {
   return (m: Message) => m.name == null || m.name.length === 0 ? { ...m, name } : m
+}
+
+function ensureMessageId(m: Message): Message {
+  if (m.id != null) return m
+  return { ...m, id: hexDigest(m) }
 }
 
 /**
@@ -54,7 +60,8 @@ export default class Logary implements RuntimeInfo {
       log(level: LogLevel, ...messages: Message[]) {
         if (level < logary.minLevel) return
         if (messages == null || messages.length === 0) return
-        logary._messages.next(messages.map(ensureName(this.name)))
+        const eN = ensureName(this.name)
+        logary._messages.next(messages.map(m => ensureMessageId(eN(m))))
       }
 
       /**

@@ -38,8 +38,8 @@ export function adaptLogFunction(level: LogLevel, message: string, ...args: unkn
     value: message,
     timestamp,
     level,
-    fields: {},
     name: [],
+    fields: {},
     ...o
   }
 
