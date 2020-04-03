@@ -1031,17 +1031,17 @@
     "@types/yargs" "^15.0.0"
     chalk "^3.0.0"
 
-"@opentelemetry/api@^0.5.0":
-  version "0.5.2"
-  resolved "https://registry.yarnpkg.com/@opentelemetry/api/-/api-0.5.2.tgz#b36c45a0f2bca74ac551d52d4ae8c29f074b211c"
-  integrity sha512-SLahDSBn08zxz+zd0kq3XXn29HyUegWX/EUD79RuF7qBoXfMlwnCOx8eIzLsIRUDY4S9Qq7BYGOHdKz2p8oeeQ==
+"@opentelemetry/api@^0.6.0":
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/api/-/api-0.6.0.tgz#f23bca57b9ae15741a52047ec7ea9c8b0c69b501"
+  integrity sha512-Y3rEz7E1O40bKQMRfPIvQr9WiQQ2ieuIrDYz1kHSiBhQqVcu60Pon1NVWjXVMv2jj3DNKskFQDDGdliWZLx5/g==
   dependencies:
-    "@opentelemetry/context-base" "^0.5.2"
+    "@opentelemetry/context-base" "^0.6.0"
 
-"@opentelemetry/context-base@^0.5.2":
-  version "0.5.2"
-  resolved "https://registry.yarnpkg.com/@opentelemetry/context-base/-/context-base-0.5.2.tgz#b606174280c739e33c29df4ef2577f5c6b290070"
-  integrity sha512-eaXuO5kwlW1X4RG7BJGC+rr6I1KFynJLJS6A0QptkgrMvZ4J1YCoIkhzmAXy2wiIHcbo/vQDV58aLtrYOrYX5g==
+"@opentelemetry/context-base@^0.6.0":
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/context-base/-/context-base-0.6.0.tgz#675b565ea3ab693b547ea11e6f8435831690c938"
+  integrity sha512-pPgwiFDk0ACoCrcSp6/h97HnlX01NRvA66yt50/sha9KzrcwVdHL+ihHzBaw/37CjsAVFZdFTU7pmF0pD+/b2w==
 
 "@sinonjs/commons@^1.7.0":
   version "1.7.0"
@@ -1168,16 +1168,6 @@
     regexpp "^3.0.0"
     tsutils "^3.17.1"
 
-"@typescript-eslint/experimental-utils@2.25.0":
-  version "2.25.0"
-  resolved "https://registry.yarnpkg.com/@typescript-eslint/experimental-utils/-/experimental-utils-2.25.0.tgz#13691c4fe368bd377b1e5b1e4ad660b220bf7714"
-  integrity sha512-0IZ4ZR5QkFYbaJk+8eJ2kYeA+1tzOE1sBjbwwtSV85oNWYUBep+EyhlZ7DLUCyhMUGuJpcCCFL0fDtYAP1zMZw==
-  dependencies:
-    "@types/json-schema" "^7.0.3"
-    "@typescript-eslint/typescript-estree" "2.25.0"
-    eslint-scope "^5.0.0"
-    eslint-utils "^2.0.0"
-
 "@typescript-eslint/experimental-utils@2.26.0":
   version "2.26.0"
   resolved "https://registry.yarnpkg.com/@typescript-eslint/experimental-utils/-/experimental-utils-2.26.0.tgz#063390c404d9980767d76274df386c0aa675d91d"
@@ -1197,19 +1187,6 @@
     "@typescript-eslint/experimental-utils" "2.26.0"
     "@typescript-eslint/typescript-estree" "2.26.0"
     eslint-visitor-keys "^1.1.0"
-
-"@typescript-eslint/typescript-estree@2.25.0":
-  version "2.25.0"
-  resolved "https://registry.yarnpkg.com/@typescript-eslint/typescript-estree/-/typescript-estree-2.25.0.tgz#b790497556734b7476fa7dd3fa539955a5c79e2c"
-  integrity sha512-VUksmx5lDxSi6GfmwSK7SSoIKSw9anukWWNitQPqt58LuYrKalzsgeuignbqnB+rK/xxGlSsCy8lYnwFfB6YJg==
-  dependencies:
-    debug "^4.1.1"
-    eslint-visitor-keys "^1.1.0"
-    glob "^7.1.6"
-    is-glob "^4.0.1"
-    lodash "^4.17.15"
-    semver "^6.3.0"
-    tsutils "^3.17.1"
 
 "@typescript-eslint/typescript-estree@2.26.0":
   version "2.26.0"
