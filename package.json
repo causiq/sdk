@@ -39,7 +39,7 @@
   },
   "browserslist": "> 0.5%, not dead",
   "dependencies": {
-    "@opentelemetry/api": "^0.6.0",
+    "@opentelemetry/api": "^0.7.0",
     "@types/jssha": "^2.0.0",
     "jssha": "^3.1.0",
     "rxjs": "^6.3.3"
