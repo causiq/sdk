@@ -6,8 +6,10 @@ import { CompletedTaskList } from "../components/CompletedTaskList"
 import Layout from '../components/Layout'
 import { info } from 'logary'
 
+https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-web
+
 function getData(url) {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const req = new XMLHttpRequest()
     req.open('GET', url, true)
     req.setRequestHeader('Content-Type', 'application/json')
@@ -20,8 +22,8 @@ function getData(url) {
 
 async function sendReqs(_: any, navigate: boolean = false) {
   if (navigate) {
-    history.pushState({ test: 'testing' }, '', `${location.pathname}`);
-    history.pushState({ test: 'testing' }, '', `${location.pathname}#foo=bar1`);
+    history.pushState({ test: 'testing' }, '', `${location.pathname}`)
+    history.pushState({ test: 'testing' }, '', `${location.pathname}#foo=bar1`)
   }
 
   const data1 = await getData('https://httpbin.org/get?a=1')
@@ -57,7 +59,7 @@ function App() {
 
     info("add_task name={taskName}", {
       taskName: newTask.name
-    });
+    })
   }
 
   const handleTaskChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,7 +128,7 @@ function App() {
 
 App.getInitialProps = async () => {
   if (typeof window === 'undefined') {
-    info("server test");
+    info("server test")
   }
   return {}
 }
