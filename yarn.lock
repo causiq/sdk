@@ -1020,16 +1020,16 @@
     chalk "^3.0.0"
 
 "@opentelemetry/api@^0.8.0":
-  version "0.8.1"
-  resolved "https://registry.yarnpkg.com/@opentelemetry/api/-/api-0.8.1.tgz#ae71a1452b21aeca19aae5c9405d04f0c66ad21f"
-  integrity sha512-fb2mLSjLUYf2hs6Brg1uGENOSvrM5Gt56AvnHfKer2zMmGZJAPSJbCJBVrP+aeJLTI143CnME8X9v88Go8QAxQ==
+  version "0.8.2"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/api/-/api-0.8.2.tgz#2bfb666db95052823a427621f6ee35102c70e3c8"
+  integrity sha512-+BwodLiysWWcqLeGmO7LoGsFViPRb4pH1VbRJmZJIU0v19mm97SXCQTScgjx4U5kQjoUGuBOTeqz2QoGjNhFGQ==
   dependencies:
-    "@opentelemetry/context-base" "^0.8.1"
+    "@opentelemetry/context-base" "^0.8.2"
 
-"@opentelemetry/context-base@^0.8.1":
-  version "0.8.1"
-  resolved "https://registry.yarnpkg.com/@opentelemetry/context-base/-/context-base-0.8.1.tgz#080ff372b470d7562b59161e26dd47834b8bf491"
-  integrity sha512-zKJF7ELknFnoad8fEop10sHCDN4/Lw0kI8Dl0879eZ7m0jbEK0RzzPqdLLRshVpuw9HVNr6aa8PztD04yjhYXw==
+"@opentelemetry/context-base@^0.8.2":
+  version "0.8.2"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/context-base/-/context-base-0.8.2.tgz#b622b5130620bff34e0714026d48e2d0c1356c3d"
+  integrity sha512-u1txzkv9vP8qv5Z1mPEFkQxPQr+zDkmsLwSyg+xG8Kj/myCZ5I5n7NKtv7VUk7ryiQMT5CB+IdhCSe018kwlWg==
 
 "@sinonjs/commons@^1.7.0":
   version "1.7.2"
