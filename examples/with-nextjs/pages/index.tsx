@@ -1,136 +1,84 @@
-import { useState } from "react"
-import { Task } from "../lib/task"
-import { TaskForm } from "../components/TaskForm"
-import { TaskList } from "../components/TaskList"
-import { CompletedTaskList } from "../components/CompletedTaskList"
-import Layout from '../components/Layout'
-import { info } from 'logary'
+import { useCallback } from "react"
+import tracer from '../lib/tracer'
 
-https://github.com/open-telemetry/opentelemetry-js/tree/master/packages/opentelemetry-web
+const getData = (url) => new Promise((resolve, reject) => {
+  // eslint-disable-next-line no-undef
+  const req = new XMLHttpRequest()
+  req.open('GET', url, true)
+  req.send()
+  req.onload = () => {
+    let json
+    try {
+      json = JSON.parse(req.responseText)
+      resolve(json)
+    } catch (e) {
+      reject(e)
+    }
+  }
+})
 
-function getData(url) {
-  return new Promise((resolve, reject) => {
-    const req = new XMLHttpRequest()
-    req.open('GET', url, true)
-    req.setRequestHeader('Content-Type', 'application/json')
-    req.setRequestHeader('Accept', 'application/json')
-    req.send()
-    req.onload = resolve
-    req.onerror = reject
+const url1 = 'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/master/package.json'
+const url2 = 'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/master/packages/opentelemetry-web/package.json'
+
+// example of keeping track of context between async operations
+const buttonClicked = () => {
+  let count = 0
+
+  const mainSpan = tracer.startSpan('click button')
+
+  function finish() {
+    count++
+    if (count === 2) {
+      mainSpan.end()
+    }
+  }
+
+  tracer.withSpan(mainSpan, () => {
+    const span1 = tracer.startSpan('files-series-info-1', {
+      parent: tracer.getCurrentSpan(),
+    })
+
+    const span2 = tracer.startSpan('files-series-info-2', {
+      parent: tracer.getCurrentSpan(),
+    })
+
+    tracer.withSpan(span1, () => {
+      getData(url1).then((data: any) => {
+        console.log('current span is span1', tracer.getCurrentSpan() === span1)
+        console.log('info from package.json', data.description, data.version)
+        tracer.getCurrentSpan().addEvent('fetching-span1-completed')
+        span1.end()
+        finish()
+      })
+    })
+
+    tracer.withSpan(span2, () => {
+      getData(url2).then((data: any) => {
+        setTimeout(() => {
+          console.log('current span is span2', tracer.getCurrentSpan() === span2)
+          console.log('info from package.json', data.description, data.version)
+          tracer.getCurrentSpan().addEvent('fetching-span2-completed')
+          span2.end()
+          finish()
+        }, 100)
+      })
+    })
   })
 }
 
-async function sendReqs(_: any, navigate: boolean = false) {
-  if (navigate) {
-    history.pushState({ test: 'testing' }, '', `${location.pathname}`)
-    history.pushState({ test: 'testing' }, '', `${location.pathname}#foo=bar1`)
-  }
-
-  const data1 = await getData('https://httpbin.org/get?a=1')
-
-  const datas = await Promise.all([
-    getData('https://httpbin.org/get?a=2'),
-    getData('https://httpbin.org/get?a=3')
-  ])
-}
-
-
-function App() {
-  const [isCompletedListActive, setCompletedListActive] = useState(false)
-
-  const [newTask, setNewTask] = useState({
-    id: 1,
-    name: "",
-    completed: false
-  })
-
-  const [tasks, setTasks] = useState(new Array<Task>())
-  const [completedTasks, setCompletedTasks] = useState(new Array<Task>())
-
-  const addTask = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    setNewTask({
-      id: newTask.id + 1,
-      name: "",
-      completed: false
-    })
-    setTasks([...tasks, newTask])
-
-    info("add_task name={taskName}", {
-      taskName: newTask.name
-    })
-  }
-
-  const handleTaskChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNewTask({
-      ...newTask,
-      name: event.target.value
-    })
-  }
-
-  const deleteTask = (taskToDelete: Task) => {
-    setTasks([...tasks.filter(task => task.id !== taskToDelete.id)])
-    setCompletedTasks([...completedTasks, taskToDelete])
-  }
-
-  const undoTask = (taskToUndo: Task) => {
-    setCompletedTasks([
-      ...completedTasks.filter(task => task.id !== taskToUndo.id)
-    ])
-    setTasks([...tasks, taskToUndo])
-  }
-
-  const completeListActiveElement = (
-    <>
-      <input
-        onChange={() => setCompletedListActive(!isCompletedListActive)}
-        type="checkbox"
-        defaultValue={isCompletedListActive.toString()}
-        id="completedListActive"
-      />
-      <label htmlFor="completedListActive">Show Done Tasks</label>
-    </>
-  )
+export default function IndexPage() {
+  const handleClick = useCallback(buttonClicked, [])
 
   return (
-    <Layout>
-      <h1>TS next Todos ✔</h1>
-
-      <TaskForm
-        disabled={newTask.name.length == 0}
-        task={newTask}
-        onAdd={addTask}
-        onChange={handleTaskChange} />
-
-      {completeListActiveElement}
-
-      <div className="lists">
-        <TaskList tasks={tasks} onDelete={deleteTask} />
-        {isCompletedListActive
-          ? <CompletedTaskList tasks={completedTasks} onDelete={undoTask} />
-          : null}
-      </div>
-
-      <button onClick={sendReqs}>
-        Test XHR Req
+    <>
+      Example of using Web Tracer with UserInteractionPlugin and XMLHttpRequestPlugin with console exporter and collector exporter
+      <br />
+      <button
+        id="button1"
+        className="btnAddClass"
+        onClick={handleClick}>
+        Add button
       </button>
-
-      <style jsx>{`
-        .lists {
-          display: flex;
-          justify-content: space-between;
-        }
-      `}</style>
-    </Layout>
+    </>
   )
 }
-
-App.getInitialProps = async () => {
-  if (typeof window === 'undefined') {
-    info("server test")
-  }
-  return {}
-}
-
-export default App

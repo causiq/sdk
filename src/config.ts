@@ -1,5 +1,5 @@
-import { Target } from './target'
 import { LogLevel } from './message'
+import { Target } from './target'
 
 /**
  * Logary configuration.

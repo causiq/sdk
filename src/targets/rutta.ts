@@ -1,11 +1,11 @@
-import { Target } from "../target"
-import periodicRequest from "../communicator/periodicRequest"
-import connectivityState from "../communicator/connectivityState"
+import { of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
+import { catchError, mergeMap } from 'rxjs/operators'
+import connectivityState from "../communicator/connectivityState"
+import periodicRequest from "../communicator/periodicRequest"
 import { Config } from '../config'
 import RuntimeInfo from '../runtimeInfo'
-import { mergeMap, catchError } from 'rxjs/operators'
-import { of } from 'rxjs'
+import { Target } from "../target"
 
 // TODO: implement Rutta target for shipping to Rutta from Browser, or from NodeJS over UDP
 

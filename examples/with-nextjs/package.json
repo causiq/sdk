@@ -5,18 +5,19 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@opentelemetry/core": "^0.4.0",
-    "@opentelemetry/exporter-jaeger": "^0.4.0",
-    "@opentelemetry/plugin-document-load": "^0.4.0",
-    "@opentelemetry/plugin-user-interaction": "^0.4.0",
-    "@opentelemetry/plugin-xml-http-request": "^0.4.0",
-    "@opentelemetry/scope-zone": "^0.4.0",
-    "@opentelemetry/web": "^0.4.0",
-    "logary": "latest",
-    "next": "^9.2.2",
-    "react": "^16.13.0",
-    "react-dom": "^16.13.0",
-    "zone.js": "^0.10.2"
+    "@opentelemetry/context-zone": "^0.8.2",
+    "@opentelemetry/core": "^0.8.2",
+    "@opentelemetry/exporter-collector": "^0.8.2",
+    "@opentelemetry/exporter-jaeger": "^0.8.2",
+    "@opentelemetry/plugin-document-load": "^0.7.0",
+    "@opentelemetry/plugin-user-interaction": "^0.7.0",
+    "@opentelemetry/plugin-xml-http-request": "^0.8.2",
+    "@opentelemetry/web": "^0.8.2",
+    "logary": "5.1.0-beta.0",
+    "next": "^9.4.2",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "zone.js": "^0.10.3"
   },
   "scripts": {
     "dev": "next",
@@ -24,7 +25,7 @@
     "start": "next start"
   },
   "devDependencies": {
-    "@types/node": "^13.9.0",
-    "@types/react": "^16.9.23"
+    "@types/node": "^14.0.5",
+    "@types/react": "^16.9.35"
   }
 }

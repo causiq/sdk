@@ -1,10 +1,10 @@
+import { empty, Subject, Subscription } from 'rxjs'
 import { Config } from './config'
-import RuntimeInfo from './runtimeInfo'
-import { Subject, Subscription, empty } from 'rxjs'
-import { Message, LogLevel } from './message'
-import { Logger } from './logger'
-import { adaptLogFunction } from './util'
 import { hexDigest } from './hasher'
+import { Logger } from './logger'
+import { LogLevel, Message } from './message'
+import RuntimeInfo from './runtimeInfo'
+import { adaptLogFunction } from './util'
 
 type LogaryState = | 'initial' | 'started' | 'closed'
 
@@ -38,7 +38,7 @@ export default class Logary implements RuntimeInfo {
     if (this._state !== 'initial') throw new Error("Logary started twice")
     this._state = 'started'
 
-    for (let t of this.config.targets) {
+    for (const t of this.config.targets) {
       this._subscription.add(t.run(this.config, this))
     }
 

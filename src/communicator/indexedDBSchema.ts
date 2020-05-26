@@ -1,6 +1,6 @@
-import { createSchema, toObservableFromCallback, deleteByPK } from "../indexeddb"
 import { Observable } from "rxjs"
 import { concatMap } from "rxjs/operators"
+import { createSchema, deleteByPK, toObservableFromCallback } from "../indexeddb"
 
 // Communicator related code – eventual sending of message
 
@@ -81,7 +81,7 @@ export function deleteMessages(db: IDBDatabase, objectStore: string, messageKeys
     const deleter = byIdIndex.openKeyCursor(IDBKeyRange.only(messageKeys))
 
     deleter.onsuccess = () => {
-      var cursor = deleter.result
+      const cursor = deleter.result
       if (cursor) {
         os.delete(cursor.primaryKey)
         count++
