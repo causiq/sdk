@@ -1,14 +1,14 @@
 export * from './keyvalue'
-export * from './message'
 export * from './logger'
+export * from './message'
 export * from './trace'
 
+import { LogFunction } from '@opentelemetry/api'
+import { Subscription } from 'rxjs'
 import Logary from './impl'
+import { Logger } from './logger'
 import { LogLevel } from './message'
 import ConsoleTarget from './targets/console'
-import { Subscription } from 'rxjs'
-import { Logger } from './logger'
-import { LogFunction } from '@opentelemetry/api'
 
 export default Logary
 
