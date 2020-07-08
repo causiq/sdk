@@ -5,13 +5,13 @@ export * from './trace'
 
 import { LogFunction } from '@opentelemetry/api'
 import { Subscription } from 'rxjs'
+import { Config } from "./config"
 import Logary from './impl'
 import { Logger } from './logger'
 import { LogLevel } from './message'
 import ConsoleTarget from './targets/console'
 
 export default Logary
-
 
 // what follows is the convenience API (every logging lib should be easy to get started with!)
 
@@ -23,9 +23,9 @@ let logger: Logger | null
  * Gets the global Logary instance, unless a user-supplied Logary was given.
  * @param userSupplied The Logary that was user-supplied; the caller owns this instance's lifetime
  */
-export function getLogaryInstance(userSupplied?: Logary): Logary {
+export function getLogaryInstance(config?: Config, userSupplied?: Logary): Logary {
   if (userSupplied != null) {
-    if (sub != null) {
+    if (sub != null && userSupplied != instance) {
       sub.unsubscribe()
       sub = null
     }
@@ -33,10 +33,12 @@ export function getLogaryInstance(userSupplied?: Logary): Logary {
   }
 
   if (instance == null) {
-    instance = new Logary({
+    instance = new Logary(config || {
       minLevel: LogLevel.verbose,
       serviceName: 'Logary',
-      targets: [new ConsoleTarget()]
+      targets: [
+        new ConsoleTarget(),
+      ]
     })
     sub = instance.start()
     logger = instance.getLogger()

@@ -1051,6 +1051,16 @@
     "@opentelemetry/tracing" "^0.8.2"
     jaeger-client "^3.15.0"
 
+"@opentelemetry/exporter-zipkin@^0.8.2":
+  version "0.8.2"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/exporter-zipkin/-/exporter-zipkin-0.8.2.tgz#fde544a770f244627271dff5ad03a0dcc6ffbf39"
+  integrity sha512-Y9OSXNgOqf+/QzOZmzPMAYq+PXfrfsxIvjSyB2TOP9MwCCSarGcgwB7HuTXZl7DV5VNZxglb8R+d9nE3obUH4g==
+  dependencies:
+    "@opentelemetry/api" "^0.8.2"
+    "@opentelemetry/core" "^0.8.2"
+    "@opentelemetry/resources" "^0.8.2"
+    "@opentelemetry/tracing" "^0.8.2"
+
 "@opentelemetry/plugin-document-load@^0.7.0":
   version "0.7.0"
   resolved "https://registry.yarnpkg.com/@opentelemetry/plugin-document-load/-/plugin-document-load-0.7.0.tgz#8d7b58067da6ad8b8c1dcdcfcbacfcc98c195ef6"

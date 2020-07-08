@@ -1,4 +1,4 @@
-import jsSHA from "jssha"
+import jsSHA from "jssha";
 
 export type HexDigest = string;
 
@@ -32,5 +32,5 @@ export function hexDigest(o: Record<string, any>): string {
   const hasher = new jsSHA('SHA-256', 'TEXT')
   const normalised = normalise(o)
   hasher.update(normalised)
-  return hasher.getHash('HEX')
+  return hasher.getHash('B64')
 }

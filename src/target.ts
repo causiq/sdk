@@ -1,8 +1,5 @@
-import { Subscription } from 'rxjs'
-import { Config } from './config'
-import RuntimeInfo from './runtimeInfo'
+import { Runnable } from "./runnable"
 
-export interface Target {
+export interface Target extends Runnable {
   readonly name: string;
-  run(config: Config, runtimeInfo: RuntimeInfo): Subscription
 }

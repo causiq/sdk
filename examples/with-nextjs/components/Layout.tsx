@@ -1,12 +1,10 @@
-import '../lib/tracer'
+import { ReactNode } from "react"
 
-type Props = Readonly<{
-  children: any
-}>
+type Props = Readonly<{ children: ReactNode }>
 
 export default function Layout({ children }: Props) {
   return (
-    <div>
+    <div id='layout'>
       {children}
     </div>
   )
