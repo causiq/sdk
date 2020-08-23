@@ -11,20 +11,31 @@ import { Config } from '../config'
 import RuntimeInfo from '../runtimeInfo'
 
 function consolePrintKVs(kvs: KeyValue[]) {
-  kvs.forEach(({ key, value }) => console.debug(`${key}:`, value))
+  for (let i = 0; i < kvs.length; i++) {
+    const { key, value } = kvs[i]
+    console.info(`${key}:`, value)
+  }
 }
 
 function consolePrint(message: Message) {
-  const templated = message.templated
-  if (templated.remaining.length > 0) {
-    console.groupCollapsed(templated.message)
-    consolePrintKVs(templated.remaining)
-    console.groupEnd()
-  } else {
-    if (message.level in console) {
-      // @ts-ignore
-      console[message.level](templated.message)
-    } else console.log(templated.message)
+  switch (message.type) {
+    case 'event': {
+      const msg = `[${message.name.join('.')}] ${message.templated.message}`
+      // console.log('message', message)
+
+      if (message.templated.remaining.length > 0) {
+        console.groupCollapsed(msg)
+        consolePrintKVs(message.templated.remaining)
+        console.groupEnd()
+      } else {
+        if (message.level in console) {
+          // @ts-ignore
+          console[message.level](msg)
+        } else {
+          console.log(msg)
+        }
+      }
+    }
   }
 }
 

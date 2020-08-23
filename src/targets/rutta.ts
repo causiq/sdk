@@ -15,7 +15,7 @@ export default class RuttaTarget implements Target {
 
   private endpoint: string;
 
-  constructor({ endpoint = '/i/logary' }: RuttaConfig) {
+  constructor({ endpoint = '/i' }: RuttaConfig) {
     this.endpoint = endpoint
   }
 

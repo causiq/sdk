@@ -4,6 +4,7 @@ import { Logger as OTLogger, LogFunction } from '@opentelemetry/api'
 interface LoggerEx extends Readonly<OTLogger> {
   readonly verbose: LogFunction;
   readonly fatal: LogFunction;
+  readonly event: LogFunction;
 }
 
 /**

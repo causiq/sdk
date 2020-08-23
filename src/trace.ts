@@ -1,5 +1,5 @@
-import { Attributes, SpanContext, Status, SpanKind } from '@opentelemetry/api'
-import { Message, Timestamp } from './message'
+import { Attributes, Status, SpanKind, Span as OTSpan, TimeInput } from '@opentelemetry/api'
+import { EventMessage, UnixEpochMillis } from './message'
 import { Logger } from './logger'
 
 /**
@@ -7,29 +7,32 @@ import { Logger } from './logger'
  * src/Logary/DataModel.Trace.fs
  */
 export interface SpanData {
-  context: SpanContext;
-
-  events: Message[];
-  attrs: Attributes;
-  status: Status;
-  kind: SpanKind;
-  label: string;
-  isDebug: boolean;
-  isSampled: boolean;
-
-  started: Timestamp;
-  finished: Timestamp;
-  isRecording: boolean;
+  readonly events: EventMessage[];
+  readonly attrs: Attributes;
+  readonly status: Status;
+  readonly kind: SpanKind;
+  readonly label: string;
+  readonly started: UnixEpochMillis;
+  readonly finished: UnixEpochMillis;
 }
 
-export interface SpanOps {
-  setAttribute(key: string, value: number | boolean | string): void;
-  setStatus(status: Status): void;
-  setLabel(label: string): void;
-  clearFlags(): void;
-  setDebugFlag(): void;
-  setSampledFlag(): void;
-  finish(): void;
+export interface SpanOps extends OTSpan {
+  setLabel(label: string): this;
+  clearFlags(): this;
+  setDebugFlag(): this;
+  setSampledFlag(): this;
+
+  /**
+   * End the Span
+   * @param endTime Optional end time
+   */
+  end(endTime?: TimeInput): void;
+
+  // also see:
+  // isRecording(): boolean;
+  // updateName(name: string): this;
+  // addEvent(name: string, attributesOrStartTime?: Record<string, unknown> | TimeInput, startTime?: TimeInput): this;
+  // setAttributes(attributes: Record<string, unknown>): this;
 }
 
 export interface Span extends SpanData, SpanOps {}

@@ -1,23 +1,13 @@
 import { empty, Subject, Subscription } from 'rxjs'
 import { Config } from './config'
-import { hexDigest } from './hasher'
 import LogaryPlugin, { PluginAPI } from "./logaryPlugin"
 import { Logger } from './logger'
 import { LogLevel, Message } from './message'
 import { Runnable } from "./runnable"
 import RuntimeInfo from './runtimeInfo'
-import { adaptLogFunction } from './util'
+import { adaptLogFunction, ensureName, ensureMessageId } from './util'
 
 type LogaryState = | 'initial' | 'started' | 'closed'
-
-function ensureName(name: string[]) {
-  return (m: Message) => m.name == null || m.name.length === 0 ? { ...m, name } : m
-}
-
-function ensureMessageId(m: Message): Message {
-  if (m.id != null) return m
-  return { ...m, id: hexDigest(m) }
-}
 
 const noPlugins: LogaryPlugin[] = []
 
@@ -126,7 +116,7 @@ export default class Logary implements RuntimeInfo, PluginAPI {
        */
       _loggerEx(level: LogLevel, message: string, ...args: unknown[]) {
         if (level < logary.minLevel) return
-        this.log(level, adaptLogFunction(level, message, args))
+        this.log(level, adaptLogFunction(level, message, ...args))
       }
 
       // LoggerEx:
@@ -136,6 +126,7 @@ export default class Logary implements RuntimeInfo, PluginAPI {
       warn = this._loggerEx.bind(this, LogLevel.warn)
       error = this._loggerEx.bind(this, LogLevel.error)
       fatal = this._loggerEx.bind(this, LogLevel.fatal)
+      event = this._loggerEx.bind(this, LogLevel.info)
     }
   }
 

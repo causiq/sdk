@@ -1,5 +1,5 @@
 import Logary, { LogLevel } from '..'
-import Message from '../message'
+import { EventMessage } from '../message'
 import StubTarget from '../targets/stub'
 
 const newLogary = (stub: StubTarget = new StubTarget()) => {
@@ -30,7 +30,9 @@ describe('surface API', () => {
     logger.info('Hello world')
 
     logger.warn('goodbye cruel world')
-    logger.log(LogLevel.error, new Message(LogLevel.error, 'oh hoy'), new Message(LogLevel.fatal, 'shutting down'))
+    logger.log(LogLevel.error,
+      new EventMessage('oh hoy', null, null, LogLevel.error),
+      new EventMessage('shutting down', null, null, LogLevel.fatal))
 
     sub.unsubscribe()
 
@@ -60,7 +62,7 @@ describe('Message', () => {
     expect(m.timestamp).toBeGreaterThanOrEqual(start)
     expect(m.level).toEqual(LogLevel.info)
     expect(Object.keys(m.fields || {})).toEqual([])
-    expect(m.value).toStrictEqual('Hello world')
+    expect((m as EventMessage).event).toStrictEqual('Hello world')
     expect(m.name).toEqual([ 'ABC', 'my component' ])
 
     sub.unsubscribe()

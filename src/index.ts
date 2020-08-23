@@ -23,7 +23,7 @@ let logger: Logger | null
  * Gets the global Logary instance, unless a user-supplied Logary was given.
  * @param userSupplied The Logary that was user-supplied; the caller owns this instance's lifetime
  */
-export function getLogaryInstance(config?: Config, userSupplied?: Logary): Logary {
+export function getLogary(config?: Config, userSupplied?: Logary): Logary {
   if (userSupplied != null) {
     if (sub != null && userSupplied != instance) {
       sub.unsubscribe()
@@ -49,13 +49,14 @@ export function getLogaryInstance(config?: Config, userSupplied?: Logary): Logar
 
 function getLogger(): Logger {
   if (logger != null) return logger
-  const logary = getLogaryInstance()
+  const logary = getLogary()
   return logger = logary.getLogger()
 }
 
-export const verbose: LogFunction = (m, args) => getLogger().verbose(m, args)
-export const debug: LogFunction = (m, args) => getLogger().debug(m, args)
-export const info: LogFunction = (m, args) => getLogger().info(m, args)
-export const warn: LogFunction = (m, args) => getLogger().warn(m, args)
-export const error: LogFunction = (m, args) => getLogger().error(m, args)
-export const fatal: LogFunction = (m, args) => getLogger().fatal(m, args)
+export const verbose: LogFunction = (m, ...args) => getLogger().verbose(m, ...args)
+export const debug: LogFunction = (m, ...args) => getLogger().debug(m, ...args)
+export const info: LogFunction = (m, ...args) => getLogger().info(m, ...args)
+export const warn: LogFunction = (m, ...args) => getLogger().warn(m, ...args)
+export const error: LogFunction = (m, ...args) => getLogger().error(m, ...args)
+export const fatal: LogFunction = (m, ...args) => getLogger().fatal(m, ...args)
+export const event: LogFunction = (m, ...args) => getLogger().event(m, ...args)

@@ -1,6 +1,6 @@
 import { NextPage } from "next"
 import { useMemo } from "react"
-import Logary, { getLogaryInstance } from "../../../dist"
+import Logary, { getLogary } from "../../../dist"
 import { Config } from "../../../dist/config"
 import { UniversalRendering } from "../../../dist/features"
 import { NextJSFeature, NextJSSupporter } from "../../../dist/plugins/nextjs"
@@ -19,7 +19,7 @@ export default function withLogary<P, IP = P>(
 ) {
   const WithLogary: NextPage<P, IP> = ({ ...pageProps }: any) => {
     const value = useMemo(
-      () => getLogaryInstance(config, logary),
+      () => getLogary(config, logary),
       [])
 
     return (
@@ -43,7 +43,7 @@ export default function withLogary<P, IP = P>(
     && supporters.some(x => x.getInitialProps != null)
 
   if (ssrOptIn || Page.getInitialProps) {
-    const __logary = logary || getLogaryInstance(config, logary)
+    const __logary = logary || getLogary(config, logary)
 
     WithLogary.getInitialProps = async ctx => {
       let pageProps = Page.getInitialProps ? await Page.getInitialProps(ctx) : {} as IP

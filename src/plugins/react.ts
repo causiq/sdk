@@ -44,8 +44,8 @@ export default function react(logary: Logary) {
 
               const names = []
               while (currentElement) {
-                const name = typeof currentElement.elementType === 'function' && currentElement.elementType.displayName
-                if (name) names.push(name)
+                const n = typeof currentElement.elementType === 'function' && currentElement.elementType.displayName
+                if (n) names.push(n)
                 currentElement = currentElement.return
               }
               nativeEvent[ExtraProp] = names

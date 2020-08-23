@@ -1,4 +1,4 @@
-import jsSHA from "jssha";
+import jsSHA from "jssha"
 
 export type HexDigest = string;
 

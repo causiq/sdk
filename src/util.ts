@@ -1,7 +1,12 @@
-import { Message, LogLevel } from './message'
-import template from './formatting/template'
+import { EventMessage, LogLevel, Message, SpanMessage, LogaryMessage } from './message'
+import { hexDigest } from './hasher'
 
-const known = new Set<keyof Message>([ 'timestamp', 'level', 'value', 'templated', 'fields'])
+const known = new Set<keyof (EventMessage & SpanMessage)>([
+  'type', 'id', 'timestamp', 'level',
+  'name', 'fields', 'context',
+  'monetaryValue',
+  'error'
+])
 
 function getPartialMessage(thing?: object | null): Partial<Message> {
   const fields = {}
@@ -26,25 +31,27 @@ function getPartialMessage(thing?: object | null): Partial<Message> {
   }
 }
 
-export function adaptLogFunction(level: LogLevel, message: string, ...args: unknown[]): Message {
+export function adaptLogFunction(level: LogLevel, message: string, ...args: unknown[]): EventMessage {
   const timestamp = Date.now()
 
-  const o =
+  const o: Record<string, any> =
     args != null && args.length !== 0 && typeof args[0] === 'object'
       ? getPartialMessage(args[0])
       : {}
 
-  const intermediate = {
-    value: message,
-    timestamp,
-    level,
-    name: [],
-    fields: {},
-    ...o
-  }
-
   return {
-    ...intermediate,
-    templated: template(intermediate.value, intermediate.fields)
+    ...(new EventMessage(message, o.monetaryValue || null, o.error || null, level, {}, {}, [], timestamp)),
+    ...o,
+    type: 'event',
   }
+}
+
+
+export function ensureName(name: string[]) {
+  return <TMessage extends Message>(m: TMessage) => m.name == null || m.name.length === 0 ? { ...m, name } : m
+}
+
+export function ensureMessageId<TMessage extends Message>(m: TMessage): TMessage {
+  if (m.id != null) return m
+  return { ...m, id: hexDigest(m) }
 }

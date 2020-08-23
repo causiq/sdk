@@ -1,6 +1,7 @@
 import Logary from ".."
 import { GlobalClickHandling, GlobalErrorHandling, UniversalRendering } from "../features"
 import { ReactJSFeature } from "./react"
+import getTargetSelector from "../getTargetSelector"
 
 function prop(e: any, debug = false) {
   return (name: string, tx?: (x: any) => any) => {
@@ -78,7 +79,12 @@ function handleError(logary: Logary, opts: BrowserPluginOptions) {
 function onClick(logary: Logary) {
   const logger = logary.getLogger('plugins', 'browser', 'onClick')
   return (e: MouseEvent) => {
-    logger.info('Click event (global)')
+    const cssSelector = getTargetSelector(e)
+    // console.log("mouse event", e, 'selector', cssSelector)
+    console.log('selector', cssSelector)
+    logger.info('Click event (global)', {
+      cssSelector
+    })
   }
 }
 

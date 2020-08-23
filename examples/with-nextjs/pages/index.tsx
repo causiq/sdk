@@ -23,7 +23,9 @@ function IndexPage() {
   return (
     <Layout>
       <h1>Example Logary app</h1>
-      <MyButton onClick={handleClick} />
+      <MyButton onClick={handleClick}>
+        Test
+      </MyButton>
       <MyButton onClick={crashingHandler}>
         Crashes
       </MyButton>
