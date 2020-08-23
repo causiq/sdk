@@ -1,4 +1,4 @@
-import { Target } from '../target'
+import { Target } from '../types'
 import { Subscription } from 'rxjs'
 import RuntimeInfo from '../runtimeInfo'
 import { Config } from '../config'

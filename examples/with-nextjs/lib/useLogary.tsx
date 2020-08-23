@@ -1,12 +1,12 @@
 import { createContext, useContext } from "react"
-import Logary, { getLogaryInstance } from '../../../dist'
-import { Config } from "../../../dist/config"
+import Logary, { getLogary } from '../../../dist'
+import { Config } from "../../../dist"
 
 export const LogaryProvider = createContext<Logary | null>(null)
 
 export default function useLogary(config?: Config, instance?: Logary) {
   const ctx = useContext(LogaryProvider)
-  return ctx || getLogaryInstance(config, instance)
+  return ctx || getLogary(config, instance)
 }
 
 export function useLogger(...name: string[]) {

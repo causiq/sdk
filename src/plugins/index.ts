@@ -1,5 +1,5 @@
-import { HasFeatures } from "./features"
-import { Runnable } from "./runnable"
+import { HasFeatures } from "../utils/features"
+import { Runnable } from "../types"
 
 export default interface LogaryPlugin extends Runnable, HasFeatures {
   readonly name: string;

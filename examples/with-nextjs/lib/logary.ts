@@ -4,12 +4,17 @@ import nextjs from '../../../dist/plugins/nextjs'
 import react from '../../../dist/plugins/react'
 import opentelemetry from '../../../dist/plugins/opentelemetry'
 import ConsoleTarget from '../../../dist/targets/console'
+import RuttaTarget from '../../../dist/targets/rutta'
 
 const instance = getLogary({
   minLevel: LogLevel.debug,
   serviceName: 'with-nextjs',
   targets: [
-    new ConsoleTarget()
+    new ConsoleTarget(),
+    new RuttaTarget({
+      endpoint: '/i',
+      disabled: typeof window === 'undefined'
+    })
   ]
 })
 

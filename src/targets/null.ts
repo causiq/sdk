@@ -1,4 +1,4 @@
-import { Target } from '../target'
+import { Target } from '../types'
 import { Message } from '../message'
 import { Subscription } from 'rxjs'
 

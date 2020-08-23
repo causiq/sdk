@@ -1,6 +1,6 @@
 import { NextPageContext } from 'next'
-import Logary from ".."
-import { ReactJSFeature } from "./react"
+import Logary from "../.."
+import { ReactJSFeature } from "../react"
 
 export const NextJSFeature = 'nextjs'
 

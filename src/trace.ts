@@ -1,7 +1,7 @@
 import { Attributes, Status, SpanKind, Span as OTSpan, TimeInput, SpanContext } from '@opentelemetry/api'
 import { EventMessage } from './message'
 import { Logger } from './logger'
-import { EpochNanoSeconds } from "./time"
+import { EpochNanoSeconds } from "./utils/time"
 
 /**
  * Via:
@@ -47,5 +47,6 @@ export interface Span extends SpanData, SpanOps {}
  * From https://open-telemetry.github.io/opentelemetry-js/interfaces/tracer.html#bind
  */
 export interface SpanLogger extends Span, Logger {
+  // TODO: start child span; act as Tracer
   logThrough(): void;
 }

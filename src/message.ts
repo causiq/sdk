@@ -1,11 +1,11 @@
 import template, { Templated } from './formatting/template'
-import { hexDigest } from './hasher'
+import { hexDigest } from './utils/hasher'
 import { Money } from "./money"
 import { SpanContext, Status, CanonicalCode, SpanKind, TimedEvent, HrTime } from "@opentelemetry/api"
 import { SpanData } from "./trace"
-import getTimestamp, { EpochNanoSeconds, hrTimeToEpochNanoSeconds } from "./time"
+import getTimestamp, { EpochNanoSeconds, hrTimeToEpochNanoSeconds } from "./utils/time"
 import { ReadableSpan } from "@opentelemetry/tracing"
-import { ErrorLike } from "./error"
+import { ErrorLike } from "./types"
 
 export enum LogLevel {
   verbose = 1,

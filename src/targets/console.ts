@@ -1,11 +1,10 @@
-import { KeyValue } from '../keyvalue'
+import { KeyValue, Target } from '../types'
 // import { Logger, SpanLogger } from '..';
 import { Message } from '../message'
 // import { SpanContext, SpanOptions } from '@opentelemetry/api';
 // import { Span } from '..';
 // import template from '../formatting/template';
 // import codec from '../codecs/textMap';
-import { Target } from '../target'
 // import { Subscription } from 'rxjs';
 import { Config } from '../config'
 import RuntimeInfo from '../runtimeInfo'

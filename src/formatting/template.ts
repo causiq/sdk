@@ -1,4 +1,5 @@
-import { KeyValue } from '../keyvalue'
+import '../utils/BigInt-JSON-patch'
+import { KeyValue } from '../types'
 
 function render(value: any) {
   if (value == null) return value

@@ -1,7 +1,7 @@
-import Logary from ".."
-import { GlobalClickHandling, GlobalErrorHandling, UniversalRendering } from "../features"
-import { ReactJSFeature } from "./react"
-import getTargetSelector from "../getTargetSelector"
+import Logary from "../.."
+import { GlobalClickHandling, GlobalErrorHandling, UniversalRendering } from "../../utils/features"
+import { ReactJSFeature } from "../react"
+import getTargetSelector from "./getTargetSelector"
 
 function prop(e: any, debug = false) {
   return (name: string, tx?: (x: any) => any) => {

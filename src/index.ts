@@ -1,17 +1,19 @@
-export * from './keyvalue'
-export * from './logger'
-export * from './message'
-export * from './trace'
-
 import { LogFunction } from '@opentelemetry/api'
 import { Subscription } from 'rxjs'
 import { Config } from "./config"
 import Logary from './impl'
-import { Logger, EventFunction } from './logger'
+import { Logger } from './logger'
+import { EventFunction } from './types'
 import { LogLevel } from './message'
 import ConsoleTarget from './targets/console'
 
+// https://www.typescriptlang.org/docs/handbook/modules.html
 export default Logary
+export { Config } from './config'
+export { Logger } from './logger'
+export { Message, LogaryMessage, EventMessage, SpanMessage, LogLevel } from './message'
+export { default as money, isMoney, Money } from './money'
+export * from './types'
 
 // what follows is the convenience API (every logging lib should be easy to get started with!)
 

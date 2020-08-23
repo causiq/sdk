@@ -1,12 +1,13 @@
-import { empty, Subject, Subscription } from 'rxjs'
-import { Config } from './config'
-import LogaryPlugin, { PluginAPI } from "./logaryPlugin"
-import { Logger, EventFunction } from './logger'
-import { LogLevel, Message } from './message'
-import { Runnable } from "./runnable"
+import LogaryPlugin, { PluginAPI } from "./plugins"
 import RuntimeInfo from './runtimeInfo'
-import { adaptLogFunction, ensureName, ensureMessageId } from './util'
+import { ensureName, ensureMessageId, adaptLogFunction } from './utils'
 import money from "./money"
+import { Config } from './config'
+import { EventFunction } from './types'
+import { LogLevel, Message } from './message'
+import { Logger } from './logger'
+import { Runnable } from "./types"
+import { empty, Subject, Subscription } from 'rxjs'
 
 type LogaryState = | 'initial' | 'started' | 'closed'
 

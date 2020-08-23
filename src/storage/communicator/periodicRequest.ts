@@ -1,12 +1,14 @@
-import { Observable, merge, interval, combineLatest } from "rxjs"
-import { filter, concatMap, tap, bufferWhen } from "rxjs/operators"
+import { Observable, merge, interval, combineLatest, from } from "rxjs"
+import { filter, tap, bufferWhen } from "rxjs/operators"
 import visibilityState from './visibilityState'
 
-const triggerOnChangeTab = () =>
-  visibilityState().pipe(
+const triggerOnChangeTab = () => {
+  if (typeof window === 'undefined') return from([])
+  return visibilityState().pipe(
     filter(x => x === 'hidden'),
     tap(() => console.debug('visibilityState => "hidden"'))
   )
+}
 
 /**
  * Creates an observable that fires in a regular interval, while
@@ -26,7 +28,7 @@ export default function periodicRequest<TRes>(
 ) {
   const trigger = () =>
     combineLatest([
-      connectivityStream,
+      connectivityStream(),
       // this second parameter acts as the trigger, either every broadcast interval, or when the page is hidden
       merge(interval(period), extraTriggers())
     ]).pipe(filter(([online, _]) => online))

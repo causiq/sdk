@@ -1,7 +1,5 @@
-import { EventMessage, LogLevel, Message, SpanMessage } from './message'
-import { hexDigest } from './hasher'
 import getTimestamp from './time'
-
+import { LogLevel, EventMessage, SpanMessage, Message } from "../message"
 
 const known = new Set<keyof (EventMessage & SpanMessage)>([
   'type', 'id', 'timestamp', 'level',
@@ -33,7 +31,7 @@ function getPartialMessage(thing?: object | null): Partial<Message> {
   }
 }
 
-export function adaptLogFunction(level: LogLevel, message: string, ...args: unknown[]): EventMessage {
+export default function adaptLogFunction(level: LogLevel, message: string, ...args: unknown[]): EventMessage {
   const timestamp = getTimestamp()
 
   const o: Record<string, any> =
@@ -46,14 +44,4 @@ export function adaptLogFunction(level: LogLevel, message: string, ...args: unkn
     ...o,
     type: 'event',
   }
-}
-
-
-export function ensureName(name: string[]) {
-  return <TMessage extends Message>(m: TMessage) => m.name == null || m.name.length === 0 ? { ...m, name } : m
-}
-
-export function ensureMessageId<TMessage extends Message>(m: TMessage): TMessage {
-  if (m.id != null) return m
-  return { ...m, id: hexDigest(m) }
 }

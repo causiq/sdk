@@ -1,8 +1,6 @@
 import { LogLevel, Message } from './message'
 import { Logger as OTLogger, LogFunction } from '@opentelemetry/api'
-import { Money } from "./money"
-
-export type EventFunction = (event: string, monetaryValueOrError?: Money | Error, ...args: unknown[]) => void
+import { EventFunction } from "./types"
 
 interface LoggerEx extends Readonly<OTLogger> {
   readonly verbose: LogFunction;
