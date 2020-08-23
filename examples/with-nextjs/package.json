@@ -7,13 +7,13 @@
   "dependencies": {
     "@opentelemetry/api": "^0.10.2",
     "@opentelemetry/context-zone": "^0.10.2",
-    "@opentelemetry/tracing": "^0.10.2",
     "@opentelemetry/plugin-document-load": "^0.9.0",
     "@opentelemetry/plugin-http": "^0.10.2",
     "@opentelemetry/plugin-https": "^0.10.2",
-
+    "@opentelemetry/tracing": "^0.10.2",
     "logary": "5.1.0-beta.0",
     "next": "^9.4.2",
+    "node-abort-controller": "^1.1.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
   },

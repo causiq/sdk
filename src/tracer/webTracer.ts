@@ -12,7 +12,7 @@ export default function create(delegator: SpanExporter, logary: Logary): TracerM
   // create the default web tracer provider
   const provider = new WebTracerProvider({
     logger: logary.getLogger('Logary', 'webTracer'),
-    plugins: [ new DocumentLoad() ]
+    plugins: [ new DocumentLoad() ],
   })
 
   // delegate into Logary

@@ -5,6 +5,10 @@ import { TracerModule, HasTracer } from "./types"
 export default function create(logary: Logary): TracerModule & HasTracer {
   if (logary == null) throw new Error('Parameter "logary" is null or undefined; you need to pass in the Logary instance to the create function.')
   // console.log('Loading tracer, is server=', typeof window === 'undefined')
+
+  // TODO: Strange error loading async_hooks in NodeJS: investigate further later
+  // error - ../../node_modules/@opentelemetry/context-async-hooks/build/src/AsyncLocalStorageContextManager.js:20:0
+  // Module not found: Can't resolve 'async_hooks
   // const loadedModule =
   //   typeof window === 'undefined'
   //     ? require('./serverTracer')

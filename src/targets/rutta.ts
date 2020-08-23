@@ -1,31 +1,45 @@
-import { of } from 'rxjs'
+import { of, Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
-import { catchError, mergeMap } from 'rxjs/operators'
+import { catchError, mergeMap, filter } from 'rxjs/operators'
 import connectivityState from "../communicator/connectivityState"
 import periodicRequest from "../communicator/periodicRequest"
 import { Config } from '../config'
 import RuntimeInfo from '../runtimeInfo'
 import { Target } from "../target"
+import send from "../send"
 
 // TODO: implement Rutta target for shipping to Rutta from Browser, or from NodeJS over UDP
 
-type RuttaConfig = Readonly<{ endpoint?: string; }>
+type RuttaConfig = Readonly<{
+  endpoint: string;
+  disabled: boolean;
+}>
+
+const DefaultEndpoint = '/i'
 
 export default class RuttaTarget implements Target {
+  constructor(endpointOrConfig: string | Partial<RuttaConfig> | undefined = DefaultEndpoint) {
+    this.conf = 
+      typeof endpointOrConfig === 'string'
+        ? { endpoint: endpointOrConfig, disabled: false } 
+        : { 
+          endpoint: endpointOrConfig.endpoint || DefaultEndpoint,
+          disabled: false,
+          ...endpointOrConfig,
+        }
 
-  private endpoint: string;
-
-  constructor({ endpoint = '/i' }: RuttaConfig) {
-    this.endpoint = endpoint
   }
+
+  private conf: RuttaConfig;
 
   name = 'rutta'
 
   run(_: Config, ri: RuntimeInfo) {
+    if (this.conf.disabled) return
+
     return periodicRequest(connectivityState, ri.messages).pipe(
-      mergeMap(messages => fromFetch(this.endpoint, {
-        body: JSON.stringify(messages)
-      })),
+      filter(messages => messages.length > 0),
+      mergeMap(messages => send(this.conf.endpoint, JSON.stringify(messages))),
       catchError(err => {
         // Network or other error, handle appropriately
         console.error(err)

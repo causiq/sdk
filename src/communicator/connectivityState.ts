@@ -1,4 +1,4 @@
-import { Observable } from "rxjs"
+import { Observable, of } from "rxjs"
 
 // NOTE: this module requires 'window' globally
 
@@ -6,6 +6,8 @@ import { Observable } from "rxjs"
  * Gives you back a connectivity observable.
  */
 export default function connectivityState(): Observable<boolean> {
+  if (typeof window === 'undefined') return of(true)
+
   return new Observable(o => {
     const onOnline = () => o.next(true)
     const onOffline = () => o.next(false)
