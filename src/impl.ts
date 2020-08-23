@@ -1,11 +1,12 @@
 import { empty, Subject, Subscription } from 'rxjs'
 import { Config } from './config'
 import LogaryPlugin, { PluginAPI } from "./logaryPlugin"
-import { Logger } from './logger'
+import { Logger, EventFunction } from './logger'
 import { LogLevel, Message } from './message'
 import { Runnable } from "./runnable"
 import RuntimeInfo from './runtimeInfo'
 import { adaptLogFunction, ensureName, ensureMessageId } from './util'
+import money from "./money"
 
 type LogaryState = | 'initial' | 'started' | 'closed'
 
@@ -126,7 +127,24 @@ export default class Logary implements RuntimeInfo, PluginAPI {
       warn = this._loggerEx.bind(this, LogLevel.warn)
       error = this._loggerEx.bind(this, LogLevel.error)
       fatal = this._loggerEx.bind(this, LogLevel.fatal)
-      event = this._loggerEx.bind(this, LogLevel.info)
+
+      /**
+       * Log a new event
+       * @param event The event name
+       * @param moneyOrError A Money or Error instance or undefined
+       * @param args Remaining args
+       */
+      event: EventFunction = (event, moneyOrError, ...args) => {
+        const currency = typeof args[0] === 'string' ? args[0] : 'EUR'
+        const nextArgs = moneyOrError == null
+          ? args
+          : moneyOrError instanceof Error
+            ? [ { error: moneyOrError }, ...args ]
+            : typeof moneyOrError === 'number'
+              ? [ { monetaryValue: money(currency, moneyOrError) }, ...args ]
+              : [ { monetaryValue: moneyOrError }, ...args ]
+        this._loggerEx(LogLevel.info, event, ...nextArgs)
+      }
     }
   }
 
@@ -139,6 +157,10 @@ export default class Logary implements RuntimeInfo, PluginAPI {
     return Array.isArray(this.config.serviceName)
       ? this.config.serviceName
       : [ this.config.serviceName ]
+  }
+
+  get serviceVersion() {
+    return this.config.serviceVersion
   }
 
   get targets() {

@@ -1,5 +1,7 @@
-import { EventMessage, LogLevel, Message, SpanMessage, LogaryMessage } from './message'
+import { EventMessage, LogLevel, Message, SpanMessage } from './message'
 import { hexDigest } from './hasher'
+import getTimestamp from './time'
+
 
 const known = new Set<keyof (EventMessage & SpanMessage)>([
   'type', 'id', 'timestamp', 'level',
@@ -32,7 +34,7 @@ function getPartialMessage(thing?: object | null): Partial<Message> {
 }
 
 export function adaptLogFunction(level: LogLevel, message: string, ...args: unknown[]): EventMessage {
-  const timestamp = Date.now()
+  const timestamp = getTimestamp()
 
   const o: Record<string, any> =
     args != null && args.length !== 0 && typeof args[0] === 'object'
@@ -40,7 +42,7 @@ export function adaptLogFunction(level: LogLevel, message: string, ...args: unkn
       : {}
 
   return {
-    ...(new EventMessage(message, o.monetaryValue || null, o.error || null, level, {}, {}, [], timestamp)),
+    ...(new EventMessage(message, o.monetaryValue || null, o.error || null, level, timestamp, o.fields || {}, o.context || {}, o.name || [])),
     ...o,
     type: 'event',
   }

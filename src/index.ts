@@ -7,7 +7,7 @@ import { LogFunction } from '@opentelemetry/api'
 import { Subscription } from 'rxjs'
 import { Config } from "./config"
 import Logary from './impl'
-import { Logger } from './logger'
+import { Logger, EventFunction } from './logger'
 import { LogLevel } from './message'
 import ConsoleTarget from './targets/console'
 
@@ -59,4 +59,4 @@ export const info: LogFunction = (m, ...args) => getLogger().info(m, ...args)
 export const warn: LogFunction = (m, ...args) => getLogger().warn(m, ...args)
 export const error: LogFunction = (m, ...args) => getLogger().error(m, ...args)
 export const fatal: LogFunction = (m, ...args) => getLogger().fatal(m, ...args)
-export const event: LogFunction = (m, ...args) => getLogger().event(m, ...args)
+export const event: EventFunction = (e, mOrE, ...args) => getLogger().event(e, mOrE, ...args)

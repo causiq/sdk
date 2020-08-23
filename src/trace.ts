@@ -1,19 +1,23 @@
-import { Attributes, Status, SpanKind, Span as OTSpan, TimeInput } from '@opentelemetry/api'
-import { EventMessage, UnixEpochMillis } from './message'
+import { Attributes, Status, SpanKind, Span as OTSpan, TimeInput, SpanContext } from '@opentelemetry/api'
+import { EventMessage } from './message'
 import { Logger } from './logger'
+import { EpochNanoSeconds } from "./time"
 
 /**
  * Via:
  * src/Logary/DataModel.Trace.fs
+ * 
+ * consider: @opentelemetry/tracing/ReadableSpan
  */
 export interface SpanData {
+  readonly spanContext: SpanContext;
   readonly events: EventMessage[];
   readonly attrs: Attributes;
   readonly status: Status;
   readonly kind: SpanKind;
   readonly label: string;
-  readonly started: UnixEpochMillis;
-  readonly finished: UnixEpochMillis;
+  readonly started: EpochNanoSeconds;
+  readonly finished: EpochNanoSeconds;
 }
 
 export interface SpanOps extends OTSpan {

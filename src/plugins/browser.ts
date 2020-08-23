@@ -81,7 +81,8 @@ function onClick(logary: Logary) {
   return (e: MouseEvent) => {
     const cssSelector = getTargetSelector(e)
     // console.log("mouse event", e, 'selector', cssSelector)
-    console.log('selector', cssSelector)
+    // console.log('selector', cssSelector)
+
     logger.info('Click event (global)', {
       cssSelector
     })

@@ -5,20 +5,17 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@opentelemetry/context-zone": "^0.8.2",
-    "@opentelemetry/core": "^0.8.2",
-    "@opentelemetry/exporter-collector": "^0.8.2",
-    "@opentelemetry/exporter-jaeger": "^0.8.2",
-    "@opentelemetry/exporter-zipkin": "^0.8.2",
-    "@opentelemetry/plugin-document-load": "^0.7.0",
-    "@opentelemetry/plugin-user-interaction": "^0.7.0",
-    "@opentelemetry/plugin-xml-http-request": "^0.8.2",
-    "@opentelemetry/web": "^0.8.2",
+    "@opentelemetry/api": "^0.10.2",
+    "@opentelemetry/context-zone": "^0.10.2",
+    "@opentelemetry/tracing": "^0.10.2",
+    "@opentelemetry/plugin-document-load": "^0.9.0",
+    "@opentelemetry/plugin-http": "^0.10.2",
+    "@opentelemetry/plugin-https": "^0.10.2",
+
     "logary": "5.1.0-beta.0",
     "next": "^9.4.2",
     "react": "^16.13.1",
-    "react-dom": "^16.13.1",
-    "zone.js": "^0.10.3"
+    "react-dom": "^16.13.1"
   },
   "scripts": {
     "dev": "next",
