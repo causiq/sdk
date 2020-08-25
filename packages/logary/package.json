@@ -33,12 +33,6 @@
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "eslint --ext .ts src",
     "prepublishOnly": "yarn test && yarn run lint",
-    "preversion": "yarn run lint",
-    "version": "yarn run format && git add -A src",
-    "postversion": "git push && git push --tags",
-    "bump:patch": "yarn version --patch",
-    "bump:minor": "yarn version --minor",
-    "bump:major": "yarn version --major",
     "install-peers": "install-peers -f"
   },
   "dependencies": {
@@ -46,12 +40,7 @@
     "@opentelemetry/tracing": "^0.10.2",
     "node-abort-controller": "^1.1.0",
     "jssha": "^3.1.0",
-    "react": "^16.13.1",
-    "rxjs": "^6.3.3",
-    "@logary/plugin-browser": "*",
-    "@logary/plugin-nextjs": "*",
-    "@logary/plugin-node": "*",
-    "@logary/plugin-react": "*"
+    "rxjs": "^6.3.3"
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",
@@ -62,13 +51,8 @@
     "@types/jssha": "^2.0.0",
     "@types/react-dom": "^16.9.8",
     "@types/webpack": "^4.41.13",
-    "@typescript-eslint/eslint-plugin": "^3.0.1",
-    "@typescript-eslint/parser": "^3.0.1",
-    "eslint": "^7.1.0",
-    "husky": "^4.2.3",
     "install-peers-cli": "^2.2.0",
     "jest": "^26.0.1",
-    "lerna": "^3.22.1",
     "prettier": "^2.0.1",
     "ts-jest": "^26.0.0",
     "typedoc": "^0.17.0",

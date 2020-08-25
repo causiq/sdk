@@ -1,7 +1,8 @@
 import { useCallback } from "react"
 import Layout from "../components/Layout"
 import logary from '../lib/logary'
-import { useLogger, withLogary } from "@logary/plugin-nextjs"
+import { useLogger } from '@logary/plugin-react'
+import { withLogary } from "@logary/plugin-nextjs"
 
 function MyButton({ onClick, children }) {
   return (
@@ -13,7 +14,6 @@ function MyButton({ onClick, children }) {
 
 function IndexPage() {
   const { info } = useLogger('IndexPage')
-
   const handleClick = useCallback(() => info('Button clicked'), [])
   const crashingHandler = useCallback(() => {
     throw new Error("Something went wrong")

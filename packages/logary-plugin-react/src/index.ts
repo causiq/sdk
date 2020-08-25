@@ -12,6 +12,9 @@ export const features = [
 
 export const ExtraProp = "__lyNames"
 
+export { default as useLogary, LogaryProvider } from './useLogary'
+export { default as useLogger } from './useLogger'
+
 export default function react(logary: Logary) {
   if (typeof window === 'undefined') return
 

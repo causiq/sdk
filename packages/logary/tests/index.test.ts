@@ -1,6 +1,6 @@
-import Logary, { LogLevel } from '../packages/logary/src'
-import { EventMessage } from '../packages/logary/src/message'
-import StubTarget from '../packages/logary/src/targets/stub'
+import Logary, { LogLevel } from '../src'
+import { EventMessage } from '../src/message'
+import StubTarget from '../src/targets/stub'
 
 const newLogary = (stub: StubTarget = new StubTarget()) => {
   return new Logary({

@@ -1,5 +1,5 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  testRegex: "src/tests/\\w+[.]test[.]ts$",
+  testRegex: "tests/\\w+[.]test[.]ts$",
 };

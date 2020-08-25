@@ -28,6 +28,4 @@ export default function nextjs(logary: Logary) {
   })
 }
 
-export { default as useLogary, LogaryProvider } from './useLogary'
-export { default as useLogger } from './useLogger'
 export { default as withLogary } from './withLogary'

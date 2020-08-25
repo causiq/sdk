@@ -8,8 +8,7 @@
     "next": "*",
     "logary": "*",
     "react": "*",
-    "@logary/plugin-react": "*",
-    "@logary/plugin-nextjs": "*"
+    "@logary/plugin-react": "*"
   },
   "files": [
     "dist/**/*",
