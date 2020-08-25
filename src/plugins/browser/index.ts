@@ -83,7 +83,7 @@ function onClick(logary: Logary) {
     // console.log("mouse event", e, 'selector', cssSelector)
     // console.log('selector', cssSelector)
 
-    logger.info('Click event (global)', {
+    logger.info('User clicked "{cssSelector}"', {
       cssSelector
     })
   }

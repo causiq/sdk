@@ -11,7 +11,7 @@
     "@opentelemetry/plugin-http": "^0.10.2",
     "@opentelemetry/plugin-https": "^0.10.2",
     "@opentelemetry/tracing": "^0.10.2",
-    "logary": "5.1.0-beta.0",
+    "logary": "6.0.0",
     "next": "^9.4.2",
     "node-abort-controller": "^1.1.0",
     "react": "^16.13.1",

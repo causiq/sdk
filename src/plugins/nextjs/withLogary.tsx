@@ -1,10 +1,11 @@
+import * as React from "react"
 import { NextPage } from "next"
 import { useMemo } from "react"
-import Logary, { getLogary } from "../../../dist"
-import { Config } from "../../../dist/config"
-import { UniversalRendering } from "../../../dist/features"
-import { NextJSFeature, NextJSSupporter } from "../../../dist/plugins/nextjs"
 import { LogaryProvider } from "./useLogary"
+import { NextJSFeature, NextJSSupporter } from "."
+import { UniversalRendering } from "../../utils"
+import Logary, { getLogary } from "../.."
+import { Config } from "../../config"
 
 type WithLogaryProps = Readonly<{
   logary?: Logary;

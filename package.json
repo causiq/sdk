@@ -1,12 +1,14 @@
 {
   "name": "logary",
-  "version": "5.1.0-beta.0",
+  "version": "6.0.0",
   "description": "A logging library for JavaScript/TypeScript for browser, server and serverless",
   "author": "Henrik Feldt",
   "license": "MIT",
-  "main": "dist/logary.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/src/index",
+  "types": "dist/src/index",
+  "exports": {
+    "./": "./dist/"
+  },
   "homepage": "https://logary.tech",
   "files": [
     "dist/**/*"

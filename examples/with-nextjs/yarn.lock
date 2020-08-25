@@ -3209,7 +3209,7 @@ lodash@^4.17.11, lodash@^4.17.13, lodash@^4.17.19:
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.20.tgz#b44a9b6297bcb698f1c51a3545a2b3b368d59c52"
   integrity sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==
 
-logary@5.1.0-beta.0:
+logary@6.0.0:
   version "5.1.0-beta.0"
   resolved "https://registry.yarnpkg.com/logary/-/logary-5.1.0-beta.0.tgz#93f7577d9426893edda7e02106ea88cdf27cc5f4"
   integrity sha512-8n5FOwL+Z9IiTXW7SaZT0WJISOkS83v67a6ZMasthEVtP900O4tW+0aJ2gzESM3QgmYSl40rn4c/Ykc5niTjPw==

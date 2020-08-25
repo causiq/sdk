@@ -1,6 +1,6 @@
-import Logary from ".."
-import { UniversalRendering } from "../utils/features"
-import { NextJSFeature } from "./nextjs"
+import Logary from "../.."
+import { UniversalRendering } from "../../utils/features"
+import { NextJSFeature } from "../nextjs"
 
 export const ReactJSFeature = 'reactjs'
 
