@@ -1,0 +1,24 @@
+{
+  "name": "@logary/plugin-nextjs",
+  "license": "GPL3 or commercial",
+  "version": "6.0.0",
+  "main": "dist/index",
+  "types": "dist/index",
+  "peerDependencies": {
+    "next": "*",
+    "logary": "*",
+    "react": "*",
+    "@logary/plugin-react": "*",
+    "@logary/plugin-nextjs": "*"
+  },
+  "files": [
+    "dist/**/*",
+    "package.json"
+  ],
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^3.8.3"
+  }
+}

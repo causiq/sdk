@@ -1,8 +1,7 @@
 import { useCallback } from "react"
 import Layout from "../components/Layout"
 import logary from '../lib/logary'
-import useLogger from "../../../dist/plugins/nextjs/useLogger"
-import withLogary from "../../../dist/plugins/nextjs/withLogary"
+import { useLogger, withLogary } from "@logary/plugin-nextjs"
 
 function MyButton({ onClick, children }) {
   return (

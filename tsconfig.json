@@ -3,8 +3,6 @@
     "target": "es2015",
     "module": "commonjs",
     "declaration": true,
-    "baseUrl": ".",
-    "outDir": "./dist",
     "strict": true,
     "noImplicitReturns": true,
     "sourceMap": true,
@@ -12,12 +10,9 @@
     "esModuleInterop": true,
     "jsx": "react"
   },
-  "include": [
-    "src/**/*"
-  ],
   "exclude": [
     "node_modules",
     "docs",
     "examples"
-  ],
+  ]
 }

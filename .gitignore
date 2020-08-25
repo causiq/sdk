@@ -1,6 +1,4 @@
 node_modules/
-.next/
 dist/
-.tmp/
 yarn-error.log
 .DS_Store
