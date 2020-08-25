@@ -5,7 +5,7 @@ import { SpanContext, Status, CanonicalCode, SpanKind, TimedEvent, HrTime } from
 import { SpanData } from "./trace"
 import getTimestamp, { EpochNanoSeconds, hrTimeToEpochNanoSeconds } from "./utils/time"
 import { ReadableSpan } from "@opentelemetry/tracing"
-import { ErrorLike } from "./types"
+import { ErrorInfo, SetUserPropertyFunction } from "./types"
 
 export enum LogLevel {
   verbose = 1,
@@ -28,7 +28,7 @@ export class EventMessage implements LogaryMessage {
   constructor(
     public event: string,
     public monetaryValue: Money | null = null,
-    public error: Error | ErrorLike | null = null,
+    public error: Error | ErrorInfo | null = null,
     public level: LogLevel = LogLevel.info,
     public timestamp: EpochNanoSeconds = getTimestamp(),
     public fields: Record<string, unknown> = {},
@@ -92,4 +92,23 @@ export class SpanMessage implements LogaryMessage, SpanData {
   }
 }
 
-export type Message = SpanMessage | EventMessage
+export class SetUserPropertyMessage implements LogaryMessage {
+  constructor(
+    public userId: string,
+    public key: string,
+    public value: unknown,
+    public name: string[],
+    public timestamp: EpochNanoSeconds = getTimestamp(),
+    id?: string
+  ) {
+    this.level = LogLevel.info
+    this.fields = {}
+    this.id = id || hexDigest(this)
+  }
+  id: string
+  level: LogLevel
+  fields: Record<string, unknown>
+  type: 'setUserProperty' = 'setUserProperty'
+}
+
+export type Message = SpanMessage | EventMessage | SetUserPropertyMessage

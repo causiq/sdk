@@ -1,6 +1,6 @@
 import { KeyValue, Target } from '../types'
 // import { Logger, SpanLogger } from '..';
-import { Message } from '../message'
+import { Message, EventMessage, SpanMessage } from '../message'
 // import { SpanContext, SpanOptions } from '@opentelemetry/api';
 // import { Span } from '..';
 // import template from '../formatting/template';
@@ -16,78 +16,76 @@ function consolePrintKVs(kvs: KeyValue[]) {
   }
 }
 
-function consolePrint(message: Message) {
-  switch (message.type) {
-    case 'event': {
-      const msg = `[${message.name.join('.')}] ${message.templated.message}`
-      // console.log('message', message)
+function consolePrintEvent(message: EventMessage) {
+  const msg = message.name.length === 0 ? message.templated.message : `[${message.name.join('.')}] ${message.templated.message}`
+  // console.log('message', message)
 
-      if (message.templated.remaining.length > 0) {
-        console.groupCollapsed(msg)
-        consolePrintKVs(message.templated.remaining)
-        console.groupEnd()
-      } else {
-        if (message.level in console) {
-          // @ts-ignore
-          console[message.level](msg)
-        } else {
-          console.log(msg)
-        }
-      }
+  if (message.templated.remaining.length > 0) {
+    console.groupCollapsed(msg)
+    consolePrintKVs(message.templated.remaining)
+    console.groupEnd()
+  } else {
+    if (message.level in console) {
+      // @ts-ignore
+      console[message.level](msg)
+    } else {
+      console.log(msg)
     }
   }
 }
 
-// function consolePrintSpan(span: Span) {
-//   console.group(span.label, span.finished != null ? Math.max(span.finished, span.started) - span.started : 0, 'ms');
+function consolePrint(message: Message) {
+  switch (message.type) {
+    case 'event':
+      return consolePrintEvent(message)
+    case 'span':
+      // eslint-disable-next-line no-use-before-define
+      return consolePrintSpan(message)
+  }
+}
 
-//   const tags: KeyValue[] = Object.keys(span.tags)
-//     .filter(k => k != null && k !== '')
-//     .filter(k => 'number|string|boolean'.indexOf(typeof span.tags[k]) !== -1)
-//     .map(k => ({ key: k, value: span.tags[k] }));
+function consolePrintSpan(span: SpanMessage) {
+  const M = BigInt('1000000')
+  console.group(span.label,
+    span.finished != null
+      ? Math.max(Number(span.finished/M), Number(span.started/M)) - Number(span.started / M)
+      : 0, 'ms')
 
-//   consolePrintKVs(tags);
+  const tags: KeyValue[] = Object.keys(span.attrs)
+    .filter(k => k != null && k !== '')
+    .filter(k => 'number|string|boolean'.indexOf(typeof span.attrs[k]) !== -1)
+    .map(k => ({ key: k, value: span.attrs[k] }))
 
-//   if (span.logs.length > 0) console.groupCollapsed(`logs`);
-//   span.logs.forEach(consolePrint);
-//   if (span.logs.length > 0) console.groupEnd();
+  consolePrintKVs(tags)
 
-//   if (span.children.length > 0) console.groupCollapsed(`children`);
-//   span.children.forEach(consolePrintSpan);
-//   if (span.children.length > 0) console.groupEnd();
+  if (span.events.length > 0) console.groupCollapsed('events')
+  span.events.forEach(consolePrint)
+  if (span.events.length > 0) console.groupEnd()
 
-//   const hasBaggage = span.hasBaggage;
-//   if (hasBaggage) console.groupCollapsed(`baggage`);
-//   span.spanContext.iterBaggage((k, v) => {
-//     console.debug(`${k}: ${v}`);
-//     return true;
-//   });
-//   if (hasBaggage) console.groupEnd();
+  // if (span.children.length > 0) console.groupCollapsed(`children`);
+  // span.children.forEach(consolePrintSpan);
+  // if (span.children.length > 0) console.groupEnd();
 
-//   console.groupEnd();
-// }
+  // const hasBaggage = span.hasBaggage;
+  // if (hasBaggage) console.groupCollapsed(`baggage`);
+  // span.spanContext.iterBaggage((k, v) => {
+  //   console.debug(`${k}: ${v}`);
+  //   return true;
+  // });
+  // if (hasBaggage) console.groupEnd();
 
-// class TopSpan implements Span {
-//   constructor(inner: Logger, label: string, options: SpanOptions = {}) {
-//     super(inner, label, options)
-//   }
+  console.groupEnd()
+}
 
-//   finish(finishTime?: Timestamp) {
-//     const logger = super.finish(finishTime)
-//     consolePrintSpan(this)
-//     return logger
-//   }
-// }
 
 export default class ConsoleTarget implements Target {
-
-  private noWarn: boolean
-
-  name = 'console'
 
   constructor(noWarn?: boolean) {
     this.noWarn = noWarn != null ? noWarn : false
   }
+
+  private noWarn: boolean
+  name = 'console'
 
   log(messages: Message[]) {
     if (typeof window === 'undefined' && !this.noWarn) {

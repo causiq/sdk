@@ -3,8 +3,8 @@ import RuntimeInfo from './runtimeInfo'
 import { ensureName, ensureMessageId, adaptLogFunction } from './utils'
 import money from "./money"
 import { Config } from './config'
-import { EventFunction } from './types'
-import { LogLevel, Message } from './message'
+import { EventFunction, SetUserPropertyFunction } from './types'
+import { LogLevel, Message, SetUserPropertyMessage } from './message'
 import { Logger } from './logger'
 import { Runnable } from "./types"
 import { empty, Subject, Subscription } from 'rxjs'
@@ -145,6 +145,10 @@ export default class Logary implements RuntimeInfo, PluginAPI {
               ? [ { monetaryValue: money(currency, moneyOrError) }, ...args ]
               : [ { monetaryValue: moneyOrError }, ...args ]
         this._loggerEx(LogLevel.info, event, ...nextArgs)
+      }
+
+      setUserProperty: SetUserPropertyFunction = (userId, key, value) => {
+        this.log(LogLevel.info, new SetUserPropertyMessage(userId, key, value, this.name))
       }
     }
   }

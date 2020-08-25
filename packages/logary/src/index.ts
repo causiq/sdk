@@ -3,7 +3,7 @@ import { Subscription } from 'rxjs'
 import { Config } from "./config"
 import Logary from './impl'
 import { Logger } from './logger'
-import { EventFunction } from './types'
+import { EventFunction, SetUserPropertyFunction } from './types'
 import { LogLevel } from './message'
 import ConsoleTarget from './targets/console'
 
@@ -64,3 +64,4 @@ export const warn: LogFunction = (m, ...args) => getLogger().warn(m, ...args)
 export const error: LogFunction = (m, ...args) => getLogger().error(m, ...args)
 export const fatal: LogFunction = (m, ...args) => getLogger().fatal(m, ...args)
 export const event: EventFunction = (e, mOrE, ...args) => getLogger().event(e, mOrE, ...args)
+export const setUserProp: SetUserPropertyFunction = (userId, key, value) => getLogger().setUserProperty(userId, key,value)

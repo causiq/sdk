@@ -1,4 +1,5 @@
 module.exports = {
+  "ignorePatterns": "*.d.ts",
   "env": {
     "browser": true,
     "es6": true,

@@ -2,11 +2,25 @@ import { Observable, merge, interval, combineLatest, from } from "rxjs"
 import { filter, tap, bufferWhen } from "rxjs/operators"
 import visibilityState from './visibilityState'
 
-const triggerOnChangeTab = () => {
+const windowTabChange = () => {
   if (typeof window === 'undefined') return from([])
   return visibilityState().pipe(
     filter(x => x === 'hidden'),
     tap(() => console.debug('visibilityState => "hidden"'))
+  )
+}
+
+const windowBeforeUnload = () => new Observable<'unload'>(o => {
+  if (typeof window === 'undefined') return o.complete()
+  const sendSignal = () => o.next('unload')
+  window.addEventListener('beforeunload', sendSignal)
+  return () => window.removeEventListener('beforeunload', sendSignal)
+})
+
+const windowTabChangeOrUnload = () => {
+  return merge(
+    windowBeforeUnload(),
+    windowTabChange()
   )
 }
 
@@ -24,7 +38,7 @@ export default function periodicRequest<TRes>(
   connectivityStream: () => Observable<boolean>,
   makeRequests: Observable<TRes>,
   period: number = 500,
-  extraTriggers: () => Observable<string> = triggerOnChangeTab
+  extraTriggers: () => Observable<string> = windowTabChangeOrUnload
 ) {
   const trigger = () =>
     combineLatest([

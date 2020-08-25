@@ -4,7 +4,7 @@ import './BigInt-JSON-patch'
 /**
  * A function that sends the body asynchronously to the specified url.
  */
-export default function send(url: string, data: string | Blob | FormData | URLSearchParams | ReadableStream<Uint8Array>) {
+export default function sendBeacon(url: string, data: string | Blob | FormData | URLSearchParams | ReadableStream<Uint8Array>) {
   if (typeof window !== 'undefined' && window.navigator.sendBeacon != null) {
     window.navigator.sendBeacon(url, data)
     return from([])
