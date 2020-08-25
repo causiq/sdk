@@ -1,7 +1,7 @@
 {
   "name": "@logary/plugin-react",
   "license": "GPL3 or commercial",
-  "version": "6.0.1-6.0.0-alpha.1.0",
+  "version": "6.0.0-alpha.0",
   "main": "dist/index",
   "types": "dist/index",
   "peerDependencies": {
@@ -13,10 +13,14 @@
     "dist/**/*",
     "package.json"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc"
   },
   "devDependencies": {
     "typescript": "^3.8.3"
-  }
+  },
+  "gitHead": "61966453e49368ed4f718cc319d63b61e38ca1cb"
 }
