@@ -1,12 +1,12 @@
 {
   "name": "@logary/plugin-react",
   "license": "GPL3 or commercial",
-  "version": "6.0.0",
+  "version": "6.0.1-6.0.0-alpha.1.0",
   "main": "dist/index",
   "types": "dist/index",
   "peerDependencies": {
-    "next": "*",
     "logary": "*",
+    "next": "*",
     "react": "*"
   },
   "files": [
