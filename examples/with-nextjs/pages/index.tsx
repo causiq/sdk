@@ -13,8 +13,8 @@ function MyButton({ onClick, children }) {
 }
 
 function IndexPage() {
-  const { info } = useLogger('IndexPage')
-  const handleClick = useCallback(() => info('Button clicked'), [])
+  const { info, event } = useLogger('IndexPage')
+  const handleClick = useCallback(() => event('Button clicked', { amount: 20, currency: 'EUR' }), [])
   const crashingHandler = useCallback(() => {
     throw new Error("Something went wrong")
   }, [])

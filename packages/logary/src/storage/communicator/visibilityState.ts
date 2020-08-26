@@ -8,12 +8,16 @@ import { Observable } from "rxjs"
  */
 export default function visibilityState(): Observable<VisibilityState> {
   return new Observable(o => {
-    // https://github.com/ReactiveX/rxjs/issues/5671
-    if (!o.closed) o.next(window.document.visibilityState)
+    try {
+      // https://github.com/ReactiveX/rxjs/issues/5671
+      o.next(window.document.visibilityState)
 
-    const handle = () => o.next(window.document.visibilityState)
+      const handle = () => o.next(window.document.visibilityState)
 
-    window.addEventListener('visibilitychange', handle)
-    return () => window.removeEventListener('visibilitychange', handle)
+      window.addEventListener('visibilitychange', handle)
+      return () => window.removeEventListener('visibilitychange', handle)
+    } catch (e) {
+      return () => {}
+    }
   })
 }
