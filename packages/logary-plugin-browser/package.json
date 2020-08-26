@@ -1,15 +1,9 @@
 {
   "name": "@logary/plugin-browser",
   "license": "GPL3 or commercial",
-  "version": "6.0.0-alpha.1",
+  "version": "6.0.0-alpha.4",
   "main": "dist/index",
   "types": "dist/index",
-  "peerDependencies": {
-    "@opentelemetry/context-zone": "*",
-    "@opentelemetry/core": "*",
-    "@opentelemetry/plugin-document-load": "*",
-    "@opentelemetry/web": "*"
-  },
   "files": [
     "dist/**/*",
     "package.json"
@@ -20,14 +14,15 @@
   "scripts": {
     "build": "tsc"
   },
-  "devDependencies": {
+  "dependencies": {
     "@opentelemetry/context-zone": "^0.10.2",
+    "@opentelemetry/core": "^0.10.2",
     "@opentelemetry/plugin-document-load": "^0.9.0",
     "@opentelemetry/web": "^0.10.2",
+    "logary": "workspace:packages/logary"
+  },
+  "devDependencies": {
     "typescript": "^4.0.2"
   },
-  "gitHead": "61966453e49368ed4f718cc319d63b61e38ca1cb",
-  "dependencies": {
-    "logary": "workspace:packages/logary"
-  }
+  "gitHead": "61966453e49368ed4f718cc319d63b61e38ca1cb"
 }

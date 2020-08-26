@@ -2744,27 +2744,76 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@logary/plugin-browser@6.0.0-alpha.1, @logary/plugin-browser@workspace:packages/logary-plugin-browser":
-  version: 0.0.0-use.local
-  resolution: "@logary/plugin-browser@workspace:packages/logary-plugin-browser"
+"@logary/plugin-browser@file:../../packages/logary-plugin-browser::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs":
+  version: 6.0.0-alpha.3
+  resolution: "@logary/plugin-browser@file:../../packages/logary-plugin-browser::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs"
   dependencies:
-    "@opentelemetry/context-zone": ^0.10.2
-    "@opentelemetry/plugin-document-load": ^0.9.0
-    "@opentelemetry/web": ^0.10.2
     logary: "workspace:packages/logary"
-    typescript: ^4.0.2
   peerDependencies:
     "@opentelemetry/context-zone": "*"
     "@opentelemetry/core": "*"
     "@opentelemetry/plugin-document-load": "*"
     "@opentelemetry/web": "*"
+  checksum: c9f505455e670078f25832555affdf39c2e57eddc21dbfecdcf76b552969e38c18864ffed2e9ea655e05684f3b80ed61d4cf8f15e1c89c939f1e97ee965baa23
+  languageName: node
+  linkType: hard
+
+"@logary/plugin-browser@npm:6.0.0-alpha.1":
+  version: 6.0.0-alpha.1
+  resolution: "@logary/plugin-browser@npm:6.0.0-alpha.1"
+  peerDependencies:
+    "@opentelemetry/context-zone": "*"
+    "@opentelemetry/plugin-document-load": "*"
+    "@opentelemetry/web": "*"
+    logary: "*"
+  checksum: 5cceb1b5f4de30e55c3d5695d3d324f7f8067acb381b101d488aba797656d1b6ff3fec1916b43afa749010f231fb44895431228d72eebef91f746a1b0992b74c
+  languageName: node
+  linkType: hard
+
+"@logary/plugin-browser@workspace:packages/logary-plugin-browser":
+  version: 0.0.0-use.local
+  resolution: "@logary/plugin-browser@workspace:packages/logary-plugin-browser"
+  dependencies:
+    "@opentelemetry/context-zone": ^0.10.2
+    "@opentelemetry/core": ^0.10.2
+    "@opentelemetry/plugin-document-load": ^0.9.0
+    "@opentelemetry/web": ^0.10.2
+    logary: "workspace:packages/logary"
+    typescript: ^4.0.2
   languageName: unknown
   linkType: soft
 
-"@logary/plugin-nextjs@6.0.0-alpha.1, @logary/plugin-nextjs@workspace:packages/logary-plugin-nextjs":
+"@logary/plugin-nextjs@file:../../packages/logary-plugin-nextjs::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs":
+  version: 6.0.0-alpha.3
+  resolution: "@logary/plugin-nextjs@file:../../packages/logary-plugin-nextjs::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs"
+  dependencies:
+    logary: "workspace:packages/logary"
+  peerDependencies:
+    "@logary/plugin-react": "*"
+    next: "*"
+    react: "*"
+  checksum: 1ab36d0a0cf76852d4f783030a9b37bcac0d239ba4ce66c79ad0a81db32671b1d5177aee138e028726313309e046f81d0dba9c2dd1d973f04674150bb3a6bf06
+  languageName: node
+  linkType: hard
+
+"@logary/plugin-nextjs@npm:6.0.0-alpha.1":
+  version: 6.0.0-alpha.1
+  resolution: "@logary/plugin-nextjs@npm:6.0.0-alpha.1"
+  peerDependencies:
+    "@logary/plugin-react": "*"
+    logary: "*"
+    next: "*"
+    react: "*"
+  checksum: d0e4f73c69c2003d5936fb21c77ff76e397e0eb03b76b9e4313112f257f1a069d24d35b047f227775fe33b59c39cbd6075c1a463c705ea4d6420dacbaa374315
+  languageName: node
+  linkType: hard
+
+"@logary/plugin-nextjs@workspace:packages/logary-plugin-nextjs":
   version: 0.0.0-use.local
   resolution: "@logary/plugin-nextjs@workspace:packages/logary-plugin-nextjs"
   dependencies:
+    "@logary/plugin-react": "workspace:packages/logary-plugin-react"
+    "@types/react": ^16.9.48
     "@types/webpack": ^4.41.21
     logary: "workspace:packages/logary"
     next: ^9.5.2
@@ -2772,13 +2821,36 @@ __metadata:
     react-dom: ^16.13.1
     typescript: ^4.0.2
   peerDependencies:
-    "@logary/plugin-react": "*"
     next: "*"
     react: "*"
   languageName: unknown
   linkType: soft
 
-"@logary/plugin-node@6.0.0-alpha.1, @logary/plugin-node@workspace:packages/logary-plugin-node":
+"@logary/plugin-node@file:../../packages/logary-plugin-node::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs":
+  version: 6.0.0-alpha.3
+  resolution: "@logary/plugin-node@file:../../packages/logary-plugin-node::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs"
+  dependencies:
+    logary: "workspace:packages/logary"
+  peerDependencies:
+    "@opentelemetry/node": ^0.10.2
+    "@opentelemetry/plugin-http": ^0.10.2
+    "@opentelemetry/plugin-https": ^0.10.2
+  checksum: 281e487f107e87ab0b1322cf5256286fe5a13983200d761385dd05b5ff3645f8cad2e9d5c5558890c121bf923eed3eebf2b861e571db9ccea4811b82a7c52413
+  languageName: node
+  linkType: hard
+
+"@logary/plugin-node@npm:6.0.0-alpha.1":
+  version: 6.0.0-alpha.1
+  resolution: "@logary/plugin-node@npm:6.0.0-alpha.1"
+  peerDependencies:
+    "@opentelemetry/node": ^0.10.2
+    "@opentelemetry/plugin-http": ^0.10.2
+    "@opentelemetry/plugin-https": ^0.10.2
+  checksum: b6b668ef2c0c18b10719a5164b5834f4f0a1d622fa35590c39f78d74fada3efe26d98e6c51569a40dcbf15269fbb168b54070fa5c37dd90dea0cb905a15b7f28
+  languageName: node
+  linkType: hard
+
+"@logary/plugin-node@workspace:packages/logary-plugin-node":
   version: 0.0.0-use.local
   resolution: "@logary/plugin-node@workspace:packages/logary-plugin-node"
   dependencies:
@@ -2791,10 +2863,34 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@logary/plugin-react@6.0.0-alpha.1, @logary/plugin-react@workspace:packages/logary-plugin-react":
+"@logary/plugin-react@file:../../packages/logary-plugin-react::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs":
+  version: 6.0.0-alpha.3
+  resolution: "@logary/plugin-react@file:../../packages/logary-plugin-react::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs"
+  dependencies:
+    logary: "workspace:packages/logary"
+  peerDependencies:
+    react: "*"
+    react-dom: "*"
+  checksum: 4da9b7cc01912850938666cf765e0cd30a9da35d589a25844f666b7c8f16ae508ca1f51689a5b94fe04a81c32a0286aa592a71583d39fc8a719df807020c9d3f
+  languageName: node
+  linkType: hard
+
+"@logary/plugin-react@npm:6.0.0-alpha.1":
+  version: 6.0.0-alpha.1
+  resolution: "@logary/plugin-react@npm:6.0.0-alpha.1"
+  peerDependencies:
+    logary: "*"
+    next: "*"
+    react: "*"
+  checksum: 48b672ae0c7a27d99ee3968c1ceeeb0c874c8a3af61199b95598a49b5594a5b2bf36cc15c6625cf89021911159da06917ade6e3a96357b4bbdb5e83da41346b0
+  languageName: node
+  linkType: hard
+
+"@logary/plugin-react@workspace:packages/logary-plugin-react":
   version: 0.0.0-use.local
   resolution: "@logary/plugin-react@workspace:packages/logary-plugin-react"
   dependencies:
+    "@types/react": ^16.9.48
     logary: "workspace:packages/logary"
     typescript: ^4.0.2
   peerDependencies:
@@ -3361,6 +3457,16 @@ __metadata:
     "@types/prop-types": "*"
     csstype: ^3.0.2
   checksum: 20cb807cb2a3145daaee3c94babe05f04bb9d384dc80b40c245f77392e0cc60e404fce6963ebd9eb36fbf0a70f0ff7f883bbf3e9eadaa5129ae1ed0bc25fe18c
+  languageName: node
+  linkType: hard
+
+"@types/react@npm:^16.9.48":
+  version: 16.9.48
+  resolution: "@types/react@npm:16.9.48"
+  dependencies:
+    "@types/prop-types": "*"
+    csstype: ^3.0.2
+  checksum: af2f71339994473a9161e8c9bc8079d162f1eadaa49b0e6a1f1f13b83dd8b47233eac2a17e8ecbad0dd5ea2a4a787c69c608139abcd67c4a3a9c5222cba20113
   languageName: node
   linkType: hard
 
@@ -9342,7 +9448,35 @@ fsevents@^1.2.7:
   languageName: unknown
   linkType: soft
 
-"logary@6.0.0-alpha.2, logary@workspace:packages/logary":
+"logary@file:../../packages/logary::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs":
+  version: 6.0.0-alpha.2
+  resolution: "logary@file:../../packages/logary::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs"
+  dependencies:
+    "@opentelemetry/api": ^0.10.2
+    "@opentelemetry/core": ^0.10.2
+    "@opentelemetry/tracing": ^0.10.2
+    jssha: ^3.1.0
+    node-abort-controller: ^1.1.0
+    rxjs: ^6.3.3
+  checksum: 75b59828a6cbe21c57078a443ad2c9f7e1ac1b14e21320537de1ed1a4b8e44e7a80a41d874a5dcdc31a809a71dec5a3adcdebde3b9c32dd5754a32867ae1917b
+  languageName: node
+  linkType: hard
+
+"logary@npm:6.0.0-alpha.3":
+  version: 6.0.0-alpha.3
+  resolution: "logary@npm:6.0.0-alpha.3"
+  dependencies:
+    "@opentelemetry/api": ^0.10.2
+    "@opentelemetry/core": ^0.10.2
+    "@opentelemetry/tracing": ^0.10.2
+    jssha: ^3.1.0
+    node-abort-controller: ^1.1.0
+    rxjs: ^6.3.3
+  checksum: 39a5c4f92b5649d8e89ea36f1af10703eb9afdf4b55e96fb4c3dbc164913d6d1da42e8e229c04b11ba03c47d62154afe53f6f3ea542cabd46c3aebe51e2303ab
+  languageName: node
+  linkType: hard
+
+"logary@workspace:packages/logary":
   version: 0.0.0-use.local
   resolution: "logary@workspace:packages/logary"
   dependencies:
@@ -9366,20 +9500,6 @@ fsevents@^1.2.7:
     typescript: ^4.0.2
   languageName: unknown
   linkType: soft
-
-"logary@file:../../packages/logary::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs":
-  version: 6.0.0-alpha.2
-  resolution: "logary@file:../../packages/logary::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs"
-  dependencies:
-    "@opentelemetry/api": ^0.10.2
-    "@opentelemetry/core": ^0.10.2
-    "@opentelemetry/tracing": ^0.10.2
-    jssha: ^3.1.0
-    node-abort-controller: ^1.1.0
-    rxjs: ^6.3.3
-  checksum: 75b59828a6cbe21c57078a443ad2c9f7e1ac1b14e21320537de1ed1a4b8e44e7a80a41d874a5dcdc31a809a71dec5a3adcdebde3b9c32dd5754a32867ae1917b
-  languageName: node
-  linkType: hard
 
 "loose-envify@npm:^1.0.0, loose-envify@npm:^1.1.0, loose-envify@npm:^1.4.0":
   version: 1.4.0
@@ -14283,7 +14403,7 @@ typescript@^4.0.2:
     "@types/node": ^14.0.5
     "@types/react": ^16.9.47
     "@types/react-dom": ^16.9.8
-    logary: 6.0.0-alpha.2
+    logary: 6.0.0-alpha.3
     next: ^9.5.2
     node-abort-controller: ^1.1.0
     react: ^16.13.1
@@ -14295,10 +14415,10 @@ typescript@^4.0.2:
   version: 0.0.0-use.local
   resolution: "with-nextjs@workspace:examples/with-nextjs"
   dependencies:
-    "@logary/plugin-browser": 6.0.0-alpha.1
-    "@logary/plugin-nextjs": 6.0.0-alpha.1
-    "@logary/plugin-node": 6.0.0-alpha.1
-    "@logary/plugin-react": 6.0.0-alpha.1
+    "@logary/plugin-browser": "file:../../packages/logary-plugin-browser"
+    "@logary/plugin-nextjs": "file:../../packages/logary-plugin-nextjs"
+    "@logary/plugin-node": "file:../../packages/logary-plugin-node"
+    "@logary/plugin-react": "file:../../packages/logary-plugin-react"
     "@opentelemetry/api": ^0.10.2
     "@opentelemetry/context-zone": ^0.10.2
     "@opentelemetry/core": ^0.10.2

@@ -54,10 +54,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
     "enableTopLevelFallback": true,
     "ignorePatternData": "(^(?:\\.yarn\\/sdks(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$)",
     "fallbackExclusionList": [
-      ["@logary/plugin-browser", ["virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-browser", "workspace:packages/logary-plugin-browser"]],
-      ["@logary/plugin-nextjs", ["virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-nextjs", "workspace:packages/logary-plugin-nextjs"]],
-      ["@logary/plugin-node", ["virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-node", "workspace:packages/logary-plugin-node"]],
-      ["@logary/plugin-react", ["virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-react", "workspace:packages/logary-plugin-react"]],
+      ["@logary/plugin-browser", ["workspace:packages/logary-plugin-browser"]],
+      ["@logary/plugin-nextjs", ["workspace:packages/logary-plugin-nextjs"]],
+      ["@logary/plugin-node", ["workspace:packages/logary-plugin-node"]],
+      ["@logary/plugin-react", ["virtual:d49a5e8cfaf2190e7a3cf7eaaea0e9b46a479d85fc968e34361b168e08669cd7ec2f40083d7b419fab8433863767ea98820cf1214399b9963acbe8e3dda4d74e#workspace:packages/logary-plugin-react", "workspace:packages/logary-plugin-react"]],
       ["logary", ["workspace:packages/logary"]],
       ["logary-project", ["workspace:."]],
       ["with-nextjs", ["workspace:examples/with-nextjs"]],
@@ -3971,16 +3971,32 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]
       ]],
       ["@logary/plugin-browser", [
-        ["virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-browser", {
-          "packageLocation": "./.yarn/$$virtual/@logary-plugin-browser-virtual-cd641a644b/1/packages/logary-plugin-browser/",
+        ["virtual:233e04818127ded33b704515b16ad507382714cf54d86b3de565e26331f2d7135c124673e3a055f78823d5793b7f13a24e74d29630a87811b87350ed40196a69#npm:6.0.0-alpha.1", {
+          "packageLocation": "./.yarn/$$virtual/@logary-plugin-browser-virtual-45de8ca1b2/0/cache/@logary-plugin-browser-npm-6.0.0-alpha.1-94885ffcce-5cceb1b5f4.zip/node_modules/@logary/plugin-browser/",
           "packageDependencies": [
-            ["@logary/plugin-browser", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-browser"],
+            ["@logary/plugin-browser", "virtual:233e04818127ded33b704515b16ad507382714cf54d86b3de565e26331f2d7135c124673e3a055f78823d5793b7f13a24e74d29630a87811b87350ed40196a69#npm:6.0.0-alpha.1"],
+            ["@opentelemetry/context-zone", "npm:0.10.2"],
+            ["@opentelemetry/plugin-document-load", "npm:0.9.0"],
+            ["@opentelemetry/web", "npm:0.10.2"],
+            ["logary", "npm:6.0.0-alpha.3"]
+          ],
+          "packagePeers": [
+            "@opentelemetry/context-zone",
+            "logary",
+            "@opentelemetry/plugin-document-load",
+            "@opentelemetry/web"
+          ],
+          "linkType": "HARD",
+        }],
+        ["virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#file:../../packages/logary-plugin-browser::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs", {
+          "packageLocation": "./.yarn/$$virtual/@logary-plugin-browser-virtual-5e7f337664/0/cache/@logary-plugin-browser-file-f4e6e685ee-c9f505455e.zip/node_modules/@logary/plugin-browser/",
+          "packageDependencies": [
+            ["@logary/plugin-browser", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#file:../../packages/logary-plugin-browser::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs"],
             ["@opentelemetry/context-zone", "npm:0.10.2"],
             ["@opentelemetry/core", "npm:0.10.2"],
             ["@opentelemetry/plugin-document-load", "npm:0.9.0"],
             ["@opentelemetry/web", "npm:0.10.2"],
-            ["logary", "workspace:packages/logary"],
-            ["typescript", "patch:typescript@npm%3A4.0.2#builtin<compat/typescript>::version=4.0.2&hash=5b02a2"]
+            ["logary", "workspace:packages/logary"]
           ],
           "packagePeers": [
             "@opentelemetry/context-zone",
@@ -3988,13 +4004,14 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             "@opentelemetry/plugin-document-load",
             "@opentelemetry/web"
           ],
-          "linkType": "SOFT",
+          "linkType": "HARD",
         }],
         ["workspace:packages/logary-plugin-browser", {
           "packageLocation": "./packages/logary-plugin-browser/",
           "packageDependencies": [
             ["@logary/plugin-browser", "workspace:packages/logary-plugin-browser"],
             ["@opentelemetry/context-zone", "npm:0.10.2"],
+            ["@opentelemetry/core", "npm:0.10.2"],
             ["@opentelemetry/plugin-document-load", "npm:0.9.0"],
             ["@opentelemetry/web", "npm:0.10.2"],
             ["logary", "workspace:packages/logary"],
@@ -4004,29 +4021,45 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]
       ]],
       ["@logary/plugin-nextjs", [
-        ["virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-nextjs", {
-          "packageLocation": "./.yarn/$$virtual/@logary-plugin-nextjs-virtual-70fb4f7f7a/1/packages/logary-plugin-nextjs/",
+        ["virtual:233e04818127ded33b704515b16ad507382714cf54d86b3de565e26331f2d7135c124673e3a055f78823d5793b7f13a24e74d29630a87811b87350ed40196a69#npm:6.0.0-alpha.1", {
+          "packageLocation": "./.yarn/$$virtual/@logary-plugin-nextjs-virtual-4a0cbc6e7d/0/cache/@logary-plugin-nextjs-npm-6.0.0-alpha.1-df9665f201-d0e4f73c69.zip/node_modules/@logary/plugin-nextjs/",
           "packageDependencies": [
-            ["@logary/plugin-nextjs", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-nextjs"],
-            ["@logary/plugin-react", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-react"],
-            ["@types/webpack", "npm:4.41.21"],
+            ["@logary/plugin-nextjs", "virtual:233e04818127ded33b704515b16ad507382714cf54d86b3de565e26331f2d7135c124673e3a055f78823d5793b7f13a24e74d29630a87811b87350ed40196a69#npm:6.0.0-alpha.1"],
+            ["@logary/plugin-react", "virtual:233e04818127ded33b704515b16ad507382714cf54d86b3de565e26331f2d7135c124673e3a055f78823d5793b7f13a24e74d29630a87811b87350ed40196a69#npm:6.0.0-alpha.1"],
+            ["logary", "npm:6.0.0-alpha.3"],
+            ["next", "virtual:d49a5e8cfaf2190e7a3cf7eaaea0e9b46a479d85fc968e34361b168e08669cd7ec2f40083d7b419fab8433863767ea98820cf1214399b9963acbe8e3dda4d74e#npm:9.5.2"],
+            ["react", "npm:16.13.1"]
+          ],
+          "packagePeers": [
+            "logary",
+            "next",
+            "@logary/plugin-react",
+            "react"
+          ],
+          "linkType": "HARD",
+        }],
+        ["virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#file:../../packages/logary-plugin-nextjs::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs", {
+          "packageLocation": "./.yarn/$$virtual/@logary-plugin-nextjs-virtual-ccd2295a2a/0/cache/@logary-plugin-nextjs-file-9cd388d313-1ab36d0a0c.zip/node_modules/@logary/plugin-nextjs/",
+          "packageDependencies": [
+            ["@logary/plugin-nextjs", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#file:../../packages/logary-plugin-nextjs::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs"],
+            ["@logary/plugin-react", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#file:../../packages/logary-plugin-react::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs"],
             ["logary", "workspace:packages/logary"],
             ["next", "virtual:d49a5e8cfaf2190e7a3cf7eaaea0e9b46a479d85fc968e34361b168e08669cd7ec2f40083d7b419fab8433863767ea98820cf1214399b9963acbe8e3dda4d74e#npm:9.5.2"],
-            ["react", "npm:16.13.1"],
-            ["react-dom", "virtual:d49a5e8cfaf2190e7a3cf7eaaea0e9b46a479d85fc968e34361b168e08669cd7ec2f40083d7b419fab8433863767ea98820cf1214399b9963acbe8e3dda4d74e#npm:16.13.1"],
-            ["typescript", "patch:typescript@npm%3A4.0.2#builtin<compat/typescript>::version=4.0.2&hash=5b02a2"]
+            ["react", "npm:16.13.1"]
           ],
           "packagePeers": [
             "next",
             "@logary/plugin-react",
             "react"
           ],
-          "linkType": "SOFT",
+          "linkType": "HARD",
         }],
         ["workspace:packages/logary-plugin-nextjs", {
           "packageLocation": "./packages/logary-plugin-nextjs/",
           "packageDependencies": [
             ["@logary/plugin-nextjs", "workspace:packages/logary-plugin-nextjs"],
+            ["@logary/plugin-react", "virtual:d49a5e8cfaf2190e7a3cf7eaaea0e9b46a479d85fc968e34361b168e08669cd7ec2f40083d7b419fab8433863767ea98820cf1214399b9963acbe8e3dda4d74e#workspace:packages/logary-plugin-react"],
+            ["@types/react", "npm:16.9.48"],
             ["@types/webpack", "npm:4.41.21"],
             ["logary", "workspace:packages/logary"],
             ["next", "virtual:d49a5e8cfaf2190e7a3cf7eaaea0e9b46a479d85fc968e34361b168e08669cd7ec2f40083d7b419fab8433863767ea98820cf1214399b9963acbe8e3dda4d74e#npm:9.5.2"],
@@ -4038,22 +4071,36 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]
       ]],
       ["@logary/plugin-node", [
-        ["virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-node", {
-          "packageLocation": "./.yarn/$$virtual/@logary-plugin-node-virtual-9f1baf317e/1/packages/logary-plugin-node/",
+        ["virtual:233e04818127ded33b704515b16ad507382714cf54d86b3de565e26331f2d7135c124673e3a055f78823d5793b7f13a24e74d29630a87811b87350ed40196a69#npm:6.0.0-alpha.1", {
+          "packageLocation": "./.yarn/$$virtual/@logary-plugin-node-virtual-c834134b91/0/cache/@logary-plugin-node-npm-6.0.0-alpha.1-0fe15426a4-b6b668ef2c.zip/node_modules/@logary/plugin-node/",
           "packageDependencies": [
-            ["@logary/plugin-node", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-node"],
+            ["@logary/plugin-node", "virtual:233e04818127ded33b704515b16ad507382714cf54d86b3de565e26331f2d7135c124673e3a055f78823d5793b7f13a24e74d29630a87811b87350ed40196a69#npm:6.0.0-alpha.1"],
             ["@opentelemetry/node", "npm:0.10.2"],
             ["@opentelemetry/plugin-http", "npm:0.10.2"],
-            ["@opentelemetry/plugin-https", "npm:0.10.2"],
-            ["logary", "workspace:packages/logary"],
-            ["typescript", "patch:typescript@npm%3A4.0.2#builtin<compat/typescript>::version=4.0.2&hash=5b02a2"]
+            ["@opentelemetry/plugin-https", "npm:0.10.2"]
           ],
           "packagePeers": [
             "@opentelemetry/node",
             "@opentelemetry/plugin-http",
             "@opentelemetry/plugin-https"
           ],
-          "linkType": "SOFT",
+          "linkType": "HARD",
+        }],
+        ["virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#file:../../packages/logary-plugin-node::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs", {
+          "packageLocation": "./.yarn/$$virtual/@logary-plugin-node-virtual-d15e1ecc23/0/cache/@logary-plugin-node-file-1e652d0c4f-281e487f10.zip/node_modules/@logary/plugin-node/",
+          "packageDependencies": [
+            ["@logary/plugin-node", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#file:../../packages/logary-plugin-node::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs"],
+            ["@opentelemetry/node", "npm:0.10.2"],
+            ["@opentelemetry/plugin-http", "npm:0.10.2"],
+            ["@opentelemetry/plugin-https", "npm:0.10.2"],
+            ["logary", "workspace:packages/logary"]
+          ],
+          "packagePeers": [
+            "@opentelemetry/node",
+            "@opentelemetry/plugin-http",
+            "@opentelemetry/plugin-https"
+          ],
+          "linkType": "HARD",
         }],
         ["workspace:packages/logary-plugin-node", {
           "packageLocation": "./packages/logary-plugin-node/",
@@ -4066,10 +4113,26 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]
       ]],
       ["@logary/plugin-react", [
-        ["virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-react", {
-          "packageLocation": "./.yarn/$$virtual/@logary-plugin-react-virtual-8208a5c8bd/1/packages/logary-plugin-react/",
+        ["virtual:233e04818127ded33b704515b16ad507382714cf54d86b3de565e26331f2d7135c124673e3a055f78823d5793b7f13a24e74d29630a87811b87350ed40196a69#npm:6.0.0-alpha.1", {
+          "packageLocation": "./.yarn/$$virtual/@logary-plugin-react-virtual-194842cc11/0/cache/@logary-plugin-react-npm-6.0.0-alpha.1-67638139c6-48b672ae0c.zip/node_modules/@logary/plugin-react/",
           "packageDependencies": [
-            ["@logary/plugin-react", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-react"],
+            ["@logary/plugin-react", "virtual:233e04818127ded33b704515b16ad507382714cf54d86b3de565e26331f2d7135c124673e3a055f78823d5793b7f13a24e74d29630a87811b87350ed40196a69#npm:6.0.0-alpha.1"],
+            ["logary", "npm:6.0.0-alpha.3"],
+            ["next", "virtual:d49a5e8cfaf2190e7a3cf7eaaea0e9b46a479d85fc968e34361b168e08669cd7ec2f40083d7b419fab8433863767ea98820cf1214399b9963acbe8e3dda4d74e#npm:9.5.2"],
+            ["react", "npm:16.13.1"]
+          ],
+          "packagePeers": [
+            "logary",
+            "next",
+            "react"
+          ],
+          "linkType": "HARD",
+        }],
+        ["virtual:d49a5e8cfaf2190e7a3cf7eaaea0e9b46a479d85fc968e34361b168e08669cd7ec2f40083d7b419fab8433863767ea98820cf1214399b9963acbe8e3dda4d74e#workspace:packages/logary-plugin-react", {
+          "packageLocation": "./.yarn/$$virtual/@logary-plugin-react-virtual-11f9c7497d/1/packages/logary-plugin-react/",
+          "packageDependencies": [
+            ["@logary/plugin-react", "virtual:d49a5e8cfaf2190e7a3cf7eaaea0e9b46a479d85fc968e34361b168e08669cd7ec2f40083d7b419fab8433863767ea98820cf1214399b9963acbe8e3dda4d74e#workspace:packages/logary-plugin-react"],
+            ["@types/react", "npm:16.9.48"],
             ["logary", "workspace:packages/logary"],
             ["react", "npm:16.13.1"],
             ["react-dom", "virtual:d49a5e8cfaf2190e7a3cf7eaaea0e9b46a479d85fc968e34361b168e08669cd7ec2f40083d7b419fab8433863767ea98820cf1214399b9963acbe8e3dda4d74e#npm:16.13.1"],
@@ -4081,10 +4144,25 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           ],
           "linkType": "SOFT",
         }],
+        ["virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#file:../../packages/logary-plugin-react::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs", {
+          "packageLocation": "./.yarn/$$virtual/@logary-plugin-react-virtual-69d3dda993/0/cache/@logary-plugin-react-file-578d91dbda-4da9b7cc01.zip/node_modules/@logary/plugin-react/",
+          "packageDependencies": [
+            ["@logary/plugin-react", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#file:../../packages/logary-plugin-react::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs"],
+            ["logary", "workspace:packages/logary"],
+            ["react", "npm:16.13.1"],
+            ["react-dom", "virtual:d49a5e8cfaf2190e7a3cf7eaaea0e9b46a479d85fc968e34361b168e08669cd7ec2f40083d7b419fab8433863767ea98820cf1214399b9963acbe8e3dda4d74e#npm:16.13.1"]
+          ],
+          "packagePeers": [
+            "react",
+            "react-dom"
+          ],
+          "linkType": "HARD",
+        }],
         ["workspace:packages/logary-plugin-react", {
           "packageLocation": "./packages/logary-plugin-react/",
           "packageDependencies": [
             ["@logary/plugin-react", "workspace:packages/logary-plugin-react"],
+            ["@types/react", "npm:16.9.48"],
             ["logary", "workspace:packages/logary"],
             ["typescript", "patch:typescript@npm%3A4.0.2#builtin<compat/typescript>::version=4.0.2&hash=5b02a2"]
           ],
@@ -4715,6 +4793,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/@types-react-npm-16.9.47-6abd7f365b-20cb807cb2.zip/node_modules/@types/react/",
           "packageDependencies": [
             ["@types/react", "npm:16.9.47"],
+            ["@types/prop-types", "npm:15.7.3"],
+            ["csstype", "npm:3.0.2"]
+          ],
+          "linkType": "HARD",
+        }],
+        ["npm:16.9.48", {
+          "packageLocation": "./.yarn/cache/@types-react-npm-16.9.48-eb73a6392f-af2f713399.zip/node_modules/@types/react/",
+          "packageDependencies": [
+            ["@types/react", "npm:16.9.48"],
             ["@types/prop-types", "npm:15.7.3"],
             ["csstype", "npm:3.0.2"]
           ],
@@ -11314,6 +11401,19 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           ],
           "linkType": "HARD",
         }],
+        ["npm:6.0.0-alpha.3", {
+          "packageLocation": "./.yarn/cache/logary-npm-6.0.0-alpha.3-f82c04b23a-39a5c4f92b.zip/node_modules/logary/",
+          "packageDependencies": [
+            ["logary", "npm:6.0.0-alpha.3"],
+            ["@opentelemetry/api", "npm:0.10.2"],
+            ["@opentelemetry/core", "npm:0.10.2"],
+            ["@opentelemetry/tracing", "npm:0.10.2"],
+            ["jssha", "npm:3.1.2"],
+            ["node-abort-controller", "npm:1.1.0"],
+            ["rxjs", "npm:6.6.2"]
+          ],
+          "linkType": "HARD",
+        }],
         ["workspace:packages/logary", {
           "packageLocation": "./packages/logary/",
           "packageDependencies": [
@@ -16695,10 +16795,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./examples/with-nextjs/",
           "packageDependencies": [
             ["with-nextjs", "workspace:examples/with-nextjs"],
-            ["@logary/plugin-browser", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-browser"],
-            ["@logary/plugin-nextjs", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-nextjs"],
-            ["@logary/plugin-node", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-node"],
-            ["@logary/plugin-react", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-react"],
+            ["@logary/plugin-browser", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#file:../../packages/logary-plugin-browser::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs"],
+            ["@logary/plugin-nextjs", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#file:../../packages/logary-plugin-nextjs::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs"],
+            ["@logary/plugin-node", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#file:../../packages/logary-plugin-node::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs"],
+            ["@logary/plugin-react", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#file:../../packages/logary-plugin-react::locator=with-nextjs%40workspace%3Aexamples%2Fwith-nextjs"],
             ["@opentelemetry/api", "npm:0.10.2"],
             ["@opentelemetry/context-zone", "npm:0.10.2"],
             ["@opentelemetry/core", "npm:0.10.2"],
@@ -16726,10 +16826,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./examples/with-nextjs-app/",
           "packageDependencies": [
             ["with-nextjs-app", "workspace:examples/with-nextjs-app"],
-            ["@logary/plugin-browser", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-browser"],
-            ["@logary/plugin-nextjs", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-nextjs"],
-            ["@logary/plugin-node", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-node"],
-            ["@logary/plugin-react", "virtual:f9522faed4c7e558462ef89aa232afe8b28f40173b914f756ee38b21c9ce10bf830de8334e264bc007ff37043ac2a4f134dac81249be2bcb7033ff024ce27466#workspace:packages/logary-plugin-react"],
+            ["@logary/plugin-browser", "virtual:233e04818127ded33b704515b16ad507382714cf54d86b3de565e26331f2d7135c124673e3a055f78823d5793b7f13a24e74d29630a87811b87350ed40196a69#npm:6.0.0-alpha.1"],
+            ["@logary/plugin-nextjs", "virtual:233e04818127ded33b704515b16ad507382714cf54d86b3de565e26331f2d7135c124673e3a055f78823d5793b7f13a24e74d29630a87811b87350ed40196a69#npm:6.0.0-alpha.1"],
+            ["@logary/plugin-node", "virtual:233e04818127ded33b704515b16ad507382714cf54d86b3de565e26331f2d7135c124673e3a055f78823d5793b7f13a24e74d29630a87811b87350ed40196a69#npm:6.0.0-alpha.1"],
+            ["@logary/plugin-react", "virtual:233e04818127ded33b704515b16ad507382714cf54d86b3de565e26331f2d7135c124673e3a055f78823d5793b7f13a24e74d29630a87811b87350ed40196a69#npm:6.0.0-alpha.1"],
             ["@opentelemetry/api", "npm:0.10.2"],
             ["@opentelemetry/context-zone", "npm:0.10.2"],
             ["@opentelemetry/core", "npm:0.10.2"],
@@ -16742,7 +16842,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@types/node", "npm:14.6.0"],
             ["@types/react", "npm:16.9.47"],
             ["@types/react-dom", "npm:16.9.8"],
-            ["logary", "workspace:packages/logary"],
+            ["logary", "npm:6.0.0-alpha.3"],
             ["next", "virtual:d49a5e8cfaf2190e7a3cf7eaaea0e9b46a479d85fc968e34361b168e08669cd7ec2f40083d7b419fab8433863767ea98820cf1214399b9963acbe8e3dda4d74e#npm:9.5.2"],
             ["node-abort-controller", "npm:1.1.0"],
             ["react", "npm:16.13.1"],

@@ -5,7 +5,8 @@ lerna-debug.log
 .DS_Store
 .yarn/*
 !.yarn/cache
-.yarn/cache/logary-file-*
+.yarn/cache/logary*
+.yarn/cache/@logary*
 !.yarn/releases
 !.yarn/plugins
 !.yarn/sdks

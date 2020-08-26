@@ -1,6 +1,6 @@
 {
   "name": "logary",
-  "version": "6.0.0-alpha.2",
+  "version": "6.0.0-alpha.4",
   "description": "Unified behavioural analytics; logging, metrics, tracing.",
   "author": "Henrik Feldt",
   "license": "(GPL-3.0 OR commercial)",

@@ -1,1 +1,9 @@
 .next/
+.yarn/*
+!.yarn/cache
+.yarn/cache/logary*
+.yarn/cache/@logary*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions

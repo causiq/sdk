@@ -1,13 +1,9 @@
 {
   "name": "@logary/plugin-react",
   "license": "GPL3 or commercial",
-  "version": "6.0.0-alpha.1",
+  "version": "6.0.0-alpha.4",
   "main": "dist/index",
   "types": "dist/index",
-  "peerDependencies": {
-    "react": "*",
-    "react-dom": "*"
-  },
   "files": [
     "dist/**/*",
     "package.json"
@@ -18,11 +14,16 @@
   "scripts": {
     "build": "tsc"
   },
-  "devDependencies": {
-    "typescript": "^4.0.2"
-  },
-  "gitHead": "61966453e49368ed4f718cc319d63b61e38ca1cb",
   "dependencies": {
     "logary": "workspace:packages/logary"
-  }
+  },
+  "devDependencies": {
+    "@types/react": "^16.9.48",
+    "typescript": "^4.0.2"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-dom": "*"
+  },
+  "gitHead": "61966453e49368ed4f718cc319d63b61e38ca1cb"
 }
