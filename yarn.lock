@@ -2774,10 +2774,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@logary/plugin-browser@workspace:packages/logary-plugin-browser"
   dependencies:
+    "@opentelemetry/api": ^0.10.2
     "@opentelemetry/context-zone": ^0.10.2
     "@opentelemetry/core": ^0.10.2
     "@opentelemetry/plugin-document-load": ^0.9.0
+    "@opentelemetry/tracing": ^0.10.2
     "@opentelemetry/web": ^0.10.2
+    "@types/node": ^14.6.0
     logary: "workspace:packages/logary"
     typescript: ^4.0.2
   languageName: unknown
@@ -2813,13 +2816,16 @@ __metadata:
   resolution: "@logary/plugin-nextjs@workspace:packages/logary-plugin-nextjs"
   dependencies:
     "@logary/plugin-react": "workspace:packages/logary-plugin-react"
+    "@types/node": ^14.6.0
     "@types/react": ^16.9.48
+    "@types/react-dom": ^16.9.8
     "@types/webpack": ^4.41.21
     logary: "workspace:packages/logary"
     next: ^9.5.2
     react: ^16.13.1
     react-dom: ^16.13.1
     typescript: ^4.0.2
+    webpack: ^4
   peerDependencies:
     next: "*"
     react: "*"
@@ -4973,6 +4979,13 @@ __metadata:
   version: 6.0.0
   resolution: "camelcase@npm:6.0.0"
   checksum: d92305180bc2041141cc0c889ee54d14f90b16365dc7c01eabe6d54e913eb8011313f98dde3025ae11f0003b601ba320f56ee56db476c64060cf2305bf7f6f2a
+  languageName: node
+  linkType: hard
+
+"caniuse-lite@npm:*":
+  version: 1.0.30001118
+  resolution: "caniuse-lite@npm:1.0.30001118"
+  checksum: 7a32929182a26f7b43cea14995db4872fb26c842d2718f67769a1169b4eba8340fc9d883c8d6db2f85267474bddb915592c19a3e379746ed3452a940e1a74e70
   languageName: node
   linkType: hard
 
@@ -14250,7 +14263,7 @@ typescript@^4.0.2:
   languageName: node
   linkType: hard
 
-"webpack@npm:4.44.1":
+"webpack@npm:4.44.1, webpack@npm:^4":
   version: 4.44.1
   resolution: "webpack@npm:4.44.1"
   dependencies:

@@ -15,13 +15,16 @@
     "build": "tsc"
   },
   "dependencies": {
+    "@opentelemetry/api": "^0.10.2",
     "@opentelemetry/context-zone": "^0.10.2",
     "@opentelemetry/core": "^0.10.2",
     "@opentelemetry/plugin-document-load": "^0.9.0",
+    "@opentelemetry/tracing": "^0.10.2",
     "@opentelemetry/web": "^0.10.2",
     "logary": "workspace:packages/logary"
   },
   "devDependencies": {
+    "@types/node": "^14.6.0",
     "typescript": "^4.0.2"
   },
   "gitHead": "61966453e49368ed4f718cc319d63b61e38ca1cb"
