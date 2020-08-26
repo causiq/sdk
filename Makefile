@@ -1,6 +1,9 @@
 .PHONY: clean build publish release
 
-release: clean build publish
+release: test clean build publish
+
+test:
+	yarn run test
 
 clean:
 	(cd packages/logary && rm -rf dist)
