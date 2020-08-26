@@ -56,7 +56,7 @@
     "jest": "^26.0.1",
     "prettier": "^2.0.1",
     "ts-jest": "^26.3.0",
-    "typedoc": "^0.17.0",
+    "typedoc": "^0.18.0",
     "typescript": "^4.0.2"
   },
   "gitHead": "61966453e49368ed4f718cc319d63b61e38ca1cb"
