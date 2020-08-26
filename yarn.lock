@@ -2152,32 +2152,42 @@
     write-file-atomic "^2.3.0"
 
 "@logary/plugin-browser@latest":
-  version "6.0.0-alpha.3"
-  resolved "https://registry.yarnpkg.com/@logary/plugin-browser/-/plugin-browser-6.0.0-alpha.3.tgz#53e6765eb4f47f29dc134158df47717132eb451b"
-  integrity sha512-mmwk1vhhWYukTSLblAKgxGCF5Qd4jnK5qNXOom0tyslI+3UyZiKi5UV9GevOZ8wBFCp5dlrs53Bnjh/See+k2Q==
+  version "6.0.0-alpha.5"
+  resolved "https://registry.yarnpkg.com/@logary/plugin-browser/-/plugin-browser-6.0.0-alpha.5.tgz#fd41eee3fe557b20699a98003d0879333b9e2f4b"
+  integrity sha512-7j1Lf9zUNld5KykGL3EQ3wM3ESwvZLFfEDW/kKVF6Zu4sJWxNJxXu5djaUdnFQm9fBSmAGphuKZAd3q1uxfKuQ==
   dependencies:
-    logary "6.0.0-alpha.3"
+    "@opentelemetry/api" "^0.10.2"
+    "@opentelemetry/context-zone" "^0.10.2"
+    "@opentelemetry/core" "^0.10.2"
+    "@opentelemetry/plugin-document-load" "^0.9.0"
+    "@opentelemetry/tracing" "^0.10.2"
+    "@opentelemetry/web" "^0.10.2"
+    logary "6.0.0-alpha.5"
 
 "@logary/plugin-nextjs@latest":
-  version "6.0.0-alpha.3"
-  resolved "https://registry.yarnpkg.com/@logary/plugin-nextjs/-/plugin-nextjs-6.0.0-alpha.3.tgz#8b7a7acbf922124cfc5a639ec046434458f9678d"
-  integrity sha512-G0D2XSl/J0EqeWS23M6fbJH6DoK6qPycVHqjXbZpBCATn2OQkDA3oCLMAxBiQb0EtdwiJ9hYUy6OwYE3y+qv/w==
+  version "6.0.0-alpha.5"
+  resolved "https://registry.yarnpkg.com/@logary/plugin-nextjs/-/plugin-nextjs-6.0.0-alpha.5.tgz#7c88979b545b29a3c3a7d7e9f703e9506377b545"
+  integrity sha512-NODFIxxA4WXkQQoURuI3ikwsoe1k/nwNTiMdubDqTjd78+kI7fseX9KOnPGGq4SI04HE9/ynVIESok9QbWyiSw==
   dependencies:
-    logary "6.0.0-alpha.3"
+    "@logary/plugin-react" "6.0.0-alpha.5"
+    logary "6.0.0-alpha.5"
 
 "@logary/plugin-node@latest":
-  version "6.0.0-alpha.3"
-  resolved "https://registry.yarnpkg.com/@logary/plugin-node/-/plugin-node-6.0.0-alpha.3.tgz#10ca1414a33e3dd99472b4afc6c143d4729bf752"
-  integrity sha512-qBV4Jv7Txfxl1J/4qinlPs+fbQJ5eMpl8EPiWjQQhWkBt7Ch9HjMGFWvCdiQC3kLP076eyHK/yfXKVfK4c7i9Q==
+  version "6.0.0-alpha.5"
+  resolved "https://registry.yarnpkg.com/@logary/plugin-node/-/plugin-node-6.0.0-alpha.5.tgz#ecb9d5c7c6bd8d6de7f0ac432e40ae39d8dc1df8"
+  integrity sha512-evViDKEQt+jNhxkqkBAHcnJSo5PVY16lTyZhAtxaC/R4E5uFGK4yj9UnlEcCQYDgGUpiDSaNRkeQ5aAdWKJQ+g==
   dependencies:
-    logary "6.0.0-alpha.3"
+    "@opentelemetry/node" "^0.10.2"
+    "@opentelemetry/plugin-http" "^0.10.2"
+    "@opentelemetry/plugin-https" "^0.10.2"
+    logary "6.0.0-alpha.5"
 
 "@logary/plugin-react@latest":
-  version "6.0.0-alpha.3"
-  resolved "https://registry.yarnpkg.com/@logary/plugin-react/-/plugin-react-6.0.0-alpha.3.tgz#3a57c3486d8b5f06b26f2f35190e2187faae60fc"
-  integrity sha512-E1pkYoxF7VvVxor2EC0WE3dr7tcvIPexIWbPxYOijefWsbQFD9oOWPksBnePROY62k/DcgF7B/GcQCZTWdjVRw==
+  version "6.0.0-alpha.5"
+  resolved "https://registry.yarnpkg.com/@logary/plugin-react/-/plugin-react-6.0.0-alpha.5.tgz#d4d2483b0cfce5df513aebfd5930e562eddcc547"
+  integrity sha512-GUtN5VFBVBz0o4fELWJR+iNeuhUFRkzRKU3WpACXNResMgm3VTAYeSfQGkSKHYQr7ouSNnPByOpLdxV1tHICBw==
   dependencies:
-    logary "6.0.0-alpha.3"
+    logary "6.0.0-alpha.5"
 
 "@mrmlnc/readdir-enhanced@^2.2.1":
   version "2.2.1"
@@ -7188,10 +7198,10 @@ lodash@^4.17.11, lodash@^4.17.12, lodash@^4.17.13, lodash@^4.17.14, lodash@^4.17
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.20.tgz#b44a9b6297bcb698f1c51a3545a2b3b368d59c52"
   integrity sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==
 
-logary@6.0.0-alpha.3, logary@latest:
-  version "6.0.0-alpha.3"
-  resolved "https://registry.yarnpkg.com/logary/-/logary-6.0.0-alpha.3.tgz#2a7922f10e44a6dce2d2d2cb8dbf999fd64aaa70"
-  integrity sha512-WhASNyvK8C/06xc79gkwszzxRCcfgQjRyfPY2w8hSecueEp6NXqs86yv0zDZzhHgKgMH3YsHdWba9T3JeMIn2Q==
+logary@latest:
+  version "6.0.0-alpha.5"
+  resolved "https://registry.yarnpkg.com/logary/-/logary-6.0.0-alpha.5.tgz#90bd727a8a08fd774eb35b46a0306f1e58065557"
+  integrity sha512-9pi+QMG9hEYOEl5HoatXyLJfSzCGRXabcLwMqgQcKSzJeXz0NZV5vTj1olaT353Kqf8xNQv2TpLGPr7O9Kfd5g==
   dependencies:
     "@opentelemetry/api" "^0.10.2"
     "@opentelemetry/core" "^0.10.2"
