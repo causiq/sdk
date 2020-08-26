@@ -1,6 +1,6 @@
 {
   "name": "with-nextjs",
-  "version": "6.0.0-alpha.1",
+  "version": "6.0.0-alpha.2",
   "description": "A sample that demonstrates how to use Logary",
   "private": true,
   "main": "index.js",
