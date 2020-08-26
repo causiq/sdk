@@ -7196,17 +7196,6 @@ lodash@^4.17.11, lodash@^4.17.12, lodash@^4.17.13, lodash@^4.17.14, lodash@^4.17
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.20.tgz#b44a9b6297bcb698f1c51a3545a2b3b368d59c52"
   integrity sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==
 
-logary@6.0.0-alpha.1:
-  version "6.0.0-alpha.1"
-  resolved "https://registry.yarnpkg.com/logary/-/logary-6.0.0-alpha.1.tgz#6d3d20320b8479b40dd8048a871d789e966c5987"
-  integrity sha512-IwJQ09DIsw10qblu9BlEDsccvhiGHpJd/qtlUkTcGhJmEzrh/be+F6pXAXLRbBxJUr3m8Nxw8jr1ZpKDOv1F7A==
-  dependencies:
-    "@opentelemetry/api" "^0.10.2"
-    "@opentelemetry/tracing" "^0.10.2"
-    jssha "^3.1.0"
-    node-abort-controller "^1.1.0"
-    rxjs "^6.3.3"
-
 loose-envify@^1.0.0, loose-envify@^1.1.0, loose-envify@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/loose-envify/-/loose-envify-1.4.0.tgz#71ee51fa7be4caec1a63839f7e682d8132d30caf"
