@@ -4,11 +4,6 @@
   "version": "6.0.0-alpha.4",
   "main": "dist/index",
   "types": "dist/index",
-  "peerDependencies": {
-    "@opentelemetry/node": "^0.10.2",
-    "@opentelemetry/plugin-http": "^0.10.2",
-    "@opentelemetry/plugin-https": "^0.10.2"
-  },
   "files": [
     "dist/**/*",
     "package.json"
@@ -19,11 +14,14 @@
   "scripts": {
     "build": "tsc"
   },
-  "devDependencies": {
-    "typescript": "^4.0.2"
-  },
   "gitHead": "61966453e49368ed4f718cc319d63b61e38ca1cb",
   "dependencies": {
-    "logary": "workspace:packages/logary"
+    "logary": "6.0.0-alpha.4",
+    "@opentelemetry/node": "^0.10.2",
+    "@opentelemetry/plugin-http": "^0.10.2",
+    "@opentelemetry/plugin-https": "^0.10.2"
+  },
+  "devDependencies": {
+    "typescript": "^4.0.2"
   }
 }

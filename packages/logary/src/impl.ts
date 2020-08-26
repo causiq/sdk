@@ -110,8 +110,8 @@ export default class Logary implements RuntimeInfo, PluginAPI {
         if (level < logary.minLevel) return
         if (messages == null || messages.length === 0) return
         const eN = ensureName(this.name)
-        for (const m of messages.map(m => ensureMessageId(eN(m)))) {
-          logary._messages.next(m)
+        for (const message of messages.map(m => ensureMessageId(eN(m)))) {
+          logary._messages.next(message)
         }
       }
 

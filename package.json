@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "dev": "lerna bootstrap && lerna link && lerna run build --stream --parallel",
-    "test": "yarn workspaces foreach run test",
+    "test": "lerna run test",
     "new-version": "lerna version --conventional-commits --yes",
     "diff": "lerna diff",
     "docs": "typedoc --name 'Logary JS' --out docs --target es6 --theme minimal --mode modules src --exclude 'tests/**/*'",

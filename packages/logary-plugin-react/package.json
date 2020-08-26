@@ -15,7 +15,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "logary": "workspace:packages/logary"
+    "logary": "6.0.0-alpha.4"
   },
   "devDependencies": {
     "@types/react": "^16.9.48",
