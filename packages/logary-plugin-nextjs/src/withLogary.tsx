@@ -1,7 +1,7 @@
 import * as React from "react"
 import { NextPage } from "next"
 import { useMemo } from "react"
-import { LogaryProvider } from "./useLogary"
+import { LogaryProvider } from "@logary/plugin-react"
 import { NextJSFeature, NextJSSupporter } from "."
 import { UniversalRendering } from "logary"
 import Logary, { Config, getLogary } from "logary"

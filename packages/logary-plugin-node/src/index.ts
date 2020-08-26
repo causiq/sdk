@@ -1,3 +1,1 @@
-import Logary from "logary"
-
-export default {}
+export default function node(logary: any){}

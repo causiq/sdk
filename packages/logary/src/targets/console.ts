@@ -1,11 +1,5 @@
 import { KeyValue, Target } from '../types'
-// import { Logger, SpanLogger } from '..';
 import { Message, EventMessage, SpanMessage } from '../message'
-// import { SpanContext, SpanOptions } from '@opentelemetry/api';
-// import { Span } from '..';
-// import template from '../formatting/template';
-// import codec from '../codecs/textMap';
-// import { Subscription } from 'rxjs';
 import { Config } from '../config'
 import RuntimeInfo from '../runtimeInfo'
 
@@ -87,14 +81,14 @@ export default class ConsoleTarget implements Target {
   private noWarn: boolean
   name = 'console'
 
-  log(messages: Message[]) {
+  log(message: Message) {
     if (typeof window === 'undefined' && !this.noWarn) {
       console.warn(
         'Logging with the default ConsoleLogger server-side; consider using req.logger instead, to capture logs better'
       )
     }
 
-    messages.forEach(consolePrint)
+    consolePrint(message)
   }
 
   run(_: Config, ri: RuntimeInfo) {

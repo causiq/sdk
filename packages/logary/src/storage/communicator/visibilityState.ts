@@ -17,6 +17,7 @@ export default function visibilityState(): Observable<VisibilityState> {
       window.addEventListener('visibilitychange', handle)
       return () => window.removeEventListener('visibilitychange', handle)
     } catch (e) {
+      console.log('error from rxjs', e)
       return () => {}
     }
   })

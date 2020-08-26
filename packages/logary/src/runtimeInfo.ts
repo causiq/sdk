@@ -4,5 +4,5 @@ import { Message } from './message'
 
 export default interface RuntimeInfo extends Omit<Config, 'serviceName'> {
   readonly serviceName: string[];
-  readonly messages: Observable<Message[]>;
+  readonly messages: Observable<Message>;
 }

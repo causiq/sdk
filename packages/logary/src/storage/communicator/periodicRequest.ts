@@ -45,7 +45,10 @@ export default function periodicRequest<TRes>(
       connectivityStream(),
       // this second parameter acts as the trigger, either every broadcast interval, or when the page is hidden
       merge(interval(period), extraTriggers())
-    ]).pipe(filter(([online, _]) => online))
+    ]).pipe(
+      tap(x => console.log('.')),
+      filter(([online, _]) => online)
+    )
 
   return makeRequests.pipe(bufferWhen(trigger))
 }

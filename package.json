@@ -7,11 +7,11 @@
   ],
   "scripts": {
     "dev": "lerna bootstrap && lerna link && lerna run build --stream --parallel",
-    "test": "lerna run test",
+    "test": "yarn workspaces foreach run test",
     "new-version": "lerna version --conventional-commits --yes",
     "diff": "lerna diff",
     "docs": "typedoc --name 'Logary JS' --out docs --target es6 --theme minimal --mode modules src --exclude 'tests/**/*'",
-    "lint": "eslint --ext .ts packages/**"
+    "lint": "eslint --ext .ts,.tsx packages/**"
   },
   "bugs": {
     "url": "https://github.com/logary/logary-js/issues"
@@ -31,10 +31,8 @@
     "@typescript-eslint/eslint-plugin": "^3.0.1",
     "@typescript-eslint/parser": "^3.0.1",
     "eslint": "^7.1.0",
-    "next": "^9.5.2",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
+    "husky": "^4.2.3",
     "lerna": "^3.22.1",
-    "husky": "^4.2.3"
+    "typescript": "^4.0.2"
   }
 }

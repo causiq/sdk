@@ -34,7 +34,7 @@ export default class Logary implements RuntimeInfo, PluginAPI {
   private _state: LogaryState = 'initial'
 
   // can use this as an event aggregator in your app
-  private _messages: Subject<Message[]> = new Subject<Message[]>()
+  private _messages: Subject<Message> = new Subject<Message>()
 
   // subscriptions are used keep track of what to dispose, and are correlated to _state
   private _subscription = new Subscription(this.stop.bind(this))
@@ -110,7 +110,9 @@ export default class Logary implements RuntimeInfo, PluginAPI {
         if (level < logary.minLevel) return
         if (messages == null || messages.length === 0) return
         const eN = ensureName(this.name)
-        logary._messages.next(messages.map(m => ensureMessageId(eN(m))))
+        for (const m of messages.map(m => ensureMessageId(eN(m)))) {
+          logary._messages.next(m)
+        }
       }
 
       /**

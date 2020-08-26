@@ -38,9 +38,10 @@ describe('surface API', () => {
 
     expect(st.interactions).toEqual([
       'run',
-      'batch with 1 messages',
-      'batch with 1 messages',
-      'batch with 2 messages',
+      'received message',
+      'received message',
+      'received message',
+      'received message',
       'unsubscribe'
     ])
   })
@@ -57,7 +58,7 @@ describe('Message', () => {
 
     logger.info("Hello world")
 
-    const m = target.batches[0][0]
+    const m = target.messages[0]
     expect(m.id).toBeDefined()
     expect(m.timestamp).toBeGreaterThanOrEqual(start)
     expect(m.level).toEqual(LogLevel.info)

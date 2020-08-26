@@ -1,4 +1,4 @@
-import { from, Observable } from "rxjs"
+import { Observable, of } from "rxjs"
 import './BigInt-JSON-patch'
 
 /**
@@ -6,8 +6,8 @@ import './BigInt-JSON-patch'
  */
 export default function sendBeacon(url: string, data: string | Blob | FormData | URLSearchParams | ReadableStream<Uint8Array>) {
   if (typeof window !== 'undefined' && window.navigator.sendBeacon != null) {
-    window.navigator.sendBeacon(url, data)
-    return from([])
+    console.log('.')
+    return of(window.navigator.sendBeacon(url, data))
   } else {
     // https://github.com/southpolesteve/node-abort-controller
     return new Observable<boolean>(o => {

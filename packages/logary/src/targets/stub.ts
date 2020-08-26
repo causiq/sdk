@@ -13,7 +13,7 @@ export default class StubTarget implements Target {
 
   interactions: string[] = []
 
-  batches: Message[][] = []
+  messages: Message[] = []
 
   subscription: Subscription = new Subscription(() => {
     this.interactions.push('unsubscribe')
@@ -25,8 +25,8 @@ export default class StubTarget implements Target {
     return this.subscription
   }
 
-  private _handle(batch: Message[]) {
-    this.interactions.push(`batch with ${batch.length} messages`)
-    this.batches.push(batch)
+  private _handle(message: Message) {
+    this.interactions.push(`received message`)
+    this.messages.push(message)
   }
 }

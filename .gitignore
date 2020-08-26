@@ -1,4 +1,12 @@
 node_modules/
 dist/
 yarn-error.log
+lerna-debug.log
 .DS_Store
+.yarn/*
+!.yarn/cache
+.yarn/cache/logary-file-*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
