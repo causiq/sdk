@@ -1,7 +1,7 @@
 {
   "name": "@logary/plugin-node",
   "license": "GPL3 or commercial",
-  "version": "6.0.0-alpha.4",
+  "version": "6.0.0-alpha.5",
   "main": "dist/index",
   "types": "dist/index",
   "files": [
@@ -16,10 +16,10 @@
   },
   "gitHead": "61966453e49368ed4f718cc319d63b61e38ca1cb",
   "dependencies": {
-    "logary": "6.0.0-alpha.4",
     "@opentelemetry/node": "^0.10.2",
     "@opentelemetry/plugin-http": "^0.10.2",
-    "@opentelemetry/plugin-https": "^0.10.2"
+    "@opentelemetry/plugin-https": "^0.10.2",
+    "logary": "6.0.0-alpha.5"
   },
   "devDependencies": {
     "typescript": "^4.0.2"
