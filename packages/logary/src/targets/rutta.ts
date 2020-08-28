@@ -5,6 +5,7 @@ import { Config } from '../config'
 import RuntimeInfo from '../runtimeInfo'
 import { Target } from "../types"
 import sendBeacon from "../utils/sendBeacon"
+import { Message } from "../message"
 
 // TODO: implement Rutta target for shipping to Rutta from Browser, or from NodeJS over UDP
 // Alt: https://medium.com/angular-in-depth/power-of-rxjs-when-using-exponential-backoff-a4b8bde276b0
