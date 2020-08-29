@@ -3,13 +3,16 @@ import RuntimeInfo from './runtimeInfo'
 import { ensureName, ensureMessageId, adaptLogFunction } from './utils'
 import { Config } from './config'
 import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction } from './types'
-import { LogLevel, Message, SetUserPropertyMessage, EventMessage } from './message'
+import { LogLevel, Message, SetUserPropertyMessage } from './message'
 import { Logger } from './logger'
 import { Runnable } from "./types"
 import { empty, Subject, Subscription } from 'rxjs'
 import createEventMessage from "./utils/createEventMessage"
 import createIdentifyMessage from "./utils/createIdentifyMessage"
 import getTimestamp from "./utils/time"
+import { OpenTelemetryHasTracer } from "./features"
+import { HasTracer } from "."
+import { NoopTracer, Tracer, Span, SpanOptions, Context } from "@opentelemetry/api"
 
 type LogaryState = | 'initial' | 'started' | 'closed'
 
@@ -84,7 +87,7 @@ export default class Logary implements RuntimeInfo, PluginAPI {
     else this._subscription.add(plugin.run(this.config, this))
   }
 
-  getSupporters(features: string[]): LogaryPlugin[] {
+  getSupporters(...features: string[]): LogaryPlugin[] {
     // TO CONSIDER: this can be optimised so that every time the list of plugins changes, we recompute a mapping
     // from Feature => LogaryPlugin[]
     let ret: LogaryPlugin[] | null = null
@@ -100,6 +103,16 @@ export default class Logary implements RuntimeInfo, PluginAPI {
   }
   // end of PluginAPI
 
+  getTracer(): Tracer {
+    const hasTracer = this.getSupporters(OpenTelemetryHasTracer)
+
+    // if (this.config.debug) {
+    //   console.log(`Found ${hasTracer.length} plugins supporting OpenTelemetry and the HasTracer feature: `, hasTracer.map(p => p.name))
+    // }
+
+    return hasTracer.length === 0 ? new NoopTracer() : (hasTracer[0] as unknown as HasTracer).tracer
+  }
+
   // Logging API:
   getLogger(...scopeName: string[]): Logger {
     if (scopeName == null) throw new Error('scopeName was null or undefined')
@@ -112,7 +125,12 @@ export default class Logary implements RuntimeInfo, PluginAPI {
         if (level < logary.minLevel) return
         if (messages == null || messages.length === 0) return
         const eN = ensureName(this.name)
-        for (const message of messages.map(m => ensureMessageId(eN(m)))) {
+        const parentSpanId = this.getCurrentSpan()?.context().spanId
+        function ensureSpanId<T extends Message>(m: T) {
+          return m.type === 'event' && parentSpanId != null ? {...m, parentSpanId } : m
+        }
+
+        for (const message of messages.map(m => ensureMessageId(ensureSpanId(eN(m))))) {
           logary._messages.next(message)
         }
       }
@@ -151,6 +169,24 @@ export default class Logary implements RuntimeInfo, PluginAPI {
         const m = createIdentifyMessage(null, ...args)
         this.log(LogLevel.info, m)
       }
+
+      // (opentelemetry/api).Tracer starts here
+      getCurrentSpan() {
+        return logary.getTracer().getCurrentSpan()
+      }
+
+      withSpan(span: Span, fn: any) {
+        return logary.getTracer().withSpan(span, fn)
+      }
+
+      bind(target: any, context?: Span) {
+        return logary.getTracer().bind(target, context)
+      }
+
+      startSpan(name: string, options?: SpanOptions, context?: Context) {
+        return logary.getTracer().startSpan(name, options, context)
+      }
+      // (opentelemetry/api).Tracer ends here
     }
   }
 

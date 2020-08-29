@@ -1,7 +1,9 @@
-import { Attributes, Status, SpanKind, Span as OTSpan, TimeInput, SpanContext } from '@opentelemetry/api'
-import { EventMessage } from './message'
-import { Logger } from './logger'
-import { EpochNanoSeconds } from "./utils/time"
+import { Attributes, Status, SpanKind, Span as OTSpan, TimeInput, SpanContext, TracerProvider } from '@opentelemetry/api'
+import { EventMessage } from '../message'
+import { EpochNanoSeconds } from "../utils/time"
+import { Tracer } from "@opentelemetry/api"
+
+export { default as LogaryExporter } from './LogaryExporter'
 
 /**
  * Via:
@@ -41,12 +43,10 @@ export interface SpanOps extends OTSpan {
 
 export interface Span extends SpanData, SpanOps {}
 
-/**
- * A SpanLogger is alike a Logger, but is backed with a running Span.
- *
- * From https://open-telemetry.github.io/opentelemetry-js/interfaces/tracer.html#bind
- */
-export interface SpanLogger extends Span, Logger {
-  // TODO: start child span; act as Tracer
-  logThrough(): void;
+export interface TracerModule {
+  readonly provider: TracerProvider;
+}
+
+export interface HasTracer {
+  readonly tracer: Tracer;
 }

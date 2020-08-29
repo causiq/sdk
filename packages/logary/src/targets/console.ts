@@ -2,6 +2,7 @@ import { KeyValue, Target } from '../types'
 import { Message, EventMessage, SpanMessage } from '../message'
 import { Config } from '../config'
 import RuntimeInfo from '../runtimeInfo'
+import { filter } from "rxjs/operators"
 
 function consolePrintKVs(kvs: KeyValue[]) {
   for (let i = 0; i < kvs.length; i++) {
@@ -11,7 +12,17 @@ function consolePrintKVs(kvs: KeyValue[]) {
 }
 
 function consolePrintEvent(message: EventMessage) {
-  const msg = message.name.length === 0 ? message.templated.message : `[${message.name.join('.')}] ${message.templated.message}`
+  const parts = []
+
+  parts.push(new Date(Number(message.timestamp / BigInt('1000000'))).toISOString().slice(11, -1))
+
+  if (message.name.length > 0) {
+    parts.push(`[${message.name.join('.')}]`)
+  }
+
+  parts.push(message.templated.message)
+
+  const msg = parts.join(' ')
   // console.log('message', message)
 
   if (message.templated.remaining.length > 0) {
@@ -50,6 +61,10 @@ function consolePrintSpan(span: SpanMessage) {
     .filter(k => k != null && k !== '')
     .filter(k => 'number|string|boolean'.indexOf(typeof span.attrs[k]) !== -1)
     .map(k => ({ key: k, value: span.attrs[k] }))
+    .concat([
+      { key: 'traceId', value: span.spanContext.traceId },
+      { key: 'spanId', value: span.spanContext.spanId }
+    ])
 
   consolePrintKVs(tags)
 
@@ -74,12 +89,12 @@ function consolePrintSpan(span: SpanMessage) {
 
 
 export default class ConsoleTarget implements Target {
-
-  constructor(noWarn?: boolean) {
+  constructor(private acceptIf?: (message: Message) => boolean, noWarn?: boolean) {
     this.noWarn = noWarn != null ? noWarn : false
   }
 
   private noWarn: boolean
+
   name = 'console'
 
   log(message: Message) {
@@ -93,6 +108,10 @@ export default class ConsoleTarget implements Target {
   }
 
   run(_: Config, ri: RuntimeInfo) {
-    return ri.messages.subscribe(this.log.bind(this))
+    return ri.messages.pipe(
+      filter(m => this.acceptIf == null ? true : this.acceptIf(m))
+    ).subscribe(
+      this.log.bind(this)
+    )
   }
 }

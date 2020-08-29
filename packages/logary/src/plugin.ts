@@ -18,5 +18,5 @@ export interface PluginAPI {
    *
    * @param features The feature constants these plugins must support to be returned
    */
-  getSupporters(features: string[]): LogaryPlugin[];
+  getSupporters(...features: string[]): LogaryPlugin[];
 }

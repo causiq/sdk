@@ -1,0 +1,1 @@
+export type NodePluginOptions = Readonly<Record<string, any>>

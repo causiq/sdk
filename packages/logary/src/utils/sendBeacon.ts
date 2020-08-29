@@ -18,7 +18,7 @@ export default function sendBeacon(url: string, data: string | Blob | FormData |
         'content-type': 'application/json; charset=utf-8',
         'accept': 'application/json'
       }
-      fetch(url, { method: 'POST', body: data, signal, headers })
+      fetch(url, { method: 'POST', body: data, signal, headers, keepalive: true })
         .then(res => res.json())
         .then(json => {
           o.next(json)

@@ -1,7 +1,7 @@
 import template, { Templated } from './formatting/template'
 import { hexDigest } from './utils/hasher'
 import { Money } from "./money"
-import { SpanContext, Status, CanonicalCode, SpanKind, TimedEvent, HrTime } from "@opentelemetry/api"
+import { SpanContext, Status, CanonicalCode, SpanKind, TimedEvent } from "@opentelemetry/api"
 import { SpanData } from "./trace"
 import getTimestamp, { EpochNanoSeconds, hrTimeToEpochNanoSeconds } from "./utils/time"
 import { ReadableSpan } from "@opentelemetry/tracing"
@@ -22,6 +22,8 @@ export interface LogaryMessage {
   readonly level: LogLevel;
   readonly timestamp: EpochNanoSeconds;
   readonly fields?: Record<string, unknown>;
+  readonly context?: Record<string, unknown>;
+  readonly parentSpanId?: string;
 }
 
 export class EventMessage implements LogaryMessage {
@@ -33,7 +35,8 @@ export class EventMessage implements LogaryMessage {
     timestamp: EpochNanoSeconds | null = getTimestamp(),
     public fields: Record<string, unknown> = {},
     public context: Record<string, unknown> = {},
-    public name: string[] = [])
+    public name: string[] = [],
+    public parentSpanId?: string)
   {
     const vars = this.error == null ? { ...fields, ...context } : { ...fields, ...context, error: this.error }
     this.timestamp = timestamp || getTimestamp()
@@ -46,9 +49,9 @@ export class EventMessage implements LogaryMessage {
   id: string
   type: 'event' = 'event'
 
-  static ofTimedEvent(te: TimedEvent): EventMessage {
+  static ofTimedEvent(te: TimedEvent, parentSpanId?: string): EventMessage {
     const timestamp = hrTimeToEpochNanoSeconds(te.time)
-    return new EventMessage(te.name, null, null, LogLevel.info, timestamp)
+    return new EventMessage(te.name, null, null, LogLevel.info, timestamp, {}, {}, [], parentSpanId)
   }
 }
 
@@ -87,7 +90,7 @@ export class SpanMessage implements LogaryMessage, SpanData {
       level,
       rs.kind,
       rs.status,
-      rs.events.map(EventMessage.ofTimedEvent),
+      rs.events.map(e => EventMessage.ofTimedEvent(e, rs.spanContext.spanId)),
       rs.attributes,
       {},
       hrTimeToEpochNanoSeconds(rs.startTime),

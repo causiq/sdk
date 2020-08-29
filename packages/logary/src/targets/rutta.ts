@@ -1,11 +1,10 @@
 import '../utils/BigInt-JSON-patch'
-import { interval, timer } from 'rxjs'
-import { mergeMap, filter, bufferWhen, retryWhen, delayWhen, take } from 'rxjs/operators'
+import { interval, timer, fromEvent, Observable, merge } from 'rxjs'
+import { tap, mergeMap, filter, bufferWhen, retryWhen, delayWhen, take, mapTo } from 'rxjs/operators'
 import { Config } from '../config'
 import RuntimeInfo from '../runtimeInfo'
 import { Target } from "../types"
 import sendBeacon from "../utils/sendBeacon"
-import { Message } from "../message"
 
 // TODO: implement Rutta target for shipping to Rutta from Browser, or from NodeJS over UDP
 // Alt: https://medium.com/angular-in-depth/power-of-rxjs-when-using-exponential-backoff-a4b8bde276b0
@@ -55,13 +54,20 @@ export default class RuttaTarget implements Target {
 
   run(_: Config, ri: RuntimeInfo) {
     if (this.conf.disabled) {
-      if (ri.debug) console.log('Shipping to Logary Rutta')
+      if (ri.debug) console.log('Skipping Logary Rutta because conf.disabled=true')
+      else console.log('RuttaTarget configured with', this.conf)
       return () => {}
     }
 
+    const beforeunload$: Observable<'beforeunload'> = fromEvent<BeforeUnloadEvent>(window, 'beforeunload').pipe(
+      mapTo('beforeunload'),
+    )
+
     const closingSelector = () => {
-      return interval(this.conf.period)
+      return merge(interval(this.conf.period), beforeunload$)
     }
+
+    if (ri.debug) console.log('RuttaTarget configured with', this.conf)
 
     const sendBatches = ri.messages.pipe(
       bufferWhen(closingSelector),

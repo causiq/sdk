@@ -16,6 +16,7 @@ export { default as money, isMoney, Money } from './money'
 export * from './types'
 export * from './features'
 export * from './targets'
+export * from './trace'
 
 // what follows is the convenience API (every logging lib should be easy to get started with!)
 
