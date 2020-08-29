@@ -7,4 +7,3 @@ export default function subscribeToBodyMutations(observer: MutationObserver) {
     subtree: true
   })
 }
-
