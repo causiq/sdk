@@ -1,6 +1,6 @@
 import '../utils/BigInt-JSON-patch'
 import { interval, timer, fromEvent, Observable, merge } from 'rxjs'
-import { tap, mergeMap, filter, bufferWhen, retryWhen, delayWhen, take, mapTo } from 'rxjs/operators'
+import { mergeMap, filter, bufferWhen, retryWhen, delayWhen, take, mapTo } from 'rxjs/operators'
 import { Config } from '../config'
 import RuntimeInfo from '../runtimeInfo'
 import { Target } from "../types"
@@ -20,7 +20,7 @@ export type RuttaConfig = Readonly<{
 
 export const DefaultRuttaEndpoint =
   typeof window === 'undefined'
-    ? process.env.LOGARY_RUTTA_ENDPOINT || 'http://rutta/i'
+    ? process.env.LOGARY_RUTTA_ENDPOINT || 'https://i.logary.tech'
     : '/i'
 
 export const DefaultConfig: RuttaConfig = {
