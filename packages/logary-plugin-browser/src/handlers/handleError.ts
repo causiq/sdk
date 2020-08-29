@@ -16,8 +16,7 @@ export default function handleError(logary: Logary, opts: BrowserPluginOptions) 
     if (opts.debugHandler) console.error(errEvt)
 
     const get = prop(errEvt, opts.debugHandler)
-
-    logger.error('Unhandled window error', {
+    const fields = {
       error: {
         colNo: get('colno'),
         lineNo: get('lineno'),
@@ -26,7 +25,9 @@ export default function handleError(logary: Logary, opts: BrowserPluginOptions) 
         stack: explode(errEvt.error.stack),
         path: get('path', stringify)
       }
-    })
+    }
+
+    logger.error('Unhandled window error: {error.message}', fields)
 
     if (opts.debugHandler) console.log('returning ', !opts.doNotMarkErrorHandled, 'from error handler')
     return !opts.doNotMarkErrorHandled
