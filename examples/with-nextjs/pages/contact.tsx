@@ -1,7 +1,9 @@
 import Layout from "../components/Layout";
 import Link from "next/link";
+import { withLogary } from "@logary/plugin-nextjs";
+import logary from '../lib/logary'
 
-export default function ContactPage() {
+function ContactPage() {
   return <Layout>
     <h1>Contact us</h1>
 
@@ -26,3 +28,5 @@ export default function ContactPage() {
 
   </Layout>
 }
+
+export default withLogary(ContactPage, { logary })

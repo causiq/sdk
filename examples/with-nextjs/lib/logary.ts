@@ -7,6 +7,7 @@ const instance = getLogary({
   minLevel: LogLevel.debug,
   serviceName: 'with-nextjs',
   targets: [
+    // new ConsoleTarget(x => x.type === 'event'),
     new ConsoleTarget(),
     new RuttaTarget({
       // endpoint: '/api/logary',
@@ -16,7 +17,8 @@ const instance = getLogary({
       disabled: typeof window === 'undefined',
     })
   ],
-  accountId: 'open-source'
+  accountId: 'open-source',
+  debug: false
 })
 
 browser(instance)
