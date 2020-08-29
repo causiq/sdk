@@ -1,4 +1,4 @@
-import { TracerModule } from "./types"
+import { TracerModule } from "logary"
 import { SpanExporter, SimpleSpanProcessor } from "@opentelemetry/tracing"
 import Logary from "logary"
 
