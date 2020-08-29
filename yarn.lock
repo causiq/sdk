@@ -2182,7 +2182,7 @@
     "@opentelemetry/plugin-https" "^0.10.2"
     logary "6.0.0-alpha.5"
 
-"@logary/plugin-react@latest":
+"@logary/plugin-react@6.0.0-alpha.5", "@logary/plugin-react@latest":
   version "6.0.0-alpha.5"
   resolved "https://registry.yarnpkg.com/@logary/plugin-react/-/plugin-react-6.0.0-alpha.5.tgz#d4d2483b0cfce5df513aebfd5930e562eddcc547"
   integrity sha512-GUtN5VFBVBz0o4fELWJR+iNeuhUFRkzRKU3WpACXNResMgm3VTAYeSfQGkSKHYQr7ouSNnPByOpLdxV1tHICBw==
@@ -2588,9 +2588,9 @@
   integrity sha1-aaI6OtKcrwCX8G7aWbNh7i8GOfY=
 
 "@types/node@*", "@types/node@>= 8", "@types/node@^14.0.5", "@types/node@^14.6.0":
-  version "14.6.1"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.6.1.tgz#fdf6f6c6c73d3d8eee9c98a9a0485bc524b048d7"
-  integrity sha512-HnYlg/BRF8uC1FyKRFZwRaCPTPYKa+6I8QiUZFLredaGOou481cgFS4wKRFyKvQtX8xudqkSdBczJHIYSQYKrQ==
+  version "14.6.2"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.6.2.tgz#264b44c5a28dfa80198fc2f7b6d3c8a054b9491f"
+  integrity sha512-onlIwbaeqvZyniGPfdw/TEhKIh79pz66L1q06WUQqJLnAb6wbjvOtepLYTGHTqzdXgBYIE3ZdmqHDGsRsbBz7A==
 
 "@types/normalize-package-data@^2.4.0":
   version "2.4.0"
@@ -7198,7 +7198,7 @@ lodash@^4.17.11, lodash@^4.17.12, lodash@^4.17.13, lodash@^4.17.14, lodash@^4.17
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.20.tgz#b44a9b6297bcb698f1c51a3545a2b3b368d59c52"
   integrity sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==
 
-logary@latest:
+logary@6.0.0-alpha.5, logary@latest:
   version "6.0.0-alpha.5"
   resolved "https://registry.yarnpkg.com/logary/-/logary-6.0.0-alpha.5.tgz#90bd727a8a08fd774eb35b46a0306f1e58065557"
   integrity sha512-9pi+QMG9hEYOEl5HoatXyLJfSzCGRXabcLwMqgQcKSzJeXz0NZV5vTj1olaT353Kqf8xNQv2TpLGPr7O9Kfd5g==
