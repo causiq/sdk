@@ -11,20 +11,34 @@ function render(value: any) {
   return String(value)
 }
 
-export type Templated = { message: string; consumed: KeyValue[]; remaining: KeyValue[] };
+function getIn(path: readonly string[], fromArgs: Record<string, any>): any {
+  let p, cP, c = fromArgs, i = 0
+  while ((p = path[i++]) != null && (c = c[p]) != null) cP = c
+  return cP
+}
 
-export default function template(templ: string, args: Record<string, any> = {}): Templated {
-  const consumed: KeyValue[] = [],
-    argsCopy = { ...args }
-  const message = templ.replace(/\{([\w-]+)\}/g, substr => {
-    const v = substr.replace(/[}{]/g, '')
+export type Templated = {
+  message: string;
+  consumed: KeyValue[];
+  remaining: KeyValue[]
+};
+
+export default function template(templ: string, args: Record<string, any> = {}) {
+  const consumed: KeyValue[] = [], argsCopy = { ...args }
+
+  const message = templ.replace(/\{([\w-.]+)\}/g, substr => {
+    const key = substr.replace(/[}{]/g, ''),
+      raw = key.indexOf('.') === -1 ? args[key] : getIn(key.split('.'), args)
+    
     let value
-    if ((value = render(args[v])) != null) {
-      consumed.push({ key: v, value })
-      delete argsCopy[v]
+    if ((value = render(raw)) != null) {
+      consumed.push({ key, value })
+      delete argsCopy[key]
       return value
-    } else return v
+    } else return key
   })
+
   const remaining = Object.keys(argsCopy).map(key => ({ key, value: argsCopy[key] }))
+
   return { message, consumed, remaining }
 }
