@@ -27,6 +27,9 @@ export default function sendBeacon(url: string, data: string | Blob | FormData |
         .catch(e => {
           o.error(e)
         })
+      return () => {
+        controller.abort()
+      }
     })
   }
 }
