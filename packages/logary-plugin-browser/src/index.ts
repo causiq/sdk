@@ -162,6 +162,8 @@ const handlers: InnerHandler[] = [
 
           span = newSpan()
           span.setAttributes({
+            'location.href': window.location.href,
+            'location.pathname': window.location.pathname,
             'document.title': document.title,
             'document.clientWidth': Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0),
             'document.clientHeight': Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0),

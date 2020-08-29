@@ -1,13 +1,12 @@
 import { TracerModule } from "logary"
 import { SpanExporter, SimpleSpanProcessor } from "@opentelemetry/tracing"
+import { DocumentLoad } from '@opentelemetry/plugin-document-load'
+import { WebTracerProvider } from '@opentelemetry/web'
+import { ZoneContextManager } from '@opentelemetry/context-zone'
 import Logary from "logary"
 
 export default function create(delegator: SpanExporter, logary: Logary): TracerModule {
   // console.log('creating webTracer')
-  const { DocumentLoad } = require('@opentelemetry/plugin-document-load')
-  const { WebTracerProvider } = require('@opentelemetry/web')
-  const { ZoneContextManager } = require('@opentelemetry/context-zone')
-
   // create the default web tracer provider
   const provider = new WebTracerProvider({
     logger: logary.getLogger('Logary', 'webTracer'),
