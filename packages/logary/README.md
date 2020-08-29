@@ -1,3 +1,14 @@
+# Logary JS 🦋
+
+A library for unified logging, metrics and tracing.
+
+    npm add logary
+
+## Usage
+
+See the `./examples` folder. Here is an example with NextJS:
+
+```typescript
 import { RuttaTarget, getLogary, LogLevel, ConsoleTarget } from 'logary'
 import browser from '@logary/plugin-browser'
 import nextjs from '@logary/plugin-nextjs'
@@ -7,16 +18,8 @@ const instance = getLogary({
   minLevel: LogLevel.debug,
   serviceName: 'with-nextjs',
   targets: [
-    // new ConsoleTarget(x => x.type === 'event'),
     new ConsoleTarget(),
-    new RuttaTarget({
-      // endpoint: '/api/logary',
-      // endpoint: 'http://localhost:8080/i',
-      // endpoint: 'https://api.logary.test/i',
-      endpoint: 'https://i.logary.tech',
-      // endpoint: 'http://localhost:8080/i',
-      disabled: false //typeof window === 'undefined',
-    })
+    new RuttaTarget({ endpoint: 'https://i.logary.tech' })
   ],
   accountId: 'open-source',
   debug: false
@@ -27,3 +30,4 @@ nextjs(instance)
 react(instance)
 
 export default instance
+```

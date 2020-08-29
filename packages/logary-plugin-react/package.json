@@ -1,12 +1,13 @@
 {
   "name": "@logary/plugin-react",
-  "license": "GPL3 or commercial",
+  "license": "GPL3 / commercial",
   "version": "6.0.0-beta.0",
   "main": "dist/index",
   "types": "dist/index",
   "files": [
     "dist/**/*",
-    "package.json"
+    "package.json",
+    "README.md"
   ],
   "publishConfig": {
     "access": "public"

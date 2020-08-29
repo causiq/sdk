@@ -1,4 +1,3 @@
-import App from 'next/app'
 import { withLogary } from "@logary/plugin-nextjs"
 import logary from '../lib/logary'
 

@@ -1,5 +1,5 @@
 import '../utils/BigInt-JSON-patch'
-import { interval, timer, fromEvent, Observable, merge } from 'rxjs'
+import { interval, timer, fromEvent, Observable, merge, NEVER } from 'rxjs'
 import { mergeMap, filter, bufferWhen, retryWhen, delayWhen, take, mapTo } from 'rxjs/operators'
 import { Config } from '../config'
 import RuntimeInfo from '../runtimeInfo'
@@ -59,9 +59,10 @@ export default class RuttaTarget implements Target {
       return () => {}
     }
 
-    const beforeunload$: Observable<'beforeunload'> = fromEvent<BeforeUnloadEvent>(window, 'beforeunload').pipe(
-      mapTo('beforeunload'),
-    )
+    const beforeunload$: Observable<'beforeunload'> =
+      typeof window !== 'undefined'
+        ? fromEvent<BeforeUnloadEvent>(window, 'beforeunload').pipe(mapTo('beforeunload'))
+        : NEVER
 
     const closingSelector = () => {
       return merge(interval(this.conf.period), beforeunload$)

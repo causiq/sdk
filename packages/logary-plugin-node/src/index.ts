@@ -18,8 +18,8 @@ export const features = [
 
 class NodePlugin implements HasTracer {
   constructor(
-    private logary: Logary,
-    private opts: NodePluginOptions = {}
+    logary: Logary,
+    opts: NodePluginOptions = {}
   ) {
     if (typeof window !== 'undefined') throw new Error('NodePlugin created, but window !== "undefined"')
     const m: TracerModule & HasTracer = createTracer(logary)
