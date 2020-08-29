@@ -38,7 +38,7 @@ export default function withLogary<P, IP = P>(
 
   const ssrOptIn =
     logary != null
-    && (supporters = logary.getSupporters(optInFeatures) as NextJSSupporter[])
+    && (supporters = logary.getSupporters(...optInFeatures) as NextJSSupporter[])
     && supporters.some(x => x.getInitialProps != null)
 
   if (ssrOptIn || Page.getInitialProps) {
