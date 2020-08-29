@@ -15,7 +15,7 @@ const instance = getLogary({
   ]
 })
 
-browser(instance, { debugHandler: false })
+browser(instance)
 nextjs(instance)
 react(instance)
 

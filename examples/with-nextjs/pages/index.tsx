@@ -1,4 +1,5 @@
 import { useCallback } from "react"
+import Link from 'next/link'
 import Layout from "../components/Layout"
 import logary from '../lib/logary'
 import { useLogger } from '@logary/plugin-react'
@@ -60,17 +61,14 @@ function IndexPage() {
             <input id='email' type='email' />
           </form>
         </fieldset>
-        <style jsx>{`
-        form {
-          display: grid;
-          grid-template-columns: 100px 1fr;
-          grid-gap: 16px;
-        }
 
-        input, button {
-          grid-column: 2 / 3;
-        }
-        `}</style>
+        <fieldset>
+          <legend>Navigation events</legend>
+
+          <Link href='/contact'>
+            <a>Contact us</a>
+          </Link>
+        </fieldset>
     </Layout>
   )
 }

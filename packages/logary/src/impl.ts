@@ -176,4 +176,8 @@ export default class Logary implements RuntimeInfo, PluginAPI {
   get minLevel() {
     return this.config.minLevel
   }
+
+  get debug() {
+    return this.config.debug
+  }
 }

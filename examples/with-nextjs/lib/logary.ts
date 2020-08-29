@@ -19,7 +19,7 @@ const instance = getLogary({
   accountId: 'open-source'
 })
 
-browser(instance, { debugHandler: false })
+browser(instance)
 nextjs(instance)
 react(instance)
 

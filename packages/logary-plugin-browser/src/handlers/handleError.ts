@@ -3,7 +3,7 @@ import { explode, stringify, prop } from '../utils'
 import { BrowserPluginOptions } from "../types"
 
 export default function handleError(logary: Logary, opts: BrowserPluginOptions) {
-  const logger = logary.getLogger('plugins', 'browser', 'onError')
+  const logger = logary.getLogger('plugins', 'browser', 'error')
   let lastError: Error | null = null
 
   // https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers/onerror
@@ -13,9 +13,9 @@ export default function handleError(logary: Logary, opts: BrowserPluginOptions) 
     else lastError = errEvt.error
 
     if (!opts.doNotMarkErrorHandled) errEvt.stopPropagation()
-    if (opts.debugHandler) console.error(errEvt)
+    if (logary.debug) console.error(errEvt)
 
-    const get = prop(errEvt, opts.debugHandler)
+    const get = prop(errEvt, logary.debug)
     const fields = {
       error: {
         colNo: get('colno'),
@@ -29,7 +29,7 @@ export default function handleError(logary: Logary, opts: BrowserPluginOptions) 
 
     logger.error('Unhandled window error: {error.message}', fields)
 
-    if (opts.debugHandler) console.log('returning ', !opts.doNotMarkErrorHandled, 'from error handler')
+    if (logary.debug) console.log('returning ', !opts.doNotMarkErrorHandled, 'from error handler')
     return !opts.doNotMarkErrorHandled
   }
 }

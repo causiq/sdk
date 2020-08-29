@@ -2,7 +2,7 @@ import Logary from 'logary'
 import { describeTarget } from '../utils'
 
 export default function onClick(logary: Logary) {
-  const logger = logary.getLogger('plugins', 'browser', 'onClick')
+  const logger = logary.getLogger('plugins', 'browser', 'click')
   return (e: MouseEvent) => {
     const clicked = describeTarget(e)
     // console.log("mouse event", e, 'selector', cssSelector)
