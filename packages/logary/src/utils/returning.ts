@@ -1,0 +1,1 @@
+export type Returning<T extends (...a: any) => any, TNewReturn> = (...a: Parameters<T>) => TNewReturn;

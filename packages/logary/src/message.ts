@@ -5,7 +5,7 @@ import { SpanContext, Status, CanonicalCode, SpanKind, TimedEvent, HrTime } from
 import { SpanData } from "./trace"
 import getTimestamp, { EpochNanoSeconds, hrTimeToEpochNanoSeconds } from "./utils/time"
 import { ReadableSpan } from "@opentelemetry/tracing"
-import { ErrorInfo, SetUserPropertyFunction } from "./types"
+import { ErrorInfo } from "./types"
 
 export enum LogLevel {
   verbose = 1,
@@ -30,17 +30,19 @@ export class EventMessage implements LogaryMessage {
     public monetaryValue: Money | null = null,
     public error: Error | ErrorInfo | null = null,
     public level: LogLevel = LogLevel.info,
-    public timestamp: EpochNanoSeconds = getTimestamp(),
+    timestamp: EpochNanoSeconds | null = getTimestamp(),
     public fields: Record<string, unknown> = {},
     public context: Record<string, unknown> = {},
     public name: string[] = [])
   {
-    const vars = { ...fields, ...context }
+    const vars = this.error == null ? { ...fields, ...context } : { ...fields, ...context, error: this.error }
+    this.timestamp = timestamp || getTimestamp()
     this.templated = template(event, vars)
     this.id = hexDigest(this)
   }
 
   templated: Templated
+  timestamp: EpochNanoSeconds
   id: string
   type: 'event' = 'event'
 
@@ -60,15 +62,17 @@ export class SpanMessage implements LogaryMessage, SpanData {
     public events: EventMessage[] = [],
     public attrs: Record<string, unknown> = {},
     public context: Record<string, unknown> = {},
-    public started: EpochNanoSeconds = getTimestamp(),
-    finished?: EpochNanoSeconds)
+    started: EpochNanoSeconds | null = getTimestamp(),
+    finished?: EpochNanoSeconds | null)
   {
-    this.finished = finished || started + BigInt(1)
+    this.started = started || getTimestamp()
+    this.finished = finished || this.started + BigInt(1)
     this.id = hexDigest(this)
   }
 
   id: string
   finished: EpochNanoSeconds
+  started: EpochNanoSeconds
   type: 'span' = 'span'
 
   get name() { return [ this.label ] }
@@ -98,17 +102,41 @@ export class SetUserPropertyMessage implements LogaryMessage {
     public key: string,
     public value: unknown,
     public name: string[],
-    public timestamp: EpochNanoSeconds = getTimestamp(),
+    timestamp: EpochNanoSeconds | null = null,
     id?: string
   ) {
     this.level = LogLevel.info
     this.fields = {}
+    this.timestamp = timestamp || getTimestamp()
     this.id = id || hexDigest(this)
   }
   id: string
   level: LogLevel
   fields: Record<string, unknown>
+  timestamp: EpochNanoSeconds
   type: 'setUserProperty' = 'setUserProperty'
 }
 
-export type Message = SpanMessage | EventMessage | SetUserPropertyMessage
+export class IdentifyUserMessage implements LogaryMessage {
+  constructor(
+    public prevUserId: string,
+    public nextUserId: string,
+    public level: LogLevel = LogLevel.info,
+    public fields: Record<string, unknown> = {},
+    public context: Record<string, unknown> = {},
+    public name: string[] = [],
+    timestamp: EpochNanoSeconds | null = null,
+  ) {
+    this.timestamp = timestamp || getTimestamp()
+    this.id = hexDigest(this)
+  }
+  id: string
+  timestamp: EpochNanoSeconds
+  type: 'identifyUserMessage' = 'identifyUserMessage'
+}
+
+export type Message =
+  | SpanMessage
+  | EventMessage
+  | SetUserPropertyMessage
+  | IdentifyUserMessage

@@ -1,13 +1,15 @@
 import LogaryPlugin, { PluginAPI } from "./plugin"
 import RuntimeInfo from './runtimeInfo'
 import { ensureName, ensureMessageId, adaptLogFunction } from './utils'
-import money from "./money"
 import { Config } from './config'
-import { EventFunction, SetUserPropertyFunction } from './types'
-import { LogLevel, Message, SetUserPropertyMessage } from './message'
+import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction } from './types'
+import { LogLevel, Message, SetUserPropertyMessage, EventMessage } from './message'
 import { Logger } from './logger'
 import { Runnable } from "./types"
 import { empty, Subject, Subscription } from 'rxjs'
+import createEventMessage from "./utils/createEventMessage"
+import createIdentifyMessage from "./utils/createIdentifyMessage"
+import getTimestamp from "./utils/time"
 
 type LogaryState = | 'initial' | 'started' | 'closed'
 
@@ -118,8 +120,7 @@ export default class Logary implements RuntimeInfo, PluginAPI {
       /**
        * private, leave me alone!
        */
-      _loggerEx(level: LogLevel, message: string, ...args: unknown[]) {
-        if (level < logary.minLevel) return
+      private _loggerEx(level: LogLevel, message: string, ...args: unknown[]) {
         this.log(level, adaptLogFunction(level, message, ...args))
       }
 
@@ -132,25 +133,23 @@ export default class Logary implements RuntimeInfo, PluginAPI {
       fatal = this._loggerEx.bind(this, LogLevel.fatal)
 
       /**
-       * Log a new event
-       * @param event The event name
-       * @param moneyOrError A Money or Error instance or undefined
-       * @param args Remaining args
+       * Logs a new event
        */
-      event: EventFunction = (event, moneyOrError, ...args) => {
-        const currency = typeof args[0] === 'string' ? args[0] : 'EUR'
-        const nextArgs = moneyOrError == null
-          ? args
-          : moneyOrError instanceof Error
-            ? [ { error: moneyOrError }, ...args ]
-            : typeof moneyOrError === 'number'
-              ? [ { monetaryValue: money(currency, moneyOrError) }, ...args ]
-              : [ { monetaryValue: moneyOrError }, ...args ]
-        this._loggerEx(LogLevel.info, event, ...nextArgs)
+      event: EventFunction = (...args: unknown[]) => {
+        // @ts-ignore
+        const m = createEventMessage(...args)
+        this.log(LogLevel.info, m)
       }
 
-      setUserProperty: SetUserPropertyFunction = (userId, key, value) => {
-        this.log(LogLevel.info, new SetUserPropertyMessage(userId, key, value, this.name))
+      setUserProperty: SetUserPropertyFunction = (userId: string, key: string, value: unknown) => {
+        const m = new SetUserPropertyMessage(userId, key, value, this.name, getTimestamp())
+        this.log(LogLevel.info, m)
+      }
+
+      identify: IdentifyUserFunction = (...args: unknown[]) => {
+        // @ts-ignore TO CONSIDER: passing along user id
+        const m = createIdentifyMessage(null, ...args)
+        this.log(LogLevel.info, m)
       }
     }
   }

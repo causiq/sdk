@@ -32,6 +32,7 @@ function consolePrint(message: Message) {
   switch (message.type) {
     case 'event':
       return consolePrintEvent(message)
+
     case 'span':
       // eslint-disable-next-line no-use-before-define
       return consolePrintSpan(message)

@@ -25,6 +25,9 @@ function getPartialMessage(thing?: object | null): Partial<Message> {
       }
     }
   }
+
+  // console.log('message.error', o.error, 'message.fields', o.fields, 'message', o)
+
   return {
     ...o,
     fields

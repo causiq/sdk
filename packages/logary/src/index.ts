@@ -3,7 +3,7 @@ import { Subscription } from 'rxjs'
 import { Config } from "./config"
 import Logary from './impl'
 import { Logger } from './logger'
-import { EventFunction, SetUserPropertyFunction } from './types'
+import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction } from './types'
 import { LogLevel } from './message'
 import ConsoleTarget from './targets/console'
 
@@ -63,5 +63,15 @@ export const info: LogFunction = (m, ...args) => getLogger().info(m, ...args)
 export const warn: LogFunction = (m, ...args) => getLogger().warn(m, ...args)
 export const error: LogFunction = (m, ...args) => getLogger().error(m, ...args)
 export const fatal: LogFunction = (m, ...args) => getLogger().fatal(m, ...args)
-export const event: EventFunction = (e, mOrE, ...args) => getLogger().event(e, mOrE, ...args)
-export const setUserProp: SetUserPropertyFunction = (userId, key, value) => getLogger().setUserProperty(userId, key,value)
+
+export const event: EventFunction = (...args: unknown[]) =>
+  // @ts-ignore
+  getLogger().event(...args)
+
+export const identify: IdentifyUserFunction = (...args: unknown[]) =>
+  // @ts-ignore
+  getLogger().identify(...args)
+
+export const setUserProperty: SetUserPropertyFunction = (...args: unknown[]) =>
+  // @ts-ignore
+  getLogger().setUserProperty(...args)

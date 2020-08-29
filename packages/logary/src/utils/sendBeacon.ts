@@ -6,7 +6,7 @@ import './BigInt-JSON-patch'
  */
 export default function sendBeacon(url: string, data: string | Blob | FormData | URLSearchParams | ReadableStream<Uint8Array>) {
   if (typeof window !== 'undefined' && window.navigator.sendBeacon != null) {
-    console.log('.')
+    // console.log('send beacon data:', data)
     return of(window.navigator.sendBeacon(url, data))
   } else {
     // https://github.com/southpolesteve/node-abort-controller
