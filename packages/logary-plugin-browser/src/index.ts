@@ -73,7 +73,7 @@ const handlers: InnerHandler[] = [
       let oldHref = window.location.href, oldTitle = window.document.title
 
       const observer = new MutationObserver(mutations => {
-        mutations.forEach(_ => {
+        mutations.forEach(() => {
           const prevHref = oldHref, prevTitle = oldTitle
 
           if (oldHref != document.location.href) {
@@ -132,8 +132,8 @@ const handlers: InnerHandler[] = [
       }
 
       function writeCapturedMetrics(span: Span) {
-        for (const [name, metric] of metrics) {
-          span.setAttribute(name, metric.value)
+        for (const [metricName, metric] of metrics) {
+          span.setAttribute(metricName, metric.value)
         }
         metrics = []
       }
