@@ -6,7 +6,7 @@
     "examples/*"
   ],
   "scripts": {
-    "dev": "lerna bootstrap && lerna link && lerna run build --stream --parallel",
+    "dev": "lerna bootstrap && lerna link && lerna run build --stream",
     "test": "lerna run test",
     "new-version": "lerna version --conventional-commits --yes",
     "diff": "lerna diff",

@@ -31,3 +31,28 @@ react(instance)
 
 export default instance
 ```
+
+## API
+
+### Logger
+
+Plain logging:
+
+- verbose
+- debug
+- info
+- warn
+- error
+
+Structured events:
+
+- event
+
+Users / UTM tags:
+
+- identify
+- setUserProperty
+
+Tracing:
+
+- getTracer
