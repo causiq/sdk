@@ -11,7 +11,6 @@ const base = {
 }
 
 
-
 describe('describeTarget', () => {
   test('with event from normal button with id', () => {
     const buttonWithId = {
