@@ -9,7 +9,7 @@ const instance = getLogary({
   targets: [
     new ConsoleTarget(),
     new RuttaTarget({
-      endpoint: '/api/logary',
+      endpoint: 'https://i.logary.tech',
       disabled: typeof window === 'undefined'
     })
   ]

@@ -7198,6 +7198,16 @@ lodash@^4.17.11, lodash@^4.17.12, lodash@^4.17.13, lodash@^4.17.14, lodash@^4.17
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.20.tgz#b44a9b6297bcb698f1c51a3545a2b3b368d59c52"
   integrity sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==
 
+"logary@file:packages/logary":
+  version "6.0.0-alpha.5"
+  dependencies:
+    "@opentelemetry/api" "^0.10.2"
+    "@opentelemetry/core" "^0.10.2"
+    "@opentelemetry/tracing" "^0.10.2"
+    jssha "^3.1.0"
+    node-abort-controller "^1.1.0"
+    rxjs "^6.3.3"
+
 logary@latest:
   version "6.0.0-alpha.5"
   resolved "https://registry.yarnpkg.com/logary/-/logary-6.0.0-alpha.5.tgz#90bd727a8a08fd774eb35b46a0306f1e58065557"
