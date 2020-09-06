@@ -2151,44 +2151,6 @@
     npmlog "^4.1.2"
     write-file-atomic "^2.3.0"
 
-"@logary/plugin-browser@latest":
-  version "6.0.0-alpha.5"
-  resolved "https://registry.yarnpkg.com/@logary/plugin-browser/-/plugin-browser-6.0.0-alpha.5.tgz#fd41eee3fe557b20699a98003d0879333b9e2f4b"
-  integrity sha512-7j1Lf9zUNld5KykGL3EQ3wM3ESwvZLFfEDW/kKVF6Zu4sJWxNJxXu5djaUdnFQm9fBSmAGphuKZAd3q1uxfKuQ==
-  dependencies:
-    "@opentelemetry/api" "^0.10.2"
-    "@opentelemetry/context-zone" "^0.10.2"
-    "@opentelemetry/core" "^0.10.2"
-    "@opentelemetry/plugin-document-load" "^0.9.0"
-    "@opentelemetry/tracing" "^0.10.2"
-    "@opentelemetry/web" "^0.10.2"
-    logary "6.0.0-alpha.5"
-
-"@logary/plugin-nextjs@latest":
-  version "6.0.0-alpha.5"
-  resolved "https://registry.yarnpkg.com/@logary/plugin-nextjs/-/plugin-nextjs-6.0.0-alpha.5.tgz#7c88979b545b29a3c3a7d7e9f703e9506377b545"
-  integrity sha512-NODFIxxA4WXkQQoURuI3ikwsoe1k/nwNTiMdubDqTjd78+kI7fseX9KOnPGGq4SI04HE9/ynVIESok9QbWyiSw==
-  dependencies:
-    "@logary/plugin-react" "6.0.0-alpha.5"
-    logary "6.0.0-alpha.5"
-
-"@logary/plugin-node@latest":
-  version "6.0.0-alpha.5"
-  resolved "https://registry.yarnpkg.com/@logary/plugin-node/-/plugin-node-6.0.0-alpha.5.tgz#ecb9d5c7c6bd8d6de7f0ac432e40ae39d8dc1df8"
-  integrity sha512-evViDKEQt+jNhxkqkBAHcnJSo5PVY16lTyZhAtxaC/R4E5uFGK4yj9UnlEcCQYDgGUpiDSaNRkeQ5aAdWKJQ+g==
-  dependencies:
-    "@opentelemetry/node" "^0.10.2"
-    "@opentelemetry/plugin-http" "^0.10.2"
-    "@opentelemetry/plugin-https" "^0.10.2"
-    logary "6.0.0-alpha.5"
-
-"@logary/plugin-react@6.0.0-alpha.5", "@logary/plugin-react@latest":
-  version "6.0.0-alpha.5"
-  resolved "https://registry.yarnpkg.com/@logary/plugin-react/-/plugin-react-6.0.0-alpha.5.tgz#d4d2483b0cfce5df513aebfd5930e562eddcc547"
-  integrity sha512-GUtN5VFBVBz0o4fELWJR+iNeuhUFRkzRKU3WpACXNResMgm3VTAYeSfQGkSKHYQr7ouSNnPByOpLdxV1tHICBw==
-  dependencies:
-    logary "6.0.0-alpha.5"
-
 "@mrmlnc/readdir-enhanced@^2.2.1":
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/@mrmlnc/readdir-enhanced/-/readdir-enhanced-2.2.1.tgz#524af240d1a360527b730475ecfa1344aa540dde"
@@ -2350,21 +2312,6 @@
   version "0.10.2"
   resolved "https://registry.yarnpkg.com/@opentelemetry/context-base/-/context-base-0.10.2.tgz#55bea904b2b91aa8a8675df9eaba5961bddb1def"
   integrity sha512-hZNKjKOYsckoOEgBziGMnBcX0M7EtstnCmwz5jZUOUYwlZ+/xxX6z3jPu1XVO2Jivk0eLfuP9GP+vFD49CMetw==
-
-"@opentelemetry/context-zone-peer-dep@^0.10.2":
-  version "0.10.2"
-  resolved "https://registry.yarnpkg.com/@opentelemetry/context-zone-peer-dep/-/context-zone-peer-dep-0.10.2.tgz#d08c68acaed8aac7a439c5eab198a7b4b509e0a3"
-  integrity sha512-lN+Q7S0haNZQidmfZdgi5SwyoHMgZLsMUlGx3j6OL6963eiO0S3arF9aiwV8jv7sdU3o/bq0i+evYoF+VnaxNA==
-  dependencies:
-    "@opentelemetry/context-base" "^0.10.2"
-
-"@opentelemetry/context-zone@^0.10.2":
-  version "0.10.2"
-  resolved "https://registry.yarnpkg.com/@opentelemetry/context-zone/-/context-zone-0.10.2.tgz#b1aaa1f114ebd4f5e8501e52dba315e609f20a3e"
-  integrity sha512-lJUMCGtyGadZjLBRvEfUd5uaO4kpZx67j1b7hg+WxSoY5E/AfXqUX5uoez+miPWSYvIlsFf/S2NRhuQ230mJ5g==
-  dependencies:
-    "@opentelemetry/context-zone-peer-dep" "^0.10.2"
-    zone.js "^0.10.2"
 
 "@opentelemetry/core@^0.10.1", "@opentelemetry/core@^0.10.2":
   version "0.10.2"
@@ -7198,18 +7145,6 @@ lodash@^4.17.11, lodash@^4.17.12, lodash@^4.17.13, lodash@^4.17.14, lodash@^4.17
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.20.tgz#b44a9b6297bcb698f1c51a3545a2b3b368d59c52"
   integrity sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==
 
-logary@6.0.0-alpha.5, logary@latest:
-  version "6.0.0-alpha.5"
-  resolved "https://registry.yarnpkg.com/logary/-/logary-6.0.0-alpha.5.tgz#90bd727a8a08fd774eb35b46a0306f1e58065557"
-  integrity sha512-9pi+QMG9hEYOEl5HoatXyLJfSzCGRXabcLwMqgQcKSzJeXz0NZV5vTj1olaT353Kqf8xNQv2TpLGPr7O9Kfd5g==
-  dependencies:
-    "@opentelemetry/api" "^0.10.2"
-    "@opentelemetry/core" "^0.10.2"
-    "@opentelemetry/tracing" "^0.10.2"
-    jssha "^3.1.0"
-    node-abort-controller "^1.1.0"
-    rxjs "^6.3.3"
-
 loose-envify@^1.0.0, loose-envify@^1.1.0, loose-envify@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/loose-envify/-/loose-envify-1.4.0.tgz#71ee51fa7be4caec1a63839f7e682d8132d30caf"
@@ -11071,8 +11006,3 @@ yargs@^15.3.1:
     which-module "^2.0.0"
     y18n "^4.0.0"
     yargs-parser "^18.1.2"
-
-zone.js@^0.10.2:
-  version "0.10.3"
-  resolved "https://registry.yarnpkg.com/zone.js/-/zone.js-0.10.3.tgz#3e5e4da03c607c9dcd92e37dd35687a14a140c16"
-  integrity sha512-LXVLVEq0NNOqK/fLJo3d0kfzd4sxwn2/h67/02pjCjfKDxgx1i9QqpvtHD8CrBnSSwMw5+dy11O7FRX5mkO7Cg==
