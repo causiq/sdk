@@ -26,8 +26,9 @@
     "apm",
     "analytics",
     "logging",
-    "logs",
-    "funnel"
+    "tracing",
+    "funnel",
+    "key performance metrics"
   ],
   "browserslist": "> 0.5%, not dead",
   "scripts": {

@@ -12,6 +12,15 @@
   "publishConfig": {
     "access": "public"
   },
+  "keywords": [
+    "tracking",
+    "error",
+    "node logging",
+    "analytics",
+    "logging",
+    "tracing",
+    "key performance metrics"
+  ],
   "scripts": {
     "build": "tsc"
   },

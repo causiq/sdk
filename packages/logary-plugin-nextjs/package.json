@@ -12,6 +12,16 @@
   "publishConfig": {
     "access": "public"
   },
+  "keywords": [
+    "exception",
+    "error",
+    "nextjs",
+    "analytics",
+    "logging",
+    "tracing",
+    "funnel",
+    "key performance metrics"
+  ],
   "scripts": {
     "build": "tsc"
   },

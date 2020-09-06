@@ -9,6 +9,14 @@
     "package.json",
     "README.md"
   ],
+  "keywords": [
+    "react",
+    "error",
+    "analytics",
+    "logging",
+    "tracing",
+    "key performance metrics"
+  ],
   "publishConfig": {
     "access": "public"
   },
