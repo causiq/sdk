@@ -1,7 +1,7 @@
 {
   "name": "@logary/plugin-browser",
   "license": "GPL3 / commercial",
-  "version": "6.0.0-beta.3",
+  "version": "6.0.0-beta.4",
   "main": "dist/index",
   "types": "dist/index",
   "files": [
@@ -21,7 +21,7 @@
     "@opentelemetry/core": "^0.10.2",
     "@opentelemetry/tracing": "^0.10.2",
     "@opentelemetry/web": "^0.10.2",
-    "logary": "6.0.0-beta.3",
+    "logary": "6.0.0-beta.4",
     "web-vitals": "^0.2.4"
   },
   "devDependencies": {
