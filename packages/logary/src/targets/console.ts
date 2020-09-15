@@ -14,7 +14,7 @@ function consolePrintKVs(kvs: KeyValue[]) {
 function consolePrintEvent(message: EventMessage) {
   const parts = []
 
-  parts.push(new Date(Number(message.timestamp / BigInt('1000000'))).toISOString().slice(11, -1))
+  parts.push(new Date(Number(message.timestamp / BigInt('1000000'))).toISOString()) //.slice(11, -1))
 
   if (message.name.length > 0) {
     parts.push(`[${message.name.join('.')}]`)
