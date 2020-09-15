@@ -80,9 +80,8 @@ describe('Span', () => {
 
     const span = logary.getTracer().startSpan('work')
 
-    for (let index = 0; index < 100000; index++) {
-      const x = () => {index - 1}
-      x()
+    for (let index = 0; index < 100; index++) {
+      span.addEvent(`Event no ${index}`)
     }
 
     span.end()
@@ -105,5 +104,10 @@ describe('Span', () => {
     // internals
     expect(s.finished).toBeGreaterThan(s.started)
 
+    // all its events
+    for (const event of s.events) {
+      expect(event.timestamp).toBeGreaterThan(beforeStart)
+      expect(event.timestamp).toBeLessThan(afterEnd)
+    }
   })
 })

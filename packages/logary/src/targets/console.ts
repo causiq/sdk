@@ -4,6 +4,8 @@ import { Config } from '../config'
 import RuntimeInfo from '../runtimeInfo'
 import { filter } from "rxjs/operators"
 
+const M = BigInt('1000000')
+
 function consolePrintKVs(kvs: KeyValue[]) {
   for (let i = 0; i < kvs.length; i++) {
     const { key, value } = kvs[i]
@@ -14,7 +16,7 @@ function consolePrintKVs(kvs: KeyValue[]) {
 function consolePrintEvent(message: EventMessage) {
   const parts = []
 
-  parts.push(new Date(Number(message.timestamp / BigInt('1000000'))).toISOString()) //.slice(11, -1))
+  parts.push(new Date(Number(message.timestamp / M)).toISOString().slice(11, -1))
 
   if (message.name.length > 0) {
     parts.push(`[${message.name.join('.')}]`)
@@ -51,7 +53,6 @@ function consolePrint(message: Message) {
 }
 
 function consolePrintSpan(span: SpanMessage) {
-  const M = BigInt('1000000')
   console.group(span.label,
     span.finished != null
       ? Math.max(Number(span.finished/M), Number(span.started/M)) - Number(span.started / M)

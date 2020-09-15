@@ -1,5 +1,7 @@
-import { NextPage, NextPageContext } from "next"
+/* eslint no-use-before-define: 0 */
+
 import React, { useMemo } from "react"
+import { NextPage, NextPageContext } from "next"
 import { LogaryProvider } from "@logary/plugin-react"
 import { NextJSFeature, NextJSSupporter } from "."
 import { UniversalRendering } from "logary"

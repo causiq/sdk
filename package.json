@@ -22,15 +22,15 @@
     }
   },
   "devDependencies": {
-    "@opentelemetry/node": "^0.10.2",
-    "@opentelemetry/plugin-document-load": "^0.9.0",
-    "@opentelemetry/plugin-http": "^0.10.2",
-    "@opentelemetry/plugin-https": "^0.10.2",
-    "@opentelemetry/web": "^0.10.2",
-    "@typescript-eslint/eslint-plugin": "^3.0.1",
-    "@typescript-eslint/parser": "^3.0.1",
-    "eslint": "^7.1.0",
-    "husky": "^4.2.3",
+    "@opentelemetry/node": "^0.11.0",
+    "@opentelemetry/plugin-document-load": "^0.10.0",
+    "@opentelemetry/plugin-http": "^0.11.0",
+    "@opentelemetry/plugin-https": "^0.11.0",
+    "@opentelemetry/web": "^0.11.0",
+    "@typescript-eslint/eslint-plugin": "^4.1.1",
+    "@typescript-eslint/parser": "^4.1.1",
+    "eslint": "^7.9.0",
+    "husky": "^4.3.0",
     "lerna": "^3.22.1",
     "typescript": "^4.0.2"
   }

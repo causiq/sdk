@@ -1,4 +1,5 @@
-import { Span, Tracer, SpanOptions, Context } from "@opentelemetry/api"
+import { setActiveSpan } from '@opentelemetry/core'
+import { Span, Tracer, SpanOptions, Context, context  } from "@opentelemetry/api"
 import Logary, { HasTracer, TracerModule, } from "logary"
 import { BrowserPluginOptions, PageViewSpanHolder } from './types'
 import { features } from './features'
@@ -36,7 +37,9 @@ class BrowserPlugin implements HasTracer, PageViewSpanHolder {
   // current root span:
 
   newPageViewSpan(): Span {
-    return this._pageViewSpan = this.tracer.startSpan(PageViewEventName)
+    const span = this.tracer.startSpan(PageViewEventName)
+    // setActiveSpan(context, span)
+    return this._pageViewSpan = span
   }
 
   get pageViewSpan(): Span {

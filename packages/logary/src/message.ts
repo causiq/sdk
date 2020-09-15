@@ -1,3 +1,5 @@
+/* eslint no-shadow: 0 */
+
 import template, { Templated } from './formatting/template'
 import { hexDigest } from './utils/hasher'
 import { Money } from "./money"
@@ -19,6 +21,7 @@ export enum LogLevel {
 export interface LogaryMessage {
   readonly id: string;
   readonly name: string[];
+  // es-
   readonly level: LogLevel;
   readonly timestamp: EpochNanoSeconds;
   readonly fields?: Record<string, unknown>;
