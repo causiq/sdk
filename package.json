@@ -26,7 +26,7 @@
     "@opentelemetry/plugin-document-load": "^0.9.0",
     "@opentelemetry/plugin-http": "^0.10.2",
     "@opentelemetry/plugin-https": "^0.10.2",
-    "@opentelemetry/web": "^0.10.2",
+    "@opentelemetry/web": "^0.11.0",
     "@typescript-eslint/eslint-plugin": "^3.0.1",
     "@typescript-eslint/parser": "^3.0.1",
     "eslint": "^7.1.0",
