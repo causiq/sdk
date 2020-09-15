@@ -110,12 +110,14 @@ export class SetUserPropertyMessage implements LogaryMessage {
   ) {
     this.level = LogLevel.info
     this.fields = {}
+    this.context = {}
     this.timestamp = timestamp || getTimestamp()
     this.id = id || hexDigest(this)
   }
   id: string
   level: LogLevel
   fields: Record<string, unknown>
+  context: Record<string, unknown>
   timestamp: EpochNanoSeconds
   type: 'setUserProperty' = 'setUserProperty'
 }

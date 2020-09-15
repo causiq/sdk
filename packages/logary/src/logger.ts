@@ -1,6 +1,6 @@
 import { LogLevel, Message } from './message'
 import { Logger as OTLogger, LogFunction, Tracer } from '@opentelemetry/api'
-import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction } from "./types"
+import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction, ForgetUserFunction } from "./types"
 
 interface LoggerEx extends Readonly<OTLogger> {
   readonly verbose: LogFunction;
@@ -8,6 +8,7 @@ interface LoggerEx extends Readonly<OTLogger> {
   readonly event: EventFunction;
   readonly setUserProperty: SetUserPropertyFunction;
   readonly identify: IdentifyUserFunction;
+  readonly forgetUser: ForgetUserFunction;
 }
 
 /**

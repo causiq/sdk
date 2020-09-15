@@ -3,7 +3,7 @@ import { Subscription } from 'rxjs'
 import { Config } from "./config"
 import Logary from './impl'
 import { Logger } from './logger'
-import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction } from './types'
+import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction, ForgetUserFunction } from './types'
 import { LogLevel } from './message'
 import ConsoleTarget from './targets/console'
 
@@ -13,6 +13,8 @@ export { Config, CookieName } from './config'
 export { Logger } from './logger'
 export { Message, LogaryMessage, EventMessage, SpanMessage, LogLevel } from './message'
 export { default as money, isMoney, Money } from './money'
+export { default as createUserId } from './utils/createUserId'
+export { default as getUserId } from './utils/getUserId'
 export * from './types'
 export * from './features'
 export * from './targets'
@@ -72,6 +74,10 @@ export const event: EventFunction = (...args: unknown[]) =>
 export const identify: IdentifyUserFunction = (...args: unknown[]) =>
   // @ts-ignore
   getLogger().identify(...args)
+
+export const forgetUser: ForgetUserFunction = (...args: unknown[]) =>
+  // @ts-ignore
+  getLogger().forgetUser(...args)
 
 export const setUserProperty: SetUserPropertyFunction = (...args: unknown[]) =>
   // @ts-ignore

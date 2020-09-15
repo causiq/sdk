@@ -59,7 +59,7 @@ function areCookiesEqual(a: Cookie, b: Cookie) {
 function createCookie(
   name: string,
   value: string,
-  options: cookie.CookieSerializeOptions,
+  options: cookie.CookieSerializeOptions = {},
 ): Cookie {
   let sameSite = options.sameSite
   if (sameSite === true) {
@@ -89,7 +89,7 @@ export function parseCookies(
     | { req: http.IncomingMessage }
     | null
     | undefined,
-  options?: cookie.CookieParseOptions,
+  options: cookie.CookieParseOptions = {},
 ): Record<string, string> {
   if (ctx && ctx.req && ctx.req.headers && ctx.req.headers.cookie) {
     return cookie.parse(ctx.req.headers.cookie as string, options)
@@ -118,7 +118,7 @@ export function setCookie(
     | undefined,
   name: string,
   value: string,
-  options: cookie.CookieSerializeOptions,
+  options: cookie.CookieSerializeOptions = {},
 ): void {
   if (ctx && ctx.res && ctx.res.getHeader && ctx.res.setHeader) {
     let cookies = ctx.res.getHeader('Set-Cookie') || []
@@ -168,7 +168,7 @@ export function destroyCookie(
     | null
     | undefined,
   name: string,
-  options?: cookie.CookieSerializeOptions,
+  options: cookie.CookieSerializeOptions = {},
 ): void {
   const opts = { ...(options || {}), maxAge: -1 }
 

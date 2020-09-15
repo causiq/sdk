@@ -27,6 +27,8 @@ export interface IdentifyUserFunction {
   (userId: string): void;
 }
 
+export type ForgetUserFunction = (userId?: string) => void;
+
 export interface SetUserPropertyFunction {
   (userId: string, key: string, value: unknown): void;
 }

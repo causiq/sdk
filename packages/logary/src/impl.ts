@@ -2,8 +2,8 @@ import LogaryPlugin, { PluginAPI } from "./plugin"
 import RuntimeInfo from './runtimeInfo'
 import { ensureName, ensureMessageId, adaptLogFunction } from './utils'
 import { Config } from './config'
-import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction } from './types'
-import { LogLevel, Message, SetUserPropertyMessage } from './message'
+import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction, ForgetUserFunction } from './types'
+import { ForgetUserMessage, LogLevel, Message, SetUserPropertyMessage } from './message'
 import { Logger } from './logger'
 import { Runnable } from "./types"
 import { empty, Subject, Subscription } from 'rxjs'
@@ -13,6 +13,7 @@ import getTimestamp from "./utils/time"
 import { OpenTelemetryHasTracer } from "./features"
 import { HasTracer } from "."
 import { NoopTracer, Tracer, Span, SpanOptions, Context } from "@opentelemetry/api"
+import getUserId from "./utils/getUserId"
 
 type LogaryState = | 'initial' | 'started' | 'closed'
 
@@ -124,13 +125,21 @@ export default class Logary implements RuntimeInfo, PluginAPI {
       log(level: LogLevel, ...messages: Message[]) {
         if (level < logary.minLevel) return
         if (messages == null || messages.length === 0) return
+
         const eN = ensureName(this.name)
         const parentSpanId = this.getCurrentSpan()?.context().spanId
+
         function ensureSpanId<T extends Message>(m: T) {
           return m.type === 'event' && parentSpanId != null ? {...m, parentSpanId } : m
         }
 
-        for (const message of messages.map(m => ensureMessageId(ensureSpanId(eN(m))))) {
+        function ensureUserId<T extends Message>(m: T): T {
+          if (typeof window === 'undefined') return m
+          if (typeof m.context['userId'] !== 'undefined') return m
+          return { ...m, context: { ...m.context, userId: getUserId() } }
+        }
+
+        for (const message of messages.map(m => ensureMessageId(ensureUserId(ensureSpanId(eN(m)))))) {
           logary._messages.next(message)
         }
       }
@@ -168,6 +177,11 @@ export default class Logary implements RuntimeInfo, PluginAPI {
         // @ts-ignore TO CONSIDER: passing along user id
         const m = createIdentifyMessage(null, ...args)
         this.log(LogLevel.info, m)
+      }
+
+      forgetUser: ForgetUserFunction = (...args: unknown[]) => {
+        const uId = args[0] as string || getUserId()
+        this.log(LogLevel.info, new ForgetUserMessage(uId))
       }
 
       // (opentelemetry/api).Tracer starts here
