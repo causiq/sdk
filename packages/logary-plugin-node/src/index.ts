@@ -10,10 +10,15 @@ import { NodePluginOptions } from './types'
 import { Tracer } from "@opentelemetry/api"
 import createTracer from './tracer'
 
+export * from './handlers'
+
+export const NodeJSHttpHandlers = 'NodeJSHttpHandlers'
+
 export const features = [
   UniversalRendering,
   OpenTelemetryFeature,
-  OpenTelemetryHasTracer
+  OpenTelemetryHasTracer,
+  NodeJSHttpHandlers
 ]
 
 class NodePlugin implements HasTracer {

@@ -9,7 +9,7 @@ import ConsoleTarget from './targets/console'
 
 // https://www.typescriptlang.org/docs/handbook/modules.html
 export default Logary
-export { Config } from './config'
+export { Config, CookieName } from './config'
 export { Logger } from './logger'
 export { Message, LogaryMessage, EventMessage, SpanMessage, LogLevel } from './message'
 export { default as money, isMoney, Money } from './money'

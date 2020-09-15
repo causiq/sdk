@@ -138,8 +138,29 @@ export class IdentifyUserMessage implements LogaryMessage {
   type: 'identifyUserMessage' = 'identifyUserMessage'
 }
 
+export class ForgetUserMessage implements LogaryMessage {
+  constructor(
+    public userId: string,
+    public name: string[] = [],
+    public fields: Record<string, unknown> = {},
+    public context: Record<string, unknown> = {},
+    public parentSpanId?: string | undefined,
+    timestamp?: EpochNanoSeconds | undefined,
+  ) {
+    this.name = name
+    this.level = LogLevel.info
+    this.timestamp = timestamp || getTimestamp()
+    this.id = hexDigest(this)
+  }
+  id: string
+  timestamp: EpochNanoSeconds
+  type: 'forgetUserMessage' = 'forgetUserMessage'
+  level: LogLevel
+}
+
 export type Message =
   | SpanMessage
   | EventMessage
   | SetUserPropertyMessage
   | IdentifyUserMessage
+  | ForgetUserMessage
