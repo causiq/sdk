@@ -137,7 +137,7 @@ export class IdentifyUserMessage implements LogaryMessage {
   }
   id: string
   timestamp: EpochNanoSeconds
-  type: 'identifyUserMessage' = 'identifyUserMessage'
+  type: 'identifyUser' = 'identifyUser'
 }
 
 export class ForgetUserMessage implements LogaryMessage {
@@ -156,7 +156,7 @@ export class ForgetUserMessage implements LogaryMessage {
   }
   id: string
   timestamp: EpochNanoSeconds
-  type: 'forgetUserMessage' = 'forgetUserMessage'
+  type: 'forgetUser' = 'forgetUser'
   level: LogLevel
 }
 
