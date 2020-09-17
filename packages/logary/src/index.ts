@@ -17,8 +17,8 @@ export { default as createUserId } from './utils/createUserId'
 export { default as getUserId } from './utils/getUserId'
 export * from './types'
 export * from './features'
-export * from './targets'
 export * from './trace'
+export { ConsoleTarget, RuttaTarget, NullTarget, StubTarget } from './targets'
 
 // what follows is the convenience API (every logging lib should be easy to get started with!)
 

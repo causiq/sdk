@@ -1,7 +1,7 @@
-import { Context, NoopSpan, Span, SpanKind, SpanOptions, TraceFlags, Tracer, TracerProvider } from "@opentelemetry/api"
+import { Context, Span, SpanKind, SpanOptions, TraceFlags, Tracer } from "@opentelemetry/api"
 import { BasicTracerProvider, SimpleSpanProcessor, Span as TSpan, Tracer as TTracer  } from "@opentelemetry/tracing"
 import Logary, { LogLevel, HasTracer, OpenTelemetryFeature, OpenTelemetryHasTracer, LogaryExporter, Config } from '../src'
-import { EventMessage, SpanMessage } from '../src/message'
+import { SpanMessage } from '../src/message'
 import LogaryPlugin from "../src/plugin"
 import StubTarget from '../src/targets/stub'
 

@@ -6,6 +6,7 @@ test:
 	yarn run test
 
 clean:
+	(cd packages/browser && rm -rf dist)
 	(cd packages/logary && rm -rf dist node_modules)
 	(cd packages/logary-plugin-browser && rm -rf dist node_modules)
 	(cd packages/logary-plugin-nextjs && rm -rf dist node_modules)
@@ -15,7 +16,8 @@ clean:
 build:
 	yarn lerna bootstrap
 	yarn lerna link
-	yarn lerna run build
+	yarn build
+	yarn build:browser
 
 publish:
 	yarn lerna publish

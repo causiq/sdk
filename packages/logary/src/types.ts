@@ -43,6 +43,8 @@ export interface Target extends Runnable {
 
 export type KeyValue = Readonly<{ key: string; value: any }>;
 
+export type ValueOf<T> = T[keyof T];
+
 // TODO: verify against server structure
 
 export type ErrorInfo = Readonly<{

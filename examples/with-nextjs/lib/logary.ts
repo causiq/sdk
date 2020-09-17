@@ -18,7 +18,7 @@ const instance = getLogary({
       disabled: false //typeof window === 'undefined',
     })
   ],
-  accountId: 'open-source',
+  appId: 'LA-123456',
   debug: false
 })
 

@@ -12,12 +12,15 @@ export const CookieName = 'uid'
  */
 export interface Config {
   /**
-   * Logary Analytics Account Id
+   * Logary Analytics App Id
    */
-  readonly accountId?: string;
+  readonly appId?: string;
   readonly serviceVersion?: string;
   readonly serviceName: string | string[];
-  readonly targets: Target[];
   readonly minLevel: LogLevel;
   readonly debug?: boolean;
+
+  readonly libraryVersion?: string;
+
+  readonly targets: Target[];
 }

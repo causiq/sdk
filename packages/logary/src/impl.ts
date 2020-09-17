@@ -1,8 +1,8 @@
 import LogaryPlugin, { PluginAPI } from "./plugin"
 import RuntimeInfo from './runtimeInfo'
-import { ensureName, ensureMessageId, adaptLogFunction } from './utils'
+import { ensureMessageId, adaptLogFunction } from './utils'
 import { Config } from './config'
-import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction, ForgetUserFunction } from './types'
+import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction, ForgetUserFunction, ValueOf } from './types'
 import { ForgetUserMessage, LogLevel, Message, SetUserPropertyMessage } from './message'
 import { Logger } from './logger'
 import { Runnable } from "./types"
@@ -18,6 +18,27 @@ import getUserId from "./utils/getUserId"
 type LogaryState = | 'initial' | 'started' | 'closed'
 
 const noPlugins: LogaryPlugin[] = []
+
+function ensureSpanId<T extends Message>(parentSpanId: null | undefined | string, m: T): T {
+  return m.type === 'event' && parentSpanId != null ? {...m, parentSpanId } : m
+}
+
+function ensureUserId<T extends Message>(m: T): T {
+  if (typeof window === 'undefined') return m
+  if (typeof m.context['userId'] !== 'undefined') return m
+  return { ...m, context: { ...m.context, userId: getUserId() } }
+}
+
+function ensureAppId<T extends Message>(appId: string | null | undefined, m: T): T {
+  if (typeof window === 'undefined') return m
+  if (appId == null) return m
+  if (typeof m.context['appId'] !== 'undefined') return m
+  return { ...m, context: { ...m.context, appId: getUserId() } }
+}
+
+function ensureName<T extends Message>(name: string[], m: T): T {
+  return m.name == null || m.name.length === 0 ? { ...m, name } : m
+}
 
 /**
  * 1. Pass a config to the c'tor
@@ -48,6 +69,8 @@ export default class Logary implements RuntimeInfo, PluginAPI {
 
   // plugin API
   private _plugins: LogaryPlugin[] = []
+
+  public i: [keyof Config, ValueOf<Config>][] = []
 
   start(): Subscription {
     if (this._state !== 'initial') throw new Error("Logary started twice")
@@ -122,24 +145,23 @@ export default class Logary implements RuntimeInfo, PluginAPI {
     return new class LoggerImpl implements Logger {
       name: string[] = [ ...logary.serviceName, ...scopeName ]
 
+      private ensureName<T extends Message>(m: T) {
+        return ensureName(this.name, m)
+      }
+
       log(level: LogLevel, ...messages: Message[]) {
         if (level < logary.minLevel) return
         if (messages == null || messages.length === 0) return
 
-        const eN = ensureName(this.name)
         const parentSpanId = this.getCurrentSpan()?.context().spanId
 
-        function ensureSpanId<T extends Message>(m: T) {
-          return m.type === 'event' && parentSpanId != null ? {...m, parentSpanId } : m
-        }
-
-        function ensureUserId<T extends Message>(m: T): T {
-          if (typeof window === 'undefined') return m
-          if (typeof m.context['userId'] !== 'undefined') return m
-          return { ...m, context: { ...m.context, userId: getUserId() } }
-        }
-
-        for (const message of messages.map(m => ensureMessageId(ensureUserId(ensureSpanId(eN(m)))))) {
+        for (const message of messages.map(m =>
+          ensureAppId(
+            logary.config.appId,
+            ensureMessageId(
+              ensureUserId(
+                ensureSpanId(parentSpanId,
+                  this.ensureName(m))))))) {
           logary._messages.next(message)
         }
       }
@@ -204,6 +226,28 @@ export default class Logary implements RuntimeInfo, PluginAPI {
     }
   }
 
+  /**
+   * Sets value on the configuration by overwriting the current configuration instance.
+   */
+  set(key: keyof Config, value: ValueOf<Config>) {
+    if (key == null || value == null) return
+    if (this.config.debug) console.log('(:Logary).set', key, value)
+    this.config = { ...this.config, [key]: value }
+  }
+
+  /**
+   * A way to reconfigure this Logary instance at runtime without cycling the
+   * Subject carrying the current messages. Configuration applies to consecutively
+   * logged messages.
+   */
+  reconfigure(): void {
+    if (this.i == null || this.i.length == 0) return
+    for (let k = 0; k < this.i.length; k++) {
+      this.set(this.i[k][0], this.i[k][1])
+    }
+    this.i = []
+  }
+
   get messages() {
     if (this._state !== 'started') return empty()
     return this._messages.asObservable()
@@ -223,11 +267,31 @@ export default class Logary implements RuntimeInfo, PluginAPI {
     return this.config.targets
   }
 
+  /**
+   * Gets the lowest level of logs that Logary send to the backend.
+   */
   get minLevel() {
     return this.config.minLevel
   }
 
+  /**
+   * Gets whether Logary is in debug mode.
+   */
   get debug() {
     return this.config.debug
+  }
+
+  /**
+   * Gets the configured application id for this app.
+   */
+  get appId() {
+    return this.config.appId
+  }
+
+  /**
+   * Gets the current Logary state: 'initial' | 'started' | 'closed'
+   */
+  get state() {
+    return this._state
   }
 }
