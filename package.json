@@ -36,7 +36,7 @@
     "husky": "^4.3.0",
     "lerna": "^3.22.1",
     "rollup": "^1.0.0",
-    "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-commonjs": "^10.1.0",
     "rollup-plugin-node-resolve": "^4.0.0",
     "rollup-plugin-typescript": "^1.0.0",
     "rollup-plugin-git-version": "^0.3.1",
