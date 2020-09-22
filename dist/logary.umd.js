@@ -1,12 +1,12 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('path'), require('crypto'), require('perf_hooks'), require('events'), require('http'), require('os'), require('stream'), require('url'), require('https'), require('zlib'), require('net'), require('tls'), require('assert'), require('tty'), require('util')) :
-	typeof define === 'function' && define.amd ? define(['path', 'crypto', 'perf_hooks', 'events', 'http', 'os', 'stream', 'url', 'https', 'zlib', 'net', 'tls', 'assert', 'tty', 'util'], factory) :
-	(global = global || self, global.logary = factory(global.path, global.crypto$1, global.perf_hooks, global.events$1, global.http$1, global.os, global.Stream, global.Url, global.https, global.zlib, global.net, global.tls, global.assert, global.tty, global.util));
-}(this, (function (path, crypto$1, perf_hooks, events$1, http$1, os, Stream, Url, https, zlib, net, tls, assert, tty, util) { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('path'), require('perf_hooks'), require('crypto'), require('events'), require('http'), require('os'), require('stream'), require('url'), require('https'), require('zlib'), require('net'), require('tls'), require('assert'), require('tty'), require('util')) :
+	typeof define === 'function' && define.amd ? define(['path', 'perf_hooks', 'crypto', 'events', 'http', 'os', 'stream', 'url', 'https', 'zlib', 'net', 'tls', 'assert', 'tty', 'util'], factory) :
+	(global = global || self, global.logary = factory(global.path, global.perf_hooks, global.crypto$1, global.events$1, global.http$1, global.os, global.Stream, global.Url, global.https, global.zlib, global.net, global.tls, global.assert, global.tty, global.util));
+}(this, (function (path, perf_hooks, crypto$1, events$1, http$1, os, Stream, Url, https, zlib, net, tls, assert, tty, util) { 'use strict';
 
 	path = path && Object.prototype.hasOwnProperty.call(path, 'default') ? path['default'] : path;
-	crypto$1 = crypto$1 && Object.prototype.hasOwnProperty.call(crypto$1, 'default') ? crypto$1['default'] : crypto$1;
 	perf_hooks = perf_hooks && Object.prototype.hasOwnProperty.call(perf_hooks, 'default') ? perf_hooks['default'] : perf_hooks;
+	crypto$1 = crypto$1 && Object.prototype.hasOwnProperty.call(crypto$1, 'default') ? crypto$1['default'] : crypto$1;
 	events$1 = events$1 && Object.prototype.hasOwnProperty.call(events$1, 'default') ? events$1['default'] : events$1;
 	http$1 = http$1 && Object.prototype.hasOwnProperty.call(http$1, 'default') ? http$1['default'] : http$1;
 	os = os && Object.prototype.hasOwnProperty.call(os, 'default') ? os['default'] : os;
@@ -2223,26 +2223,43 @@
 	 */
 	Object.defineProperty(exports, "__esModule", { value: true });
 	exports.RandomIdGenerator = void 0;
-
 	const SPAN_ID_BYTES = 8;
 	const TRACE_ID_BYTES = 16;
 	class RandomIdGenerator {
-	    /**
-	     * Returns a random 16-byte trace ID formatted/encoded as a 32 lowercase hex
-	     * characters corresponding to 128 bits.
-	     */
-	    generateTraceId() {
-	        return crypto$1.randomBytes(TRACE_ID_BYTES).toString('hex');
-	    }
-	    /**
-	     * Returns a random 8-byte span ID formatted/encoded as a 16 lowercase hex
-	     * characters corresponding to 64 bits.
-	     */
-	    generateSpanId() {
-	        return crypto$1.randomBytes(SPAN_ID_BYTES).toString('hex');
+	    constructor() {
+	        /**
+	         * Returns a random 16-byte trace ID formatted/encoded as a 32 lowercase hex
+	         * characters corresponding to 128 bits.
+	         */
+	        this.generateTraceId = getIdGenerator(TRACE_ID_BYTES);
+	        /**
+	         * Returns a random 8-byte span ID formatted/encoded as a 16 lowercase hex
+	         * characters corresponding to 64 bits.
+	         */
+	        this.generateSpanId = getIdGenerator(SPAN_ID_BYTES);
 	    }
 	}
 	exports.RandomIdGenerator = RandomIdGenerator;
+	const SHARED_BUFFER = Buffer.allocUnsafe(TRACE_ID_BYTES);
+	function getIdGenerator(bytes) {
+	    return function generateId() {
+	        for (let i = 0; i < bytes / 4; i++) {
+	            // unsigned right shift drops decimal part of the number
+	            // it is required because if a number between 2**32 and 2**32 - 1 is generated, an out of range error is thrown by writeUInt32BE
+	            SHARED_BUFFER.writeUInt32BE((Math.random() * 2 ** 32) >>> 0, i * 4);
+	        }
+	        // If buffer is all 0, set the last byte to 1 to guarantee a valid w3c id is generated
+	        for (let i = 0; i < bytes; i++) {
+	            if (SHARED_BUFFER[i] > 0) {
+	                break;
+	            }
+	            else if (i === bytes - 1) {
+	                SHARED_BUFFER[bytes - 1] = 1;
+	            }
+	        }
+	        return SHARED_BUFFER.toString('hex', 0, bytes);
+	    };
+	}
 
 	});
 
@@ -2294,7 +2311,7 @@
 	Object.defineProperty(exports, "__esModule", { value: true });
 	exports.VERSION = void 0;
 	// this is autogenerated file, see scripts/version-update.js
-	exports.VERSION = '0.10.2';
+	exports.VERSION = '0.11.0';
 
 	});
 
@@ -2361,6 +2378,48 @@
 	unwrapExports(timerUtil);
 	var timerUtil_1 = timerUtil.unrefTimer;
 
+	var ShutdownNotifier = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports._invokeGlobalShutdown = exports.notifyOnGlobalShutdown = void 0;
+	/**
+	 * Adds an event listener to trigger a callback when a SIGTERM is detected in the process
+	 */
+	function notifyOnGlobalShutdown(cb) {
+	    process.once('SIGTERM', cb);
+	    return function removeCallbackFromGlobalShutdown() {
+	        process.removeListener('SIGTERM', cb);
+	    };
+	}
+	exports.notifyOnGlobalShutdown = notifyOnGlobalShutdown;
+	/**
+	 * Warning: meant for internal use only! Sends a SIGTERM to the current process
+	 */
+	function _invokeGlobalShutdown() {
+	    process.kill(process.pid, 'SIGTERM');
+	}
+	exports._invokeGlobalShutdown = _invokeGlobalShutdown;
+
+	});
+
+	unwrapExports(ShutdownNotifier);
+	var ShutdownNotifier_1 = ShutdownNotifier._invokeGlobalShutdown;
+	var ShutdownNotifier_2 = ShutdownNotifier.notifyOnGlobalShutdown;
+
 	var node = createCommonjsModule(function (module, exports) {
 	/*
 	 * Copyright The OpenTelemetry Authors
@@ -2395,6 +2454,7 @@
 	__exportStar(performance$1, exports);
 	__exportStar(sdkInfo, exports);
 	__exportStar(timerUtil, exports);
+	__exportStar(ShutdownNotifier, exports);
 
 	});
 
@@ -2780,7 +2840,7 @@
 	    }
 	    /** Get a key to uniquely identify a context value */
 	    Context.createKey = function (description) {
-	        return Symbol(description);
+	        return Symbol.for(description);
 	    };
 	    /**
 	     * Get a value from the context.
@@ -2929,13 +2989,18 @@
 	 * limitations under the License.
 	 */
 	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.getParentSpanContext = exports.setExtractedSpanContext = exports.getExtractedSpanContext = exports.setActiveSpan = exports.getActiveSpan = exports.ACTIVE_SPAN_KEY = void 0;
+	exports.isInstrumentationSuppressed = exports.unsuppressInstrumentation = exports.suppressInstrumentation = exports.getParentSpanContext = exports.setExtractedSpanContext = exports.getExtractedSpanContext = exports.setActiveSpan = exports.getActiveSpan = exports.SUPPRESS_INSTRUMENTATION_KEY = exports.ACTIVE_SPAN_KEY = void 0;
 
 	/**
 	 * Active span key
 	 */
 	exports.ACTIVE_SPAN_KEY = src.Context.createKey('OpenTelemetry Context Key ACTIVE_SPAN');
 	const EXTRACTED_SPAN_CONTEXT_KEY = src.Context.createKey('OpenTelemetry Context Key EXTRACTED_SPAN_CONTEXT');
+	/**
+	 * Shared key for indicating if instrumentation should be suppressed beyond
+	 * this current scope.
+	 */
+	exports.SUPPRESS_INSTRUMENTATION_KEY = src.Context.createKey('OpenTelemetry Context Key SUPPRESS_INSTRUMENTATION');
 	/**
 	 * Return the active span if one exists
 	 *
@@ -2986,16 +3051,72 @@
 	    return ((_a = getActiveSpan(context)) === null || _a === void 0 ? void 0 : _a.context()) || getExtractedSpanContext(context);
 	}
 	exports.getParentSpanContext = getParentSpanContext;
+	/**
+	 * Sets value on context to indicate that instrumentation should
+	 * be suppressed beyond this current scope.
+	 *
+	 * @param context context to set the suppress instrumentation value on.
+	 */
+	function suppressInstrumentation(context) {
+	    return context.setValue(exports.SUPPRESS_INSTRUMENTATION_KEY, true);
+	}
+	exports.suppressInstrumentation = suppressInstrumentation;
+	/**
+	 * Sets value on context to indicate that instrumentation should
+	 * no-longer be suppressed beyond this current scope.
+	 *
+	 * @param context context to set the suppress instrumentation value on.
+	 */
+	function unsuppressInstrumentation(context) {
+	    return context.setValue(exports.SUPPRESS_INSTRUMENTATION_KEY, false);
+	}
+	exports.unsuppressInstrumentation = unsuppressInstrumentation;
+	/**
+	 * Return current suppress instrumentation value for the given context,
+	 * if it exists.
+	 *
+	 * @param context context check for the suppress instrumentation value.
+	 */
+	function isInstrumentationSuppressed(context) {
+	    return Boolean(context.getValue(exports.SUPPRESS_INSTRUMENTATION_KEY));
+	}
+	exports.isInstrumentationSuppressed = isInstrumentationSuppressed;
 
 	});
 
 	unwrapExports(context$1);
-	var context_1$1 = context$1.getParentSpanContext;
-	var context_2 = context$1.setExtractedSpanContext;
-	var context_3 = context$1.getExtractedSpanContext;
-	var context_4 = context$1.setActiveSpan;
-	var context_5 = context$1.getActiveSpan;
-	var context_6 = context$1.ACTIVE_SPAN_KEY;
+	var context_1$1 = context$1.isInstrumentationSuppressed;
+	var context_2 = context$1.unsuppressInstrumentation;
+	var context_3 = context$1.suppressInstrumentation;
+	var context_4 = context$1.getParentSpanContext;
+	var context_5 = context$1.setExtractedSpanContext;
+	var context_6 = context$1.getExtractedSpanContext;
+	var context_7 = context$1.setActiveSpan;
+	var context_8 = context$1.getActiveSpan;
+	var context_9 = context$1.SUPPRESS_INSTRUMENTATION_KEY;
+	var context_10 = context$1.ACTIVE_SPAN_KEY;
+
+	var Exception = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(Exception);
 
 	var Logger = createCommonjsModule(function (module, exports) {
 	/*
@@ -3061,7 +3182,7 @@
 	unwrapExports(getter);
 	var getter_1 = getter.defaultGetter;
 
-	var HttpTextPropagator = createCommonjsModule(function (module, exports) {
+	var TextMapPropagator = createCommonjsModule(function (module, exports) {
 	/*
 	 * Copyright The OpenTelemetry Authors
 	 *
@@ -3081,9 +3202,9 @@
 
 	});
 
-	unwrapExports(HttpTextPropagator);
+	unwrapExports(TextMapPropagator);
 
-	var NoopHttpTextPropagator_1 = createCommonjsModule(function (module, exports) {
+	var NoopTextMapPropagator_1 = createCommonjsModule(function (module, exports) {
 	/*
 	 * Copyright The OpenTelemetry Authors
 	 *
@@ -3100,29 +3221,29 @@
 	 * limitations under the License.
 	 */
 	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.NOOP_HTTP_TEXT_PROPAGATOR = exports.NoopHttpTextPropagator = void 0;
+	exports.NOOP_TEXT_MAP_PROPAGATOR = exports.NoopTextMapPropagator = void 0;
 	/**
-	 * No-op implementations of {@link HttpTextPropagator}.
+	 * No-op implementations of {@link TextMapPropagator}.
 	 */
-	var NoopHttpTextPropagator = /** @class */ (function () {
-	    function NoopHttpTextPropagator() {
+	var NoopTextMapPropagator = /** @class */ (function () {
+	    function NoopTextMapPropagator() {
 	    }
 	    /** Noop inject function does nothing */
-	    NoopHttpTextPropagator.prototype.inject = function (context, carrier, setter) { };
+	    NoopTextMapPropagator.prototype.inject = function (context, carrier, setter) { };
 	    /** Noop extract function does nothing and returns the input context */
-	    NoopHttpTextPropagator.prototype.extract = function (context, carrier, getter) {
+	    NoopTextMapPropagator.prototype.extract = function (context, carrier, getter) {
 	        return context;
 	    };
-	    return NoopHttpTextPropagator;
+	    return NoopTextMapPropagator;
 	}());
-	exports.NoopHttpTextPropagator = NoopHttpTextPropagator;
-	exports.NOOP_HTTP_TEXT_PROPAGATOR = new NoopHttpTextPropagator();
+	exports.NoopTextMapPropagator = NoopTextMapPropagator;
+	exports.NOOP_TEXT_MAP_PROPAGATOR = new NoopTextMapPropagator();
 
 	});
 
-	unwrapExports(NoopHttpTextPropagator_1);
-	var NoopHttpTextPropagator_2 = NoopHttpTextPropagator_1.NOOP_HTTP_TEXT_PROPAGATOR;
-	var NoopHttpTextPropagator_3 = NoopHttpTextPropagator_1.NoopHttpTextPropagator;
+	unwrapExports(NoopTextMapPropagator_1);
+	var NoopTextMapPropagator_2 = NoopTextMapPropagator_1.NOOP_TEXT_MAP_PROPAGATOR;
+	var NoopTextMapPropagator_3 = NoopTextMapPropagator_1.NoopTextMapPropagator;
 
 	var setter = createCommonjsModule(function (module, exports) {
 	/*
@@ -3450,16 +3571,8 @@
 	    function NoopValueRecorderMetric() {
 	        return _super !== null && _super.apply(this, arguments) || this;
 	    }
-	    NoopValueRecorderMetric.prototype.record = function (value, labels, correlationContext, spanContext) {
-	        if (typeof correlationContext === 'undefined') {
-	            this.bind(labels).record(value);
-	        }
-	        else if (typeof spanContext === 'undefined') {
-	            this.bind(labels).record(value, correlationContext);
-	        }
-	        else {
-	            this.bind(labels).record(value, correlationContext, spanContext);
-	        }
+	    NoopValueRecorderMetric.prototype.record = function (value, labels) {
+	        this.bind(labels).record(value);
 	    };
 	    return NoopValueRecorderMetric;
 	}(NoopMetric));
@@ -3755,6 +3868,46 @@
 	unwrapExports(trace_flags);
 	var trace_flags_1 = trace_flags.TraceFlags;
 
+	var spancontextUtils = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.isSpanContextValid = exports.isValidSpanId = exports.isValidTraceId = exports.INVALID_SPAN_CONTEXT = exports.INVALID_TRACEID = exports.INVALID_SPANID = void 0;
+
+	var VALID_TRACEID_REGEX = /^([0-9a-f]{32})$/i;
+	var VALID_SPANID_REGEX = /^[0-9a-f]{16}$/i;
+	exports.INVALID_SPANID = '0000000000000000';
+	exports.INVALID_TRACEID = '00000000000000000000000000000000';
+	exports.INVALID_SPAN_CONTEXT = {
+	    traceId: exports.INVALID_TRACEID,
+	    spanId: exports.INVALID_SPANID,
+	    traceFlags: trace_flags.TraceFlags.NONE,
+	};
+	function isValidTraceId(traceId) {
+	    return VALID_TRACEID_REGEX.test(traceId) && traceId !== exports.INVALID_TRACEID;
+	}
+	exports.isValidTraceId = isValidTraceId;
+	function isValidSpanId(spanId) {
+	    return VALID_SPANID_REGEX.test(spanId) && spanId !== exports.INVALID_SPANID;
+	}
+	exports.isValidSpanId = isValidSpanId;
+	/**
+	 * Returns true if this {@link SpanContext} is valid.
+	 * @return true if this {@link SpanContext} is valid.
+	 */
+	function isSpanContextValid(spanContext) {
+	    return (isValidTraceId(spanContext.traceId) && isValidSpanId(spanContext.spanId));
+	}
+	exports.isSpanContextValid = isSpanContextValid;
+
+	});
+
+	unwrapExports(spancontextUtils);
+	var spancontextUtils_1 = spancontextUtils.isSpanContextValid;
+	var spancontextUtils_2 = spancontextUtils.isValidSpanId;
+	var spancontextUtils_3 = spancontextUtils.isValidTraceId;
+	var spancontextUtils_4 = spancontextUtils.INVALID_SPAN_CONTEXT;
+	var spancontextUtils_5 = spancontextUtils.INVALID_TRACEID;
+	var spancontextUtils_6 = spancontextUtils.INVALID_SPANID;
+
 	var NoopSpan_1 = createCommonjsModule(function (module, exports) {
 	/*
 	 * Copyright The OpenTelemetry Authors
@@ -3772,15 +3925,8 @@
 	 * limitations under the License.
 	 */
 	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.NOOP_SPAN = exports.NoopSpan = exports.INVALID_SPAN_ID = exports.INVALID_TRACE_ID = void 0;
+	exports.NOOP_SPAN = exports.NoopSpan = void 0;
 
-	exports.INVALID_TRACE_ID = '0';
-	exports.INVALID_SPAN_ID = '0';
-	var INVALID_SPAN_CONTEXT = {
-	    traceId: exports.INVALID_TRACE_ID,
-	    spanId: exports.INVALID_SPAN_ID,
-	    traceFlags: trace_flags.TraceFlags.NONE,
-	};
 	/**
 	 * The NoopSpan is the default {@link Span} that is used when no Span
 	 * implementation is available. All operations are no-op including context
@@ -3788,7 +3934,7 @@
 	 */
 	var NoopSpan = /** @class */ (function () {
 	    function NoopSpan(_spanContext) {
-	        if (_spanContext === void 0) { _spanContext = INVALID_SPAN_CONTEXT; }
+	        if (_spanContext === void 0) { _spanContext = spancontextUtils.INVALID_SPAN_CONTEXT; }
 	        this._spanContext = _spanContext;
 	    }
 	    // Returns a SpanContext.
@@ -3821,6 +3967,8 @@
 	    NoopSpan.prototype.isRecording = function () {
 	        return false;
 	    };
+	    // By default does nothing
+	    NoopSpan.prototype.recordException = function (exception, time) { };
 	    return NoopSpan;
 	}());
 	exports.NoopSpan = NoopSpan;
@@ -3831,8 +3979,6 @@
 	unwrapExports(NoopSpan_1);
 	var NoopSpan_2 = NoopSpan_1.NOOP_SPAN;
 	var NoopSpan_3 = NoopSpan_1.NoopSpan;
-	var NoopSpan_4 = NoopSpan_1.INVALID_SPAN_ID;
-	var NoopSpan_5 = NoopSpan_1.INVALID_TRACE_ID;
 
 	var NoopTracer_1 = createCommonjsModule(function (module, exports) {
 	/*
@@ -3924,6 +4070,131 @@
 	unwrapExports(NoopTracerProvider_1);
 	var NoopTracerProvider_2 = NoopTracerProvider_1.NOOP_TRACER_PROVIDER;
 	var NoopTracerProvider_3 = NoopTracerProvider_1.NoopTracerProvider;
+
+	var ProxyTracer_1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ProxyTracer = void 0;
+
+	/**
+	 * Proxy tracer provided by the proxy tracer provider
+	 */
+	var ProxyTracer = /** @class */ (function () {
+	    function ProxyTracer(_provider, name, version) {
+	        this._provider = _provider;
+	        this.name = name;
+	        this.version = version;
+	    }
+	    ProxyTracer.prototype.getCurrentSpan = function () {
+	        return this._getTracer().getCurrentSpan();
+	    };
+	    ProxyTracer.prototype.startSpan = function (name, options) {
+	        return this._getTracer().startSpan(name, options);
+	    };
+	    ProxyTracer.prototype.withSpan = function (span, fn) {
+	        return this._getTracer().withSpan(span, fn);
+	    };
+	    ProxyTracer.prototype.bind = function (target, span) {
+	        return this._getTracer().bind(target, span);
+	    };
+	    /**
+	     * Try to get a tracer from the proxy tracer provider.
+	     * If the proxy tracer provider has no delegate, return a noop tracer.
+	     */
+	    ProxyTracer.prototype._getTracer = function () {
+	        if (this._delegate) {
+	            return this._delegate;
+	        }
+	        var tracer = this._provider.getDelegateTracer(this.name, this.version);
+	        if (!tracer) {
+	            return NoopTracer_1.NOOP_TRACER;
+	        }
+	        this._delegate = tracer;
+	        return this._delegate;
+	    };
+	    return ProxyTracer;
+	}());
+	exports.ProxyTracer = ProxyTracer;
+
+	});
+
+	unwrapExports(ProxyTracer_1);
+	var ProxyTracer_2 = ProxyTracer_1.ProxyTracer;
+
+	var ProxyTracerProvider_1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ProxyTracerProvider = void 0;
+
+
+	/**
+	 * Tracer provider which provides {@link ProxyTracer}s.
+	 *
+	 * Before a delegate is set, tracers provided are NoOp.
+	 *   When a delegate is set, traces are provided from the delegate.
+	 *   When a delegate is set after tracers have already been provided,
+	 *   all tracers already provided will use the provided delegate implementation.
+	 */
+	var ProxyTracerProvider = /** @class */ (function () {
+	    function ProxyTracerProvider() {
+	    }
+	    /**
+	     * Get a {@link ProxyTracer}
+	     */
+	    ProxyTracerProvider.prototype.getTracer = function (name, version) {
+	        var _a;
+	        return ((_a = this.getDelegateTracer(name, version)) !== null && _a !== void 0 ? _a : new ProxyTracer_1.ProxyTracer(this, name, version));
+	    };
+	    ProxyTracerProvider.prototype.getDelegate = function () {
+	        var _a;
+	        return (_a = this._delegate) !== null && _a !== void 0 ? _a : NoopTracerProvider_1.NOOP_TRACER_PROVIDER;
+	    };
+	    /**
+	     * Set the delegate tracer provider
+	     */
+	    ProxyTracerProvider.prototype.setDelegate = function (delegate) {
+	        this._delegate = delegate;
+	    };
+	    ProxyTracerProvider.prototype.getDelegateTracer = function (name, version) {
+	        var _a;
+	        return (_a = this._delegate) === null || _a === void 0 ? void 0 : _a.getTracer(name, version);
+	    };
+	    return ProxyTracerProvider;
+	}());
+	exports.ProxyTracerProvider = ProxyTracerProvider;
+
+	});
+
+	unwrapExports(ProxyTracerProvider_1);
+	var ProxyTracerProvider_2 = ProxyTracerProvider_1.ProxyTracerProvider;
 
 	var Sampler = createCommonjsModule(function (module, exports) {
 	/*
@@ -4589,12 +4860,16 @@
 	exports.TraceAPI = void 0;
 
 
+
+
 	/**
 	 * Singleton object which represents the entry point to the OpenTelemetry Tracing API
 	 */
 	var TraceAPI = /** @class */ (function () {
 	    /** Empty private constructor prevents end users from constructing a new instance of the API */
 	    function TraceAPI() {
+	        this._proxyTracerProvider = new ProxyTracerProvider_1.ProxyTracerProvider();
+	        this.isSpanContextValid = spancontextUtils.isSpanContextValid;
 	    }
 	    /** Get the singleton instance of the Trace API */
 	    TraceAPI.getInstance = function () {
@@ -4611,7 +4886,8 @@
 	            // global tracer provider has already been set
 	            return this.getTracerProvider();
 	        }
-	        globalUtils._global[globalUtils.GLOBAL_TRACE_API_KEY] = globalUtils.makeGetter(globalUtils.API_BACKWARDS_COMPATIBILITY_VERSION, provider, NoopTracerProvider_1.NOOP_TRACER_PROVIDER);
+	        this._proxyTracerProvider.setDelegate(provider);
+	        globalUtils._global[globalUtils.GLOBAL_TRACE_API_KEY] = globalUtils.makeGetter(globalUtils.API_BACKWARDS_COMPATIBILITY_VERSION, this._proxyTracerProvider, NoopTracerProvider_1.NOOP_TRACER_PROVIDER);
 	        return this.getTracerProvider();
 	    };
 	    /**
@@ -4619,7 +4895,7 @@
 	     */
 	    TraceAPI.prototype.getTracerProvider = function () {
 	        var _a, _b;
-	        return ((_b = (_a = globalUtils._global[globalUtils.GLOBAL_TRACE_API_KEY]) === null || _a === void 0 ? void 0 : _a.call(globalUtils._global, globalUtils.API_BACKWARDS_COMPATIBILITY_VERSION)) !== null && _b !== void 0 ? _b : NoopTracerProvider_1.NOOP_TRACER_PROVIDER);
+	        return ((_b = (_a = globalUtils._global[globalUtils.GLOBAL_TRACE_API_KEY]) === null || _a === void 0 ? void 0 : _a.call(globalUtils._global, globalUtils.API_BACKWARDS_COMPATIBILITY_VERSION)) !== null && _b !== void 0 ? _b : this._proxyTracerProvider);
 	    };
 	    /**
 	     * Returns a tracer from the global tracer provider.
@@ -4630,6 +4906,7 @@
 	    /** Remove the global tracer provider */
 	    TraceAPI.prototype.disable = function () {
 	        delete globalUtils._global[globalUtils.GLOBAL_TRACE_API_KEY];
+	        this._proxyTracerProvider = new ProxyTracerProvider_1.ProxyTracerProvider();
 	    };
 	    return TraceAPI;
 	}());
@@ -4757,7 +5034,7 @@
 	            // global propagator has already been set
 	            return this._getGlobalPropagator();
 	        }
-	        globalUtils._global[globalUtils.GLOBAL_PROPAGATION_API_KEY] = globalUtils.makeGetter(globalUtils.API_BACKWARDS_COMPATIBILITY_VERSION, propagator, NoopHttpTextPropagator_1.NOOP_HTTP_TEXT_PROPAGATOR);
+	        globalUtils._global[globalUtils.GLOBAL_PROPAGATION_API_KEY] = globalUtils.makeGetter(globalUtils.API_BACKWARDS_COMPATIBILITY_VERSION, propagator, NoopTextMapPropagator_1.NOOP_TEXT_MAP_PROPAGATOR);
 	        return propagator;
 	    };
 	    /**
@@ -4790,7 +5067,7 @@
 	    };
 	    PropagationAPI.prototype._getGlobalPropagator = function () {
 	        var _a, _b;
-	        return ((_b = (_a = globalUtils._global[globalUtils.GLOBAL_PROPAGATION_API_KEY]) === null || _a === void 0 ? void 0 : _a.call(globalUtils._global, globalUtils.API_BACKWARDS_COMPATIBILITY_VERSION)) !== null && _b !== void 0 ? _b : NoopHttpTextPropagator_1.NOOP_HTTP_TEXT_PROPAGATOR);
+	        return ((_b = (_a = globalUtils._global[globalUtils.GLOBAL_PROPAGATION_API_KEY]) === null || _a === void 0 ? void 0 : _a.call(globalUtils._global, globalUtils.API_BACKWARDS_COMPATIBILITY_VERSION)) !== null && _b !== void 0 ? _b : NoopTextMapPropagator_1.NOOP_TEXT_MAP_PROPAGATOR);
 	    };
 	    return PropagationAPI;
 	}());
@@ -4829,11 +5106,12 @@
 	};
 	Object.defineProperty(exports, "__esModule", { value: true });
 	exports.propagation = exports.metrics = exports.trace = exports.context = void 0;
+	__exportStar(Exception, exports);
 	__exportStar(Logger, exports);
 	__exportStar(Time, exports);
 	__exportStar(getter, exports);
-	__exportStar(HttpTextPropagator, exports);
-	__exportStar(NoopHttpTextPropagator_1, exports);
+	__exportStar(TextMapPropagator, exports);
+	__exportStar(NoopTextMapPropagator_1, exports);
 	__exportStar(setter, exports);
 	__exportStar(CorrelationContext, exports);
 	__exportStar(EntryValue, exports);
@@ -4854,6 +5132,8 @@
 	__exportStar(NoopSpan_1, exports);
 	__exportStar(NoopTracer_1, exports);
 	__exportStar(NoopTracerProvider_1, exports);
+	__exportStar(ProxyTracer_1, exports);
+	__exportStar(ProxyTracerProvider_1, exports);
 	__exportStar(Sampler, exports);
 	__exportStar(SamplingResult, exports);
 	__exportStar(span_context, exports);
@@ -4866,6 +5146,10 @@
 	__exportStar(trace_state, exports);
 	__exportStar(tracer_provider, exports);
 	__exportStar(tracer, exports);
+
+	Object.defineProperty(exports, "INVALID_SPANID", { enumerable: true, get: function () { return spancontextUtils.INVALID_SPANID; } });
+	Object.defineProperty(exports, "INVALID_TRACEID", { enumerable: true, get: function () { return spancontextUtils.INVALID_TRACEID; } });
+	Object.defineProperty(exports, "INVALID_SPAN_CONTEXT", { enumerable: true, get: function () { return spancontextUtils.INVALID_SPAN_CONTEXT; } });
 
 	Object.defineProperty(exports, "Context", { enumerable: true, get: function () { return src.Context; } });
 
@@ -4912,20 +5196,76 @@
 	 * limitations under the License.
 	 */
 	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.B3Propagator = exports.X_B3_SAMPLED = exports.X_B3_SPAN_ID = exports.X_B3_TRACE_ID = void 0;
+	exports.B3Propagator = exports.DEBUG_FLAG_KEY = exports.PARENT_SPAN_ID_KEY = exports.X_B3_FLAGS = exports.X_B3_PARENT_SPAN_ID = exports.X_B3_SAMPLED = exports.X_B3_SPAN_ID = exports.X_B3_TRACE_ID = void 0;
 
 
 	exports.X_B3_TRACE_ID = 'x-b3-traceid';
 	exports.X_B3_SPAN_ID = 'x-b3-spanid';
 	exports.X_B3_SAMPLED = 'x-b3-sampled';
+	exports.X_B3_PARENT_SPAN_ID = 'x-b3-parentspanid';
+	exports.X_B3_FLAGS = 'x-b3-flags';
+	exports.PARENT_SPAN_ID_KEY = src$1.Context.createKey('OpenTelemetry Context Key B3 Parent Span Id');
+	exports.DEBUG_FLAG_KEY = src$1.Context.createKey('OpenTelemetry Context Key B3 Debug Flag');
 	const VALID_TRACEID_REGEX = /^([0-9a-f]{16}){1,2}$/i;
 	const VALID_SPANID_REGEX = /^[0-9a-f]{16}$/i;
 	const INVALID_ID_REGEX = /^0+$/i;
+	const VALID_SAMPLED_VALUES = new Set([true, 'true', 'True', '1', 1]);
+	const VALID_UNSAMPLED_VALUES = new Set([false, 'false', 'False', '0', 0]);
 	function isValidTraceId(traceId) {
 	    return VALID_TRACEID_REGEX.test(traceId) && !INVALID_ID_REGEX.test(traceId);
 	}
 	function isValidSpanId(spanId) {
 	    return VALID_SPANID_REGEX.test(spanId) && !INVALID_ID_REGEX.test(spanId);
+	}
+	function isValidParentSpanID(spanId) {
+	    return spanId === undefined || isValidSpanId(spanId);
+	}
+	function isValidSampledValue(sampled) {
+	    return sampled === src$1.TraceFlags.SAMPLED || sampled === src$1.TraceFlags.NONE;
+	}
+	function parseHeader(header) {
+	    return Array.isArray(header) ? header[0] : header;
+	}
+	function getHeaderValue(carrier, getter, key) {
+	    const header = getter(carrier, key);
+	    return parseHeader(header);
+	}
+	function getTraceId(carrier, getter) {
+	    const traceId = getHeaderValue(carrier, getter, exports.X_B3_TRACE_ID);
+	    if (typeof traceId === 'string') {
+	        return traceId.padStart(32, '0');
+	    }
+	    return '';
+	}
+	function getSpanId(carrier, getter) {
+	    const spanId = getHeaderValue(carrier, getter, exports.X_B3_SPAN_ID);
+	    if (typeof spanId === 'string') {
+	        return spanId;
+	    }
+	    return '';
+	}
+	function getParentSpanId(carrier, getter) {
+	    const spanId = getHeaderValue(carrier, getter, exports.X_B3_PARENT_SPAN_ID);
+	    if (typeof spanId === 'string') {
+	        return spanId;
+	    }
+	    return;
+	}
+	function getDebug(carrier, getter) {
+	    const debug = getHeaderValue(carrier, getter, exports.X_B3_FLAGS);
+	    return debug === '1' ? '1' : undefined;
+	}
+	function getTraceFlags(carrier, getter) {
+	    const traceFlags = getHeaderValue(carrier, getter, exports.X_B3_SAMPLED);
+	    const debug = getDebug(carrier, getter);
+	    if (debug === '1' || VALID_SAMPLED_VALUES.has(traceFlags)) {
+	        return src$1.TraceFlags.SAMPLED;
+	    }
+	    if (traceFlags === undefined || VALID_UNSAMPLED_VALUES.has(traceFlags)) {
+	        return src$1.TraceFlags.NONE;
+	    }
+	    // This indicates to isValidSampledValue that this is not valid
+	    return;
 	}
 	/**
 	 * Propagator for the B3 HTTP header format.
@@ -4936,13 +5276,24 @@
 	        const spanContext = context$1.getParentSpanContext(context);
 	        if (!spanContext)
 	            return;
+	        const parentSpanId = context.getValue(exports.PARENT_SPAN_ID_KEY);
 	        if (isValidTraceId(spanContext.traceId) &&
-	            isValidSpanId(spanContext.spanId)) {
+	            isValidSpanId(spanContext.spanId) &&
+	            isValidParentSpanID(parentSpanId)) {
+	            const debug = context.getValue(exports.DEBUG_FLAG_KEY);
 	            setter(carrier, exports.X_B3_TRACE_ID, spanContext.traceId);
 	            setter(carrier, exports.X_B3_SPAN_ID, spanContext.spanId);
-	            // We set the header only if there is an existing sampling decision.
-	            // Otherwise we will omit it => Absent.
-	            if (spanContext.traceFlags !== undefined) {
+	            if (parentSpanId) {
+	                setter(carrier, exports.X_B3_PARENT_SPAN_ID, parentSpanId);
+	            }
+	            // According to the B3 spec, if the debug flag is set,
+	            // the sampled flag shouldn't be propagated as well.
+	            if (debug === '1') {
+	                setter(carrier, exports.X_B3_FLAGS, debug);
+	            }
+	            else if (spanContext.traceFlags !== undefined) {
+	                // We set the header only if there is an existing sampling decision.
+	                // Otherwise we will omit it => Absent.
 	                setter(carrier, exports.X_B3_SAMPLED, (src$1.TraceFlags.SAMPLED & spanContext.traceFlags) === src$1.TraceFlags.SAMPLED
 	                    ? '1'
 	                    : '0');
@@ -4950,26 +5301,22 @@
 	        }
 	    }
 	    extract(context, carrier, getter) {
-	        const traceIdHeader = getter(carrier, exports.X_B3_TRACE_ID);
-	        const spanIdHeader = getter(carrier, exports.X_B3_SPAN_ID);
-	        const sampledHeader = getter(carrier, exports.X_B3_SAMPLED);
-	        const traceIdHeaderValue = Array.isArray(traceIdHeader)
-	            ? traceIdHeader[0]
-	            : traceIdHeader;
-	        const spanId = Array.isArray(spanIdHeader) ? spanIdHeader[0] : spanIdHeader;
-	        const options = Array.isArray(sampledHeader)
-	            ? sampledHeader[0]
-	            : sampledHeader;
-	        if (typeof traceIdHeaderValue !== 'string' || typeof spanId !== 'string') {
-	            return context;
-	        }
-	        const traceId = traceIdHeaderValue.padStart(32, '0');
-	        if (isValidTraceId(traceId) && isValidSpanId(spanId)) {
+	        const traceId = getTraceId(carrier, getter);
+	        const spanId = getSpanId(carrier, getter);
+	        const parentSpanId = getParentSpanId(carrier, getter);
+	        const traceFlags = getTraceFlags(carrier, getter);
+	        const debug = getDebug(carrier, getter);
+	        if (isValidTraceId(traceId) &&
+	            isValidSpanId(spanId) &&
+	            isValidParentSpanID(parentSpanId) &&
+	            isValidSampledValue(traceFlags)) {
+	            context = context.setValue(exports.PARENT_SPAN_ID_KEY, parentSpanId);
+	            context = context.setValue(exports.DEBUG_FLAG_KEY, debug);
 	            return context$1.setExtractedSpanContext(context, {
 	                traceId,
 	                spanId,
 	                isRemote: true,
-	                traceFlags: isNaN(Number(options)) ? src$1.TraceFlags.NONE : Number(options),
+	                traceFlags,
 	            });
 	        }
 	        return context;
@@ -4981,9 +5328,13 @@
 
 	unwrapExports(B3Propagator_1);
 	var B3Propagator_2 = B3Propagator_1.B3Propagator;
-	var B3Propagator_3 = B3Propagator_1.X_B3_SAMPLED;
-	var B3Propagator_4 = B3Propagator_1.X_B3_SPAN_ID;
-	var B3Propagator_5 = B3Propagator_1.X_B3_TRACE_ID;
+	var B3Propagator_3 = B3Propagator_1.DEBUG_FLAG_KEY;
+	var B3Propagator_4 = B3Propagator_1.PARENT_SPAN_ID_KEY;
+	var B3Propagator_5 = B3Propagator_1.X_B3_FLAGS;
+	var B3Propagator_6 = B3Propagator_1.X_B3_PARENT_SPAN_ID;
+	var B3Propagator_7 = B3Propagator_1.X_B3_SAMPLED;
+	var B3Propagator_8 = B3Propagator_1.X_B3_SPAN_ID;
+	var B3Propagator_9 = B3Propagator_1.X_B3_TRACE_ID;
 
 	var composite = createCommonjsModule(function (module, exports) {
 	/*
@@ -5181,10 +5532,11 @@
 	            .split(LIST_MEMBERS_SEPARATOR)
 	            .reverse() // Store in reverse so new keys (.set(...)) will be placed at the beginning
 	            .reduce((agg, part) => {
-	            const i = part.indexOf(LIST_MEMBER_KEY_VALUE_SPLITTER);
+	            const listMember = part.trim(); // Optional Whitespace (OWS) handling
+	            const i = listMember.indexOf(LIST_MEMBER_KEY_VALUE_SPLITTER);
 	            if (i !== -1) {
-	                const key = part.slice(0, i);
-	                const value = part.slice(i + 1, part.length);
+	                const key = listMember.slice(0, i);
+	                const value = listMember.slice(i + 1, part.length);
 	                if (validators.validateKey(key) && validators.validateValue(value)) {
 	                    agg.set(key, value);
 	                }
@@ -5232,8 +5584,12 @@
 
 	exports.TRACE_PARENT_HEADER = 'traceparent';
 	exports.TRACE_STATE_HEADER = 'tracestate';
-	const VALID_TRACE_PARENT_REGEX = /^(?!ff)[\da-f]{2}-([\da-f]{32})-([\da-f]{16})-([\da-f]{2})(-|$)/;
 	const VERSION = '00';
+	const VERSION_PART_COUNT = 4; // Version 00 only allows the specific 4 fields.
+	const VERSION_REGEX = /^(?!ff)[\da-f]{2}$/;
+	const TRACE_ID_REGEX = /^(?![0]{32})[\da-f]{32}$/;
+	const PARENT_ID_REGEX = /^(?![0]{16})[\da-f]{16}$/;
+	const FLAGS_REGEX = /^[\da-f]{2}$/;
 	/**
 	 * Parses information from the [traceparent] span tag and converts it into {@link SpanContext}
 	 * @param traceParent - A meta property that comes from server.
@@ -5245,16 +5601,26 @@
 	 *     For more information see {@link https://www.w3.org/TR/trace-context/}
 	 */
 	function parseTraceParent(traceParent) {
-	    const match = traceParent.match(VALID_TRACE_PARENT_REGEX);
-	    if (!match ||
-	        match[1] === '00000000000000000000000000000000' ||
-	        match[2] === '0000000000000000') {
+	    const trimmed = traceParent.trim();
+	    const traceParentParts = trimmed.split('-');
+	    // Current version must be structured correctly.
+	    // For future versions, we can grab just the parts we do support.
+	    if (traceParentParts[0] === VERSION &&
+	        traceParentParts.length !== VERSION_PART_COUNT) {
+	        return null;
+	    }
+	    const [version, traceId, parentId, flags] = traceParentParts;
+	    const isValidParent = VERSION_REGEX.test(version) &&
+	        TRACE_ID_REGEX.test(traceId) &&
+	        PARENT_ID_REGEX.test(parentId) &&
+	        FLAGS_REGEX.test(flags);
+	    if (!isValidParent) {
 	        return null;
 	    }
 	    return {
-	        traceId: match[1],
-	        spanId: match[2],
-	        traceFlags: parseInt(match[3], 16),
+	        traceId: traceId,
+	        spanId: parentId,
+	        traceFlags: parseInt(flags, 16),
 	    };
 	}
 	exports.parseTraceParent = parseTraceParent;
@@ -5444,14 +5810,15 @@
 	            return context;
 	        }
 	        const pairs = headerValue.split(ITEMS_SEPARATOR);
-	        if (pairs.length == 1)
-	            return context;
 	        pairs.forEach(entry => {
 	            const keyPair = this._parsePairKeyValue(entry);
 	            if (keyPair) {
 	                correlationContext$1[keyPair.key] = { value: keyPair.value };
 	            }
 	        });
+	        if (Object.entries(correlationContext$1).length === 0) {
+	            return context;
+	        }
 	        return correlationContext.setCorrelationContext(context, correlationContext$1);
 	    }
 	    _parsePairKeyValue(entry) {
@@ -5462,7 +5829,7 @@
 	        if (!keyPairPart)
 	            return;
 	        const keyPair = keyPairPart.split(KEY_PAIR_SEPARATOR);
-	        if (keyPair.length <= 1)
+	        if (keyPair.length != 2)
 	            return;
 	        const key = decodeURIComponent(keyPair[0].trim());
 	        let value = decodeURIComponent(keyPair[1].trim());
@@ -5484,50 +5851,6 @@
 	var HttpCorrelationContext_5 = HttpCorrelationContext_1.MAX_NAME_VALUE_PAIRS;
 	var HttpCorrelationContext_6 = HttpCorrelationContext_1.CORRELATION_CONTEXT_HEADER;
 
-	var spancontextUtils = createCommonjsModule(function (module, exports) {
-	/*
-	 * Copyright The OpenTelemetry Authors
-	 *
-	 * Licensed under the Apache License, Version 2.0 (the "License");
-	 * you may not use this file except in compliance with the License.
-	 * You may obtain a copy of the License at
-	 *
-	 *      https://www.apache.org/licenses/LICENSE-2.0
-	 *
-	 * Unless required by applicable law or agreed to in writing, software
-	 * distributed under the License is distributed on an "AS IS" BASIS,
-	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	 * See the License for the specific language governing permissions and
-	 * limitations under the License.
-	 */
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.isValid = exports.INVALID_SPAN_CONTEXT = exports.INVALID_TRACEID = exports.INVALID_SPANID = void 0;
-
-	exports.INVALID_SPANID = '0';
-	exports.INVALID_TRACEID = '0';
-	exports.INVALID_SPAN_CONTEXT = {
-	    traceId: exports.INVALID_TRACEID,
-	    spanId: exports.INVALID_SPANID,
-	    traceFlags: src$1.TraceFlags.NONE,
-	};
-	/**
-	 * Returns true if this {@link SpanContext} is valid.
-	 * @return true if this {@link SpanContext} is valid.
-	 */
-	function isValid(spanContext) {
-	    return (spanContext.traceId !== exports.INVALID_TRACEID &&
-	        spanContext.spanId !== exports.INVALID_SPANID);
-	}
-	exports.isValid = isValid;
-
-	});
-
-	unwrapExports(spancontextUtils);
-	var spancontextUtils_1 = spancontextUtils.isValid;
-	var spancontextUtils_2 = spancontextUtils.INVALID_SPAN_CONTEXT;
-	var spancontextUtils_3 = spancontextUtils.INVALID_TRACEID;
-	var spancontextUtils_4 = spancontextUtils.INVALID_SPANID;
-
 	var NoRecordingSpan_1 = createCommonjsModule(function (module, exports) {
 	/*
 	 * Copyright The OpenTelemetry Authors
@@ -5547,7 +5870,6 @@
 	Object.defineProperty(exports, "__esModule", { value: true });
 	exports.NoRecordingSpan = void 0;
 
-
 	/**
 	 * The NoRecordingSpan extends the {@link NoopSpan}, making all operations no-op
 	 * except context propagation.
@@ -5555,7 +5877,7 @@
 	class NoRecordingSpan extends src$1.NoopSpan {
 	    constructor(spanContext) {
 	        super(spanContext);
-	        this._context = spanContext || spancontextUtils.INVALID_SPAN_CONTEXT;
+	        this._context = spanContext || src$1.INVALID_SPAN_CONTEXT;
 	    }
 	    // Returns a SpanContext.
 	    context() {
@@ -5903,7 +6225,6 @@
 	__exportStar(AlwaysOnSampler_1, exports);
 	__exportStar(ParentOrElseSampler_1, exports);
 	__exportStar(ProbabilitySampler_1, exports);
-	__exportStar(spancontextUtils, exports);
 	__exportStar(TraceState_1, exports);
 	__exportStar(IdGenerator, exports);
 	__exportStar(url, exports);
@@ -6045,6 +6366,2087 @@
 	unwrapExports(hasher);
 	var hasher_1 = hasher.hexDigest;
 
+	var Logger$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(Logger$1);
+
+	var Time$1 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(Time$1);
+
+	var getter$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.defaultGetter = void 0;
+	/**
+	 * Default getter which just does a simple property access. Returns
+	 * undefined if the key is not set.
+	 *
+	 * @param carrier
+	 * @param key
+	 */
+	function defaultGetter(carrier, key) {
+	    return carrier[key];
+	}
+	exports.defaultGetter = defaultGetter;
+
+	});
+
+	unwrapExports(getter$1);
+	var getter_1$1 = getter$1.defaultGetter;
+
+	var HttpTextPropagator = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(HttpTextPropagator);
+
+	var NoopHttpTextPropagator_1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.NOOP_HTTP_TEXT_PROPAGATOR = exports.NoopHttpTextPropagator = void 0;
+	/**
+	 * No-op implementations of {@link HttpTextPropagator}.
+	 */
+	var NoopHttpTextPropagator = /** @class */ (function () {
+	    function NoopHttpTextPropagator() {
+	    }
+	    /** Noop inject function does nothing */
+	    NoopHttpTextPropagator.prototype.inject = function (context, carrier, setter) { };
+	    /** Noop extract function does nothing and returns the input context */
+	    NoopHttpTextPropagator.prototype.extract = function (context, carrier, getter) {
+	        return context;
+	    };
+	    return NoopHttpTextPropagator;
+	}());
+	exports.NoopHttpTextPropagator = NoopHttpTextPropagator;
+	exports.NOOP_HTTP_TEXT_PROPAGATOR = new NoopHttpTextPropagator();
+
+	});
+
+	unwrapExports(NoopHttpTextPropagator_1);
+	var NoopHttpTextPropagator_2 = NoopHttpTextPropagator_1.NOOP_HTTP_TEXT_PROPAGATOR;
+	var NoopHttpTextPropagator_3 = NoopHttpTextPropagator_1.NoopHttpTextPropagator;
+
+	var setter$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.defaultSetter = void 0;
+	/**
+	 * Default setter which sets value via direct property access
+	 *
+	 * @param carrier
+	 * @param key
+	 */
+	function defaultSetter(carrier, key, value) {
+	    carrier[key] = value;
+	}
+	exports.defaultSetter = defaultSetter;
+
+	});
+
+	unwrapExports(setter$1);
+	var setter_1$1 = setter$1.defaultSetter;
+
+	var CorrelationContext$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(CorrelationContext$1);
+
+	var EntryValue$1 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.EntryTtl = void 0;
+	/**
+	 * EntryTtl is an integer that represents number of hops an entry can propagate.
+	 *
+	 * For now, ONLY special values (0 and -1) are supported.
+	 */
+	var EntryTtl;
+	(function (EntryTtl) {
+	    /**
+	     * NO_PROPAGATION is considered to have local context and is used within the
+	     * process it created.
+	     */
+	    EntryTtl[EntryTtl["NO_PROPAGATION"] = 0] = "NO_PROPAGATION";
+	    /** UNLIMITED_PROPAGATION can propagate unlimited hops. */
+	    EntryTtl[EntryTtl["UNLIMITED_PROPAGATION"] = -1] = "UNLIMITED_PROPAGATION";
+	})(EntryTtl = exports.EntryTtl || (exports.EntryTtl = {}));
+
+	});
+
+	unwrapExports(EntryValue$1);
+	var EntryValue_1$1 = EntryValue$1.EntryTtl;
+
+	var BatchObserverResult$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(BatchObserverResult$1);
+
+	var BoundInstrument$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(BoundInstrument$1);
+
+	var Meter$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(Meter$1);
+
+	var MeterProvider$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(MeterProvider$1);
+
+	var Metric$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ValueType = void 0;
+	/** The Type of value. It describes how the data is reported. */
+	var ValueType;
+	(function (ValueType) {
+	    ValueType[ValueType["INT"] = 0] = "INT";
+	    ValueType[ValueType["DOUBLE"] = 1] = "DOUBLE";
+	})(ValueType = exports.ValueType || (exports.ValueType = {}));
+
+	});
+
+	unwrapExports(Metric$1);
+	var Metric_1$1 = Metric$1.ValueType;
+
+	var NoopMeter_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var __extends = (commonjsGlobal && commonjsGlobal.__extends) || (function () {
+	    var extendStatics = function (d, b) {
+	        extendStatics = Object.setPrototypeOf ||
+	            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+	            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+	        return extendStatics(d, b);
+	    };
+	    return function (d, b) {
+	        extendStatics(d, b);
+	        function __() { this.constructor = d; }
+	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	    };
+	})();
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.NOOP_BATCH_OBSERVER_METRIC = exports.NOOP_SUM_OBSERVER_METRIC = exports.NOOP_UP_DOWN_SUM_OBSERVER_METRIC = exports.NOOP_VALUE_OBSERVER_METRIC = exports.NOOP_BOUND_BASE_OBSERVER = exports.NOOP_VALUE_RECORDER_METRIC = exports.NOOP_BOUND_VALUE_RECORDER = exports.NOOP_COUNTER_METRIC = exports.NOOP_BOUND_COUNTER = exports.NOOP_METER = exports.NoopBoundBaseObserver = exports.NoopBoundValueRecorder = exports.NoopBoundCounter = exports.NoopBatchObserverMetric = exports.NoopBaseObserverMetric = exports.NoopValueRecorderMetric = exports.NoopCounterMetric = exports.NoopMetric = exports.NoopMeter = void 0;
+	/**
+	 * NoopMeter is a noop implementation of the {@link Meter} interface. It reuses
+	 * constant NoopMetrics for all of its methods.
+	 */
+	var NoopMeter = /** @class */ (function () {
+	    function NoopMeter() {
+	    }
+	    /**
+	     * Returns constant noop value recorder.
+	     * @param name the name of the metric.
+	     * @param [options] the metric options.
+	     */
+	    NoopMeter.prototype.createValueRecorder = function (name, options) {
+	        return exports.NOOP_VALUE_RECORDER_METRIC;
+	    };
+	    /**
+	     * Returns a constant noop counter.
+	     * @param name the name of the metric.
+	     * @param [options] the metric options.
+	     */
+	    NoopMeter.prototype.createCounter = function (name, options) {
+	        return exports.NOOP_COUNTER_METRIC;
+	    };
+	    /**
+	     * Returns a constant noop UpDownCounter.
+	     * @param name the name of the metric.
+	     * @param [options] the metric options.
+	     */
+	    NoopMeter.prototype.createUpDownCounter = function (name, options) {
+	        return exports.NOOP_COUNTER_METRIC;
+	    };
+	    /**
+	     * Returns constant noop value observer.
+	     * @param name the name of the metric.
+	     * @param [options] the metric options.
+	     * @param [callback] the value observer callback
+	     */
+	    NoopMeter.prototype.createValueObserver = function (name, options, callback) {
+	        return exports.NOOP_VALUE_OBSERVER_METRIC;
+	    };
+	    /**
+	     * Returns constant noop batch observer.
+	     * @param name the name of the metric.
+	     * @param callback the batch observer callback
+	     */
+	    NoopMeter.prototype.createBatchObserver = function (name, callback) {
+	        return exports.NOOP_BATCH_OBSERVER_METRIC;
+	    };
+	    return NoopMeter;
+	}());
+	exports.NoopMeter = NoopMeter;
+	var NoopMetric = /** @class */ (function () {
+	    function NoopMetric(instrument) {
+	        this._instrument = instrument;
+	    }
+	    /**
+	     * Returns a Bound Instrument associated with specified Labels.
+	     * It is recommended to keep a reference to the Bound Instrument instead of
+	     * always calling this method for every operations.
+	     * @param labels key-values pairs that are associated with a specific metric
+	     *     that you want to record.
+	     */
+	    NoopMetric.prototype.bind = function (labels) {
+	        return this._instrument;
+	    };
+	    /**
+	     * Removes the Binding from the metric, if it is present.
+	     * @param labels key-values pairs that are associated with a specific metric.
+	     */
+	    NoopMetric.prototype.unbind = function (labels) {
+	        return;
+	    };
+	    /**
+	     * Clears all timeseries from the Metric.
+	     */
+	    NoopMetric.prototype.clear = function () {
+	        return;
+	    };
+	    return NoopMetric;
+	}());
+	exports.NoopMetric = NoopMetric;
+	var NoopCounterMetric = /** @class */ (function (_super) {
+	    __extends(NoopCounterMetric, _super);
+	    function NoopCounterMetric() {
+	        return _super !== null && _super.apply(this, arguments) || this;
+	    }
+	    NoopCounterMetric.prototype.add = function (value, labels) {
+	        this.bind(labels).add(value);
+	    };
+	    return NoopCounterMetric;
+	}(NoopMetric));
+	exports.NoopCounterMetric = NoopCounterMetric;
+	var NoopValueRecorderMetric = /** @class */ (function (_super) {
+	    __extends(NoopValueRecorderMetric, _super);
+	    function NoopValueRecorderMetric() {
+	        return _super !== null && _super.apply(this, arguments) || this;
+	    }
+	    NoopValueRecorderMetric.prototype.record = function (value, labels, correlationContext, spanContext) {
+	        if (typeof correlationContext === 'undefined') {
+	            this.bind(labels).record(value);
+	        }
+	        else if (typeof spanContext === 'undefined') {
+	            this.bind(labels).record(value, correlationContext);
+	        }
+	        else {
+	            this.bind(labels).record(value, correlationContext, spanContext);
+	        }
+	    };
+	    return NoopValueRecorderMetric;
+	}(NoopMetric));
+	exports.NoopValueRecorderMetric = NoopValueRecorderMetric;
+	var NoopBaseObserverMetric = /** @class */ (function (_super) {
+	    __extends(NoopBaseObserverMetric, _super);
+	    function NoopBaseObserverMetric() {
+	        return _super !== null && _super.apply(this, arguments) || this;
+	    }
+	    NoopBaseObserverMetric.prototype.observation = function () {
+	        return {
+	            observer: this,
+	            value: 0,
+	        };
+	    };
+	    return NoopBaseObserverMetric;
+	}(NoopMetric));
+	exports.NoopBaseObserverMetric = NoopBaseObserverMetric;
+	var NoopBatchObserverMetric = /** @class */ (function (_super) {
+	    __extends(NoopBatchObserverMetric, _super);
+	    function NoopBatchObserverMetric() {
+	        return _super !== null && _super.apply(this, arguments) || this;
+	    }
+	    return NoopBatchObserverMetric;
+	}(NoopMetric));
+	exports.NoopBatchObserverMetric = NoopBatchObserverMetric;
+	var NoopBoundCounter = /** @class */ (function () {
+	    function NoopBoundCounter() {
+	    }
+	    NoopBoundCounter.prototype.add = function (value) {
+	        return;
+	    };
+	    return NoopBoundCounter;
+	}());
+	exports.NoopBoundCounter = NoopBoundCounter;
+	var NoopBoundValueRecorder = /** @class */ (function () {
+	    function NoopBoundValueRecorder() {
+	    }
+	    NoopBoundValueRecorder.prototype.record = function (value, correlationContext, spanContext) {
+	        return;
+	    };
+	    return NoopBoundValueRecorder;
+	}());
+	exports.NoopBoundValueRecorder = NoopBoundValueRecorder;
+	var NoopBoundBaseObserver = /** @class */ (function () {
+	    function NoopBoundBaseObserver() {
+	    }
+	    NoopBoundBaseObserver.prototype.update = function (value) { };
+	    return NoopBoundBaseObserver;
+	}());
+	exports.NoopBoundBaseObserver = NoopBoundBaseObserver;
+	exports.NOOP_METER = new NoopMeter();
+	exports.NOOP_BOUND_COUNTER = new NoopBoundCounter();
+	exports.NOOP_COUNTER_METRIC = new NoopCounterMetric(exports.NOOP_BOUND_COUNTER);
+	exports.NOOP_BOUND_VALUE_RECORDER = new NoopBoundValueRecorder();
+	exports.NOOP_VALUE_RECORDER_METRIC = new NoopValueRecorderMetric(exports.NOOP_BOUND_VALUE_RECORDER);
+	exports.NOOP_BOUND_BASE_OBSERVER = new NoopBoundBaseObserver();
+	exports.NOOP_VALUE_OBSERVER_METRIC = new NoopBaseObserverMetric(exports.NOOP_BOUND_BASE_OBSERVER);
+	exports.NOOP_UP_DOWN_SUM_OBSERVER_METRIC = new NoopBaseObserverMetric(exports.NOOP_BOUND_BASE_OBSERVER);
+	exports.NOOP_SUM_OBSERVER_METRIC = new NoopBaseObserverMetric(exports.NOOP_BOUND_BASE_OBSERVER);
+	exports.NOOP_BATCH_OBSERVER_METRIC = new NoopBatchObserverMetric();
+
+	});
+
+	unwrapExports(NoopMeter_1$1);
+	var NoopMeter_2$1 = NoopMeter_1$1.NOOP_BATCH_OBSERVER_METRIC;
+	var NoopMeter_3$1 = NoopMeter_1$1.NOOP_SUM_OBSERVER_METRIC;
+	var NoopMeter_4$1 = NoopMeter_1$1.NOOP_UP_DOWN_SUM_OBSERVER_METRIC;
+	var NoopMeter_5$1 = NoopMeter_1$1.NOOP_VALUE_OBSERVER_METRIC;
+	var NoopMeter_6$1 = NoopMeter_1$1.NOOP_BOUND_BASE_OBSERVER;
+	var NoopMeter_7$1 = NoopMeter_1$1.NOOP_VALUE_RECORDER_METRIC;
+	var NoopMeter_8$1 = NoopMeter_1$1.NOOP_BOUND_VALUE_RECORDER;
+	var NoopMeter_9$1 = NoopMeter_1$1.NOOP_COUNTER_METRIC;
+	var NoopMeter_10$1 = NoopMeter_1$1.NOOP_BOUND_COUNTER;
+	var NoopMeter_11$1 = NoopMeter_1$1.NOOP_METER;
+	var NoopMeter_12$1 = NoopMeter_1$1.NoopBoundBaseObserver;
+	var NoopMeter_13$1 = NoopMeter_1$1.NoopBoundValueRecorder;
+	var NoopMeter_14$1 = NoopMeter_1$1.NoopBoundCounter;
+	var NoopMeter_15$1 = NoopMeter_1$1.NoopBatchObserverMetric;
+	var NoopMeter_16$1 = NoopMeter_1$1.NoopBaseObserverMetric;
+	var NoopMeter_17$1 = NoopMeter_1$1.NoopValueRecorderMetric;
+	var NoopMeter_18$1 = NoopMeter_1$1.NoopCounterMetric;
+	var NoopMeter_19$1 = NoopMeter_1$1.NoopMetric;
+	var NoopMeter_20$1 = NoopMeter_1$1.NoopMeter;
+
+	var NoopMeterProvider_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.NOOP_METER_PROVIDER = exports.NoopMeterProvider = void 0;
+
+	/**
+	 * An implementation of the {@link MeterProvider} which returns an impotent Meter
+	 * for all calls to `getMeter`
+	 */
+	var NoopMeterProvider = /** @class */ (function () {
+	    function NoopMeterProvider() {
+	    }
+	    NoopMeterProvider.prototype.getMeter = function (_name, _version) {
+	        return NoopMeter_1$1.NOOP_METER;
+	    };
+	    return NoopMeterProvider;
+	}());
+	exports.NoopMeterProvider = NoopMeterProvider;
+	exports.NOOP_METER_PROVIDER = new NoopMeterProvider();
+
+	});
+
+	unwrapExports(NoopMeterProvider_1$1);
+	var NoopMeterProvider_2$1 = NoopMeterProvider_1$1.NOOP_METER_PROVIDER;
+	var NoopMeterProvider_3$1 = NoopMeterProvider_1$1.NoopMeterProvider;
+
+	var Observation$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(Observation$1);
+
+	var ObserverResult$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(ObserverResult$1);
+
+	var attributes$1 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(attributes$1);
+
+	var Event$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(Event$1);
+
+	var Plugin$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(Plugin$1);
+
+	var link_context$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(link_context$1);
+
+	var link$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(link$1);
+
+	var trace_flags$1 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.TraceFlags = void 0;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var TraceFlags;
+	(function (TraceFlags) {
+	    /** Represents no flag set. */
+	    TraceFlags[TraceFlags["NONE"] = 0] = "NONE";
+	    /** Bit to represent whether trace is sampled in trace flags. */
+	    TraceFlags[TraceFlags["SAMPLED"] = 1] = "SAMPLED";
+	})(TraceFlags = exports.TraceFlags || (exports.TraceFlags = {}));
+
+	});
+
+	unwrapExports(trace_flags$1);
+	var trace_flags_1$1 = trace_flags$1.TraceFlags;
+
+	var NoopSpan_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.NOOP_SPAN = exports.NoopSpan = exports.INVALID_SPAN_ID = exports.INVALID_TRACE_ID = void 0;
+
+	exports.INVALID_TRACE_ID = '0';
+	exports.INVALID_SPAN_ID = '0';
+	var INVALID_SPAN_CONTEXT = {
+	    traceId: exports.INVALID_TRACE_ID,
+	    spanId: exports.INVALID_SPAN_ID,
+	    traceFlags: trace_flags$1.TraceFlags.NONE,
+	};
+	/**
+	 * The NoopSpan is the default {@link Span} that is used when no Span
+	 * implementation is available. All operations are no-op including context
+	 * propagation.
+	 */
+	var NoopSpan = /** @class */ (function () {
+	    function NoopSpan(_spanContext) {
+	        if (_spanContext === void 0) { _spanContext = INVALID_SPAN_CONTEXT; }
+	        this._spanContext = _spanContext;
+	    }
+	    // Returns a SpanContext.
+	    NoopSpan.prototype.context = function () {
+	        return this._spanContext;
+	    };
+	    // By default does nothing
+	    NoopSpan.prototype.setAttribute = function (key, value) {
+	        return this;
+	    };
+	    // By default does nothing
+	    NoopSpan.prototype.setAttributes = function (attributes) {
+	        return this;
+	    };
+	    // By default does nothing
+	    NoopSpan.prototype.addEvent = function (name, attributes) {
+	        return this;
+	    };
+	    // By default does nothing
+	    NoopSpan.prototype.setStatus = function (status) {
+	        return this;
+	    };
+	    // By default does nothing
+	    NoopSpan.prototype.updateName = function (name) {
+	        return this;
+	    };
+	    // By default does nothing
+	    NoopSpan.prototype.end = function (endTime) { };
+	    // isRecording always returns false for noopSpan.
+	    NoopSpan.prototype.isRecording = function () {
+	        return false;
+	    };
+	    return NoopSpan;
+	}());
+	exports.NoopSpan = NoopSpan;
+	exports.NOOP_SPAN = new NoopSpan();
+
+	});
+
+	unwrapExports(NoopSpan_1$1);
+	var NoopSpan_2$1 = NoopSpan_1$1.NOOP_SPAN;
+	var NoopSpan_3$1 = NoopSpan_1$1.NoopSpan;
+	var NoopSpan_4 = NoopSpan_1$1.INVALID_SPAN_ID;
+	var NoopSpan_5 = NoopSpan_1$1.INVALID_TRACE_ID;
+
+	var NoopTracer_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.NOOP_TRACER = exports.NoopTracer = void 0;
+
+	/**
+	 * No-op implementations of {@link Tracer}.
+	 */
+	var NoopTracer = /** @class */ (function () {
+	    function NoopTracer() {
+	    }
+	    NoopTracer.prototype.getCurrentSpan = function () {
+	        return NoopSpan_1$1.NOOP_SPAN;
+	    };
+	    // startSpan starts a noop span.
+	    NoopTracer.prototype.startSpan = function (name, options) {
+	        return NoopSpan_1$1.NOOP_SPAN;
+	    };
+	    NoopTracer.prototype.withSpan = function (span, fn) {
+	        return fn();
+	    };
+	    NoopTracer.prototype.bind = function (target, span) {
+	        return target;
+	    };
+	    return NoopTracer;
+	}());
+	exports.NoopTracer = NoopTracer;
+	exports.NOOP_TRACER = new NoopTracer();
+
+	});
+
+	unwrapExports(NoopTracer_1$1);
+	var NoopTracer_2$1 = NoopTracer_1$1.NOOP_TRACER;
+	var NoopTracer_3$1 = NoopTracer_1$1.NoopTracer;
+
+	var NoopTracerProvider_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.NOOP_TRACER_PROVIDER = exports.NoopTracerProvider = void 0;
+
+	/**
+	 * An implementation of the {@link TracerProvider} which returns an impotent
+	 * Tracer for all calls to `getTracer`.
+	 *
+	 * All operations are no-op.
+	 */
+	var NoopTracerProvider = /** @class */ (function () {
+	    function NoopTracerProvider() {
+	    }
+	    NoopTracerProvider.prototype.getTracer = function (_name, _version) {
+	        return NoopTracer_1$1.NOOP_TRACER;
+	    };
+	    return NoopTracerProvider;
+	}());
+	exports.NoopTracerProvider = NoopTracerProvider;
+	exports.NOOP_TRACER_PROVIDER = new NoopTracerProvider();
+
+	});
+
+	unwrapExports(NoopTracerProvider_1$1);
+	var NoopTracerProvider_2$1 = NoopTracerProvider_1$1.NOOP_TRACER_PROVIDER;
+	var NoopTracerProvider_3$1 = NoopTracerProvider_1$1.NoopTracerProvider;
+
+	var Sampler$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(Sampler$1);
+
+	var SamplingResult$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.SamplingDecision = void 0;
+	/**
+	 * A sampling decision that determines how a {@link Span} will be recorded
+	 * and collected.
+	 */
+	var SamplingDecision;
+	(function (SamplingDecision) {
+	    /**
+	     * `Span.isRecording() === false`, span will not be recorded and all events
+	     * and attributes will be dropped.
+	     */
+	    SamplingDecision[SamplingDecision["NOT_RECORD"] = 0] = "NOT_RECORD";
+	    /**
+	     * `Span.isRecording() === true`, but `Sampled` flag in {@link TraceFlags}
+	     * MUST NOT be set.
+	     */
+	    SamplingDecision[SamplingDecision["RECORD"] = 1] = "RECORD";
+	    /**
+	     * `Span.isRecording() === true` AND `Sampled` flag in {@link TraceFlags}
+	     * MUST be set.
+	     */
+	    SamplingDecision[SamplingDecision["RECORD_AND_SAMPLED"] = 2] = "RECORD_AND_SAMPLED";
+	})(SamplingDecision = exports.SamplingDecision || (exports.SamplingDecision = {}));
+
+	});
+
+	unwrapExports(SamplingResult$1);
+	var SamplingResult_1$1 = SamplingResult$1.SamplingDecision;
+
+	var span_context$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(span_context$1);
+
+	var span_kind$1 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.SpanKind = void 0;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var SpanKind;
+	(function (SpanKind) {
+	    /** Default value. Indicates that the span is used internally. */
+	    SpanKind[SpanKind["INTERNAL"] = 0] = "INTERNAL";
+	    /**
+	     * Indicates that the span covers server-side handling of an RPC or other
+	     * remote request.
+	     */
+	    SpanKind[SpanKind["SERVER"] = 1] = "SERVER";
+	    /**
+	     * Indicates that the span covers the client-side wrapper around an RPC or
+	     * other remote request.
+	     */
+	    SpanKind[SpanKind["CLIENT"] = 2] = "CLIENT";
+	    /**
+	     * Indicates that the span describes producer sending a message to a
+	     * broker. Unlike client and server, there is no direct critical path latency
+	     * relationship between producer and consumer spans.
+	     */
+	    SpanKind[SpanKind["PRODUCER"] = 3] = "PRODUCER";
+	    /**
+	     * Indicates that the span describes consumer receiving a message from a
+	     * broker. Unlike client and server, there is no direct critical path latency
+	     * relationship between producer and consumer spans.
+	     */
+	    SpanKind[SpanKind["CONSUMER"] = 4] = "CONSUMER";
+	})(SpanKind = exports.SpanKind || (exports.SpanKind = {}));
+
+	});
+
+	unwrapExports(span_kind$1);
+	var span_kind_1$1 = span_kind$1.SpanKind;
+
+	var span$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(span$1);
+
+	var SpanOptions$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(SpanOptions$1);
+
+	var status$1 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.CanonicalCode = void 0;
+	/**
+	 * An enumeration of canonical status codes.
+	 */
+	var CanonicalCode;
+	(function (CanonicalCode) {
+	    /**
+	     * Not an error; returned on success
+	     */
+	    CanonicalCode[CanonicalCode["OK"] = 0] = "OK";
+	    /**
+	     * The operation was cancelled (typically by the caller).
+	     */
+	    CanonicalCode[CanonicalCode["CANCELLED"] = 1] = "CANCELLED";
+	    /**
+	     * Unknown error.  An example of where this error may be returned is
+	     * if a status value received from another address space belongs to
+	     * an error-space that is not known in this address space.  Also
+	     * errors raised by APIs that do not return enough error information
+	     * may be converted to this error.
+	     */
+	    CanonicalCode[CanonicalCode["UNKNOWN"] = 2] = "UNKNOWN";
+	    /**
+	     * Client specified an invalid argument.  Note that this differs
+	     * from FAILED_PRECONDITION.  INVALID_ARGUMENT indicates arguments
+	     * that are problematic regardless of the state of the system
+	     * (e.g., a malformed file name).
+	     */
+	    CanonicalCode[CanonicalCode["INVALID_ARGUMENT"] = 3] = "INVALID_ARGUMENT";
+	    /**
+	     * Deadline expired before operation could complete.  For operations
+	     * that change the state of the system, this error may be returned
+	     * even if the operation has completed successfully.  For example, a
+	     * successful response from a server could have been delayed long
+	     * enough for the deadline to expire.
+	     */
+	    CanonicalCode[CanonicalCode["DEADLINE_EXCEEDED"] = 4] = "DEADLINE_EXCEEDED";
+	    /**
+	     * Some requested entity (e.g., file or directory) was not found.
+	     */
+	    CanonicalCode[CanonicalCode["NOT_FOUND"] = 5] = "NOT_FOUND";
+	    /**
+	     * Some entity that we attempted to create (e.g., file or directory)
+	     * already exists.
+	     */
+	    CanonicalCode[CanonicalCode["ALREADY_EXISTS"] = 6] = "ALREADY_EXISTS";
+	    /**
+	     * The caller does not have permission to execute the specified
+	     * operation.  PERMISSION_DENIED must not be used for rejections
+	     * caused by exhausting some resource (use RESOURCE_EXHAUSTED
+	     * instead for those errors).  PERMISSION_DENIED must not be
+	     * used if the caller can not be identified (use UNAUTHENTICATED
+	     * instead for those errors).
+	     */
+	    CanonicalCode[CanonicalCode["PERMISSION_DENIED"] = 7] = "PERMISSION_DENIED";
+	    /**
+	     * Some resource has been exhausted, perhaps a per-user quota, or
+	     * perhaps the entire file system is out of space.
+	     */
+	    CanonicalCode[CanonicalCode["RESOURCE_EXHAUSTED"] = 8] = "RESOURCE_EXHAUSTED";
+	    /**
+	     * Operation was rejected because the system is not in a state
+	     * required for the operation's execution.  For example, directory
+	     * to be deleted may be non-empty, an rmdir operation is applied to
+	     * a non-directory, etc.
+	     *
+	     * A litmus test that may help a service implementor in deciding
+	     * between FAILED_PRECONDITION, ABORTED, and UNAVAILABLE:
+	     *
+	     *  - Use UNAVAILABLE if the client can retry just the failing call.
+	     *  - Use ABORTED if the client should retry at a higher-level
+	     *    (e.g., restarting a read-modify-write sequence).
+	     *  - Use FAILED_PRECONDITION if the client should not retry until
+	     *    the system state has been explicitly fixed.  E.g., if an "rmdir"
+	     *    fails because the directory is non-empty, FAILED_PRECONDITION
+	     *    should be returned since the client should not retry unless
+	     *    they have first fixed up the directory by deleting files from it.
+	     *  - Use FAILED_PRECONDITION if the client performs conditional
+	     *    REST Get/Update/Delete on a resource and the resource on the
+	     *    server does not match the condition. E.g., conflicting
+	     *    read-modify-write on the same resource.
+	     */
+	    CanonicalCode[CanonicalCode["FAILED_PRECONDITION"] = 9] = "FAILED_PRECONDITION";
+	    /**
+	     * The operation was aborted, typically due to a concurrency issue
+	     * like sequencer check failures, transaction aborts, etc.
+	     *
+	     * See litmus test above for deciding between FAILED_PRECONDITION,
+	     * ABORTED, and UNAVAILABLE.
+	     */
+	    CanonicalCode[CanonicalCode["ABORTED"] = 10] = "ABORTED";
+	    /**
+	     * Operation was attempted past the valid range.  E.g., seeking or
+	     * reading past end of file.
+	     *
+	     * Unlike INVALID_ARGUMENT, this error indicates a problem that may
+	     * be fixed if the system state changes. For example, a 32-bit file
+	     * system will generate INVALID_ARGUMENT if asked to read at an
+	     * offset that is not in the range [0,2^32-1], but it will generate
+	     * OUT_OF_RANGE if asked to read from an offset past the current
+	     * file size.
+	     *
+	     * There is a fair bit of overlap between FAILED_PRECONDITION and
+	     * OUT_OF_RANGE.  We recommend using OUT_OF_RANGE (the more specific
+	     * error) when it applies so that callers who are iterating through
+	     * a space can easily look for an OUT_OF_RANGE error to detect when
+	     * they are done.
+	     */
+	    CanonicalCode[CanonicalCode["OUT_OF_RANGE"] = 11] = "OUT_OF_RANGE";
+	    /**
+	     * Operation is not implemented or not supported/enabled in this service.
+	     */
+	    CanonicalCode[CanonicalCode["UNIMPLEMENTED"] = 12] = "UNIMPLEMENTED";
+	    /**
+	     * Internal errors.  Means some invariants expected by underlying
+	     * system has been broken.  If you see one of these errors,
+	     * something is very broken.
+	     */
+	    CanonicalCode[CanonicalCode["INTERNAL"] = 13] = "INTERNAL";
+	    /**
+	     * The service is currently unavailable.  This is a most likely a
+	     * transient condition and may be corrected by retrying with
+	     * a backoff.
+	     *
+	     * See litmus test above for deciding between FAILED_PRECONDITION,
+	     * ABORTED, and UNAVAILABLE.
+	     */
+	    CanonicalCode[CanonicalCode["UNAVAILABLE"] = 14] = "UNAVAILABLE";
+	    /**
+	     * Unrecoverable data loss or corruption.
+	     */
+	    CanonicalCode[CanonicalCode["DATA_LOSS"] = 15] = "DATA_LOSS";
+	    /**
+	     * The request does not have valid authentication credentials for the
+	     * operation.
+	     */
+	    CanonicalCode[CanonicalCode["UNAUTHENTICATED"] = 16] = "UNAUTHENTICATED";
+	})(CanonicalCode = exports.CanonicalCode || (exports.CanonicalCode = {}));
+
+	});
+
+	unwrapExports(status$1);
+	var status_1$1 = status$1.CanonicalCode;
+
+	var TimedEvent$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(TimedEvent$1);
+
+	var trace_state$1 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(trace_state$1);
+
+	var tracer_provider$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(tracer_provider$1);
+
+	var tracer$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(tracer$1);
+
+	var types$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(types$3);
+
+	var context$3 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.Context = void 0;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var Context = /** @class */ (function () {
+	    /**
+	     * Construct a new context which inherits values from an optional parent context.
+	     *
+	     * @param parentContext a context from which to inherit values
+	     */
+	    function Context(parentContext) {
+	        this._currentContext = parentContext ? new Map(parentContext) : new Map();
+	    }
+	    /** Get a key to uniquely identify a context value */
+	    Context.createKey = function (description) {
+	        return Symbol(description);
+	    };
+	    /**
+	     * Get a value from the context.
+	     *
+	     * @param key key which identifies a context value
+	     */
+	    Context.prototype.getValue = function (key) {
+	        return this._currentContext.get(key);
+	    };
+	    /**
+	     * Create a new context which inherits from this context and has
+	     * the given key set to the given value.
+	     *
+	     * @param key context key for which to set the value
+	     * @param value value to set for the given key
+	     */
+	    Context.prototype.setValue = function (key, value) {
+	        var context = new Context(this._currentContext);
+	        context._currentContext.set(key, value);
+	        return context;
+	    };
+	    /**
+	     * Return a new context which inherits from this context but does
+	     * not contain a value for the given key.
+	     *
+	     * @param key context key for which to clear a value
+	     */
+	    Context.prototype.deleteValue = function (key) {
+	        var context = new Context(this._currentContext);
+	        context._currentContext.delete(key);
+	        return context;
+	    };
+	    /** The root context is used as the default parent context when there is no active context */
+	    Context.ROOT_CONTEXT = new Context();
+	    /**
+	     * This is another identifier to the root context which allows developers to easily search the
+	     * codebase for direct uses of context which need to be removed in later PRs.
+	     *
+	     * It's existence is temporary and it should be removed when all references are fixed.
+	     */
+	    Context.TODO = Context.ROOT_CONTEXT;
+	    return Context;
+	}());
+	exports.Context = Context;
+
+	});
+
+	unwrapExports(context$3);
+	var context_1$3 = context$3.Context;
+
+	var NoopContextManager_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.NoopContextManager = void 0;
+
+	var NoopContextManager = /** @class */ (function () {
+	    function NoopContextManager() {
+	    }
+	    NoopContextManager.prototype.active = function () {
+	        return context$3.Context.ROOT_CONTEXT;
+	    };
+	    NoopContextManager.prototype.with = function (context, fn) {
+	        return fn();
+	    };
+	    NoopContextManager.prototype.bind = function (target, context) {
+	        return target;
+	    };
+	    NoopContextManager.prototype.enable = function () {
+	        return this;
+	    };
+	    NoopContextManager.prototype.disable = function () {
+	        return this;
+	    };
+	    return NoopContextManager;
+	}());
+	exports.NoopContextManager = NoopContextManager;
+
+	});
+
+	unwrapExports(NoopContextManager_1$1);
+	var NoopContextManager_2$1 = NoopContextManager_1$1.NoopContextManager;
+
+	var src$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+	}) : (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    o[k2] = m[k];
+	}));
+	var __exportStar = (commonjsGlobal && commonjsGlobal.__exportStar) || function(m, exports) {
+	    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	__exportStar(types$3, exports);
+	__exportStar(context$3, exports);
+	__exportStar(NoopContextManager_1$1, exports);
+
+	});
+
+	unwrapExports(src$3);
+
+	var globalThis_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports._globalThis = void 0;
+	/** only globals that common to node and browsers are allowed */
+	// eslint-disable-next-line node/no-unsupported-features/es-builtins
+	exports._globalThis = typeof globalThis === 'object' ? globalThis : commonjsGlobal;
+
+	});
+
+	unwrapExports(globalThis_1$1);
+	var globalThis_2$1 = globalThis_1$1._globalThis;
+
+	var node$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+	}) : (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    o[k2] = m[k];
+	}));
+	var __exportStar = (commonjsGlobal && commonjsGlobal.__exportStar) || function(m, exports) {
+	    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	__exportStar(globalThis_1$1, exports);
+
+	});
+
+	unwrapExports(node$2);
+
+	var platform$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+	}) : (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    o[k2] = m[k];
+	}));
+	var __exportStar = (commonjsGlobal && commonjsGlobal.__exportStar) || function(m, exports) {
+	    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	__exportStar(node$2, exports);
+
+	});
+
+	unwrapExports(platform$2);
+
+	var globalUtils$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.API_BACKWARDS_COMPATIBILITY_VERSION = exports.makeGetter = exports._global = exports.GLOBAL_TRACE_API_KEY = exports.GLOBAL_PROPAGATION_API_KEY = exports.GLOBAL_METRICS_API_KEY = exports.GLOBAL_CONTEXT_MANAGER_API_KEY = void 0;
+
+	exports.GLOBAL_CONTEXT_MANAGER_API_KEY = Symbol.for('io.opentelemetry.js.api.context');
+	exports.GLOBAL_METRICS_API_KEY = Symbol.for('io.opentelemetry.js.api.metrics');
+	exports.GLOBAL_PROPAGATION_API_KEY = Symbol.for('io.opentelemetry.js.api.propagation');
+	exports.GLOBAL_TRACE_API_KEY = Symbol.for('io.opentelemetry.js.api.trace');
+	exports._global = platform$2._globalThis;
+	/**
+	 * Make a function which accepts a version integer and returns the instance of an API if the version
+	 * is compatible, or a fallback version (usually NOOP) if it is not.
+	 *
+	 * @param requiredVersion Backwards compatibility version which is required to return the instance
+	 * @param instance Instance which should be returned if the required version is compatible
+	 * @param fallback Fallback instance, usually NOOP, which will be returned if the required version is not compatible
+	 */
+	function makeGetter(requiredVersion, instance, fallback) {
+	    return function (version) {
+	        return version === requiredVersion ? instance : fallback;
+	    };
+	}
+	exports.makeGetter = makeGetter;
+	/**
+	 * A number which should be incremented each time a backwards incompatible
+	 * change is made to the API. This number is used when an API package
+	 * attempts to access the global API to ensure it is getting a compatible
+	 * version. If the global API is not compatible with the API package
+	 * attempting to get it, a NOOP API implementation will be returned.
+	 */
+	exports.API_BACKWARDS_COMPATIBILITY_VERSION = 0;
+
+	});
+
+	unwrapExports(globalUtils$1);
+	var globalUtils_1$1 = globalUtils$1.API_BACKWARDS_COMPATIBILITY_VERSION;
+	var globalUtils_2$1 = globalUtils$1.makeGetter;
+	var globalUtils_3$1 = globalUtils$1._global;
+	var globalUtils_4$1 = globalUtils$1.GLOBAL_TRACE_API_KEY;
+	var globalUtils_5$1 = globalUtils$1.GLOBAL_PROPAGATION_API_KEY;
+	var globalUtils_6$1 = globalUtils$1.GLOBAL_METRICS_API_KEY;
+	var globalUtils_7$1 = globalUtils$1.GLOBAL_CONTEXT_MANAGER_API_KEY;
+
+	var context$4 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ContextAPI = void 0;
+
+
+	var NOOP_CONTEXT_MANAGER = new src$3.NoopContextManager();
+	/**
+	 * Singleton object which represents the entry point to the OpenTelemetry Context API
+	 */
+	var ContextAPI = /** @class */ (function () {
+	    /** Empty private constructor prevents end users from constructing a new instance of the API */
+	    function ContextAPI() {
+	    }
+	    /** Get the singleton instance of the Context API */
+	    ContextAPI.getInstance = function () {
+	        if (!this._instance) {
+	            this._instance = new ContextAPI();
+	        }
+	        return this._instance;
+	    };
+	    /**
+	     * Set the current context manager. Returns the initialized context manager
+	     */
+	    ContextAPI.prototype.setGlobalContextManager = function (contextManager) {
+	        if (globalUtils$1._global[globalUtils$1.GLOBAL_CONTEXT_MANAGER_API_KEY]) {
+	            // global context manager has already been set
+	            return this._getContextManager();
+	        }
+	        globalUtils$1._global[globalUtils$1.GLOBAL_CONTEXT_MANAGER_API_KEY] = globalUtils$1.makeGetter(globalUtils$1.API_BACKWARDS_COMPATIBILITY_VERSION, contextManager, NOOP_CONTEXT_MANAGER);
+	        return contextManager;
+	    };
+	    /**
+	     * Get the currently active context
+	     */
+	    ContextAPI.prototype.active = function () {
+	        return this._getContextManager().active();
+	    };
+	    /**
+	     * Execute a function with an active context
+	     *
+	     * @param context context to be active during function execution
+	     * @param fn function to execute in a context
+	     */
+	    ContextAPI.prototype.with = function (context, fn) {
+	        return this._getContextManager().with(context, fn);
+	    };
+	    /**
+	     * Bind a context to a target function or event emitter
+	     *
+	     * @param target function or event emitter to bind
+	     * @param context context to bind to the event emitter or function. Defaults to the currently active context
+	     */
+	    ContextAPI.prototype.bind = function (target, context) {
+	        if (context === void 0) { context = this.active(); }
+	        return this._getContextManager().bind(target, context);
+	    };
+	    ContextAPI.prototype._getContextManager = function () {
+	        var _a, _b;
+	        return ((_b = (_a = globalUtils$1._global[globalUtils$1.GLOBAL_CONTEXT_MANAGER_API_KEY]) === null || _a === void 0 ? void 0 : _a.call(globalUtils$1._global, globalUtils$1.API_BACKWARDS_COMPATIBILITY_VERSION)) !== null && _b !== void 0 ? _b : NOOP_CONTEXT_MANAGER);
+	    };
+	    /** Disable and remove the global context manager */
+	    ContextAPI.prototype.disable = function () {
+	        this._getContextManager().disable();
+	        delete globalUtils$1._global[globalUtils$1.GLOBAL_CONTEXT_MANAGER_API_KEY];
+	    };
+	    return ContextAPI;
+	}());
+	exports.ContextAPI = ContextAPI;
+
+	});
+
+	unwrapExports(context$4);
+	var context_1$4 = context$4.ContextAPI;
+
+	var trace$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.TraceAPI = void 0;
+
+
+	/**
+	 * Singleton object which represents the entry point to the OpenTelemetry Tracing API
+	 */
+	var TraceAPI = /** @class */ (function () {
+	    /** Empty private constructor prevents end users from constructing a new instance of the API */
+	    function TraceAPI() {
+	    }
+	    /** Get the singleton instance of the Trace API */
+	    TraceAPI.getInstance = function () {
+	        if (!this._instance) {
+	            this._instance = new TraceAPI();
+	        }
+	        return this._instance;
+	    };
+	    /**
+	     * Set the current global tracer. Returns the initialized global tracer provider
+	     */
+	    TraceAPI.prototype.setGlobalTracerProvider = function (provider) {
+	        if (globalUtils$1._global[globalUtils$1.GLOBAL_TRACE_API_KEY]) {
+	            // global tracer provider has already been set
+	            return this.getTracerProvider();
+	        }
+	        globalUtils$1._global[globalUtils$1.GLOBAL_TRACE_API_KEY] = globalUtils$1.makeGetter(globalUtils$1.API_BACKWARDS_COMPATIBILITY_VERSION, provider, NoopTracerProvider_1$1.NOOP_TRACER_PROVIDER);
+	        return this.getTracerProvider();
+	    };
+	    /**
+	     * Returns the global tracer provider.
+	     */
+	    TraceAPI.prototype.getTracerProvider = function () {
+	        var _a, _b;
+	        return ((_b = (_a = globalUtils$1._global[globalUtils$1.GLOBAL_TRACE_API_KEY]) === null || _a === void 0 ? void 0 : _a.call(globalUtils$1._global, globalUtils$1.API_BACKWARDS_COMPATIBILITY_VERSION)) !== null && _b !== void 0 ? _b : NoopTracerProvider_1$1.NOOP_TRACER_PROVIDER);
+	    };
+	    /**
+	     * Returns a tracer from the global tracer provider.
+	     */
+	    TraceAPI.prototype.getTracer = function (name, version) {
+	        return this.getTracerProvider().getTracer(name, version);
+	    };
+	    /** Remove the global tracer provider */
+	    TraceAPI.prototype.disable = function () {
+	        delete globalUtils$1._global[globalUtils$1.GLOBAL_TRACE_API_KEY];
+	    };
+	    return TraceAPI;
+	}());
+	exports.TraceAPI = TraceAPI;
+
+	});
+
+	unwrapExports(trace$1);
+	var trace_1$1 = trace$1.TraceAPI;
+
+	var metrics$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.MetricsAPI = void 0;
+
+
+	/**
+	 * Singleton object which represents the entry point to the OpenTelemetry Metrics API
+	 */
+	var MetricsAPI = /** @class */ (function () {
+	    /** Empty private constructor prevents end users from constructing a new instance of the API */
+	    function MetricsAPI() {
+	    }
+	    /** Get the singleton instance of the Metrics API */
+	    MetricsAPI.getInstance = function () {
+	        if (!this._instance) {
+	            this._instance = new MetricsAPI();
+	        }
+	        return this._instance;
+	    };
+	    /**
+	     * Set the current global meter. Returns the initialized global meter provider.
+	     */
+	    MetricsAPI.prototype.setGlobalMeterProvider = function (provider) {
+	        if (globalUtils$1._global[globalUtils$1.GLOBAL_METRICS_API_KEY]) {
+	            // global meter provider has already been set
+	            return this.getMeterProvider();
+	        }
+	        globalUtils$1._global[globalUtils$1.GLOBAL_METRICS_API_KEY] = globalUtils$1.makeGetter(globalUtils$1.API_BACKWARDS_COMPATIBILITY_VERSION, provider, NoopMeterProvider_1$1.NOOP_METER_PROVIDER);
+	        return provider;
+	    };
+	    /**
+	     * Returns the global meter provider.
+	     */
+	    MetricsAPI.prototype.getMeterProvider = function () {
+	        var _a, _b;
+	        return ((_b = (_a = globalUtils$1._global[globalUtils$1.GLOBAL_METRICS_API_KEY]) === null || _a === void 0 ? void 0 : _a.call(globalUtils$1._global, globalUtils$1.API_BACKWARDS_COMPATIBILITY_VERSION)) !== null && _b !== void 0 ? _b : NoopMeterProvider_1$1.NOOP_METER_PROVIDER);
+	    };
+	    /**
+	     * Returns a meter from the global meter provider.
+	     */
+	    MetricsAPI.prototype.getMeter = function (name, version) {
+	        return this.getMeterProvider().getMeter(name, version);
+	    };
+	    /** Remove the global meter provider */
+	    MetricsAPI.prototype.disable = function () {
+	        delete globalUtils$1._global[globalUtils$1.GLOBAL_METRICS_API_KEY];
+	    };
+	    return MetricsAPI;
+	}());
+	exports.MetricsAPI = MetricsAPI;
+
+	});
+
+	unwrapExports(metrics$1);
+	var metrics_1$1 = metrics$1.MetricsAPI;
+
+	var propagation$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.PropagationAPI = void 0;
+
+
+
+
+
+	var contextApi = context$4.ContextAPI.getInstance();
+	/**
+	 * Singleton object which represents the entry point to the OpenTelemetry Propagation API
+	 */
+	var PropagationAPI = /** @class */ (function () {
+	    /** Empty private constructor prevents end users from constructing a new instance of the API */
+	    function PropagationAPI() {
+	    }
+	    /** Get the singleton instance of the Propagator API */
+	    PropagationAPI.getInstance = function () {
+	        if (!this._instance) {
+	            this._instance = new PropagationAPI();
+	        }
+	        return this._instance;
+	    };
+	    /**
+	     * Set the current propagator. Returns the initialized propagator
+	     */
+	    PropagationAPI.prototype.setGlobalPropagator = function (propagator) {
+	        if (globalUtils$1._global[globalUtils$1.GLOBAL_PROPAGATION_API_KEY]) {
+	            // global propagator has already been set
+	            return this._getGlobalPropagator();
+	        }
+	        globalUtils$1._global[globalUtils$1.GLOBAL_PROPAGATION_API_KEY] = globalUtils$1.makeGetter(globalUtils$1.API_BACKWARDS_COMPATIBILITY_VERSION, propagator, NoopHttpTextPropagator_1.NOOP_HTTP_TEXT_PROPAGATOR);
+	        return propagator;
+	    };
+	    /**
+	     * Inject context into a carrier to be propagated inter-process
+	     *
+	     * @param carrier carrier to inject context into
+	     * @param setter Function used to set values on the carrier
+	     * @param context Context carrying tracing data to inject. Defaults to the currently active context.
+	     */
+	    PropagationAPI.prototype.inject = function (carrier, setter, context) {
+	        if (setter === void 0) { setter = setter$1.defaultSetter; }
+	        if (context === void 0) { context = contextApi.active(); }
+	        return this._getGlobalPropagator().inject(context, carrier, setter);
+	    };
+	    /**
+	     * Extract context from a carrier
+	     *
+	     * @param carrier Carrier to extract context from
+	     * @param getter Function used to extract keys from a carrier
+	     * @param context Context which the newly created context will inherit from. Defaults to the currently active context.
+	     */
+	    PropagationAPI.prototype.extract = function (carrier, getter, context) {
+	        if (getter === void 0) { getter = getter$1.defaultGetter; }
+	        if (context === void 0) { context = contextApi.active(); }
+	        return this._getGlobalPropagator().extract(context, carrier, getter);
+	    };
+	    /** Remove the global propagator */
+	    PropagationAPI.prototype.disable = function () {
+	        delete globalUtils$1._global[globalUtils$1.GLOBAL_PROPAGATION_API_KEY];
+	    };
+	    PropagationAPI.prototype._getGlobalPropagator = function () {
+	        var _a, _b;
+	        return ((_b = (_a = globalUtils$1._global[globalUtils$1.GLOBAL_PROPAGATION_API_KEY]) === null || _a === void 0 ? void 0 : _a.call(globalUtils$1._global, globalUtils$1.API_BACKWARDS_COMPATIBILITY_VERSION)) !== null && _b !== void 0 ? _b : NoopHttpTextPropagator_1.NOOP_HTTP_TEXT_PROPAGATOR);
+	    };
+	    return PropagationAPI;
+	}());
+	exports.PropagationAPI = PropagationAPI;
+
+	});
+
+	unwrapExports(propagation$1);
+	var propagation_1$1 = propagation$1.PropagationAPI;
+
+	var src$4 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+	}) : (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    o[k2] = m[k];
+	}));
+	var __exportStar = (commonjsGlobal && commonjsGlobal.__exportStar) || function(m, exports) {
+	    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.propagation = exports.metrics = exports.trace = exports.context = void 0;
+	__exportStar(Logger$1, exports);
+	__exportStar(Time$1, exports);
+	__exportStar(getter$1, exports);
+	__exportStar(HttpTextPropagator, exports);
+	__exportStar(NoopHttpTextPropagator_1, exports);
+	__exportStar(setter$1, exports);
+	__exportStar(CorrelationContext$1, exports);
+	__exportStar(EntryValue$1, exports);
+	__exportStar(BatchObserverResult$1, exports);
+	__exportStar(BoundInstrument$1, exports);
+	__exportStar(Meter$1, exports);
+	__exportStar(MeterProvider$1, exports);
+	__exportStar(Metric$1, exports);
+	__exportStar(NoopMeter_1$1, exports);
+	__exportStar(NoopMeterProvider_1$1, exports);
+	__exportStar(Observation$1, exports);
+	__exportStar(ObserverResult$1, exports);
+	__exportStar(attributes$1, exports);
+	__exportStar(Event$1, exports);
+	__exportStar(Plugin$1, exports);
+	__exportStar(link_context$1, exports);
+	__exportStar(link$1, exports);
+	__exportStar(NoopSpan_1$1, exports);
+	__exportStar(NoopTracer_1$1, exports);
+	__exportStar(NoopTracerProvider_1$1, exports);
+	__exportStar(Sampler$1, exports);
+	__exportStar(SamplingResult$1, exports);
+	__exportStar(span_context$1, exports);
+	__exportStar(span_kind$1, exports);
+	__exportStar(span$1, exports);
+	__exportStar(SpanOptions$1, exports);
+	__exportStar(status$1, exports);
+	__exportStar(TimedEvent$1, exports);
+	__exportStar(trace_flags$1, exports);
+	__exportStar(trace_state$1, exports);
+	__exportStar(tracer_provider$1, exports);
+	__exportStar(tracer$1, exports);
+
+	Object.defineProperty(exports, "Context", { enumerable: true, get: function () { return src$3.Context; } });
+
+	/** Entrypoint for context API */
+	exports.context = context$4.ContextAPI.getInstance();
+
+	/** Entrypoint for trace API */
+	exports.trace = trace$1.TraceAPI.getInstance();
+
+	/** Entrypoint for metrics API */
+	exports.metrics = metrics$1.MetricsAPI.getInstance();
+
+	/** Entrypoint for propagation API */
+	exports.propagation = propagation$1.PropagationAPI.getInstance();
+	exports.default = {
+	    trace: exports.trace,
+	    metrics: exports.metrics,
+	    context: exports.context,
+	    propagation: exports.propagation,
+	};
+
+	});
+
+	unwrapExports(src$4);
+	var src_1$1 = src$4.propagation;
+	var src_2$1 = src$4.metrics;
+	var src_3$1 = src$4.trace;
+	var src_4$1 = src$4.context;
+
 	var message = createCommonjsModule(function (module, exports) {
 	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
 	    if (k2 === undefined) k2 = k;
@@ -6106,7 +8508,7 @@
 	}
 	exports.EventMessage = EventMessage;
 	class SpanMessage {
-	    constructor(spanContext, label, level = LogLevel.info, kind = src$1.SpanKind.CLIENT, status = { code: src$1.CanonicalCode.OK }, events = [], attrs = {}, context = {}, started = time_1.default(), finished) {
+	    constructor(spanContext, label, level = LogLevel.info, kind = src$4.SpanKind.CLIENT, status = { code: src$4.CanonicalCode.OK }, events = [], attrs = {}, context = {}, started = time_1.default(), finished) {
 	        this.spanContext = spanContext;
 	        this.label = label;
 	        this.level = level;
@@ -10924,18 +13326,16 @@
 	function ensureUserId(m) {
 	    if (typeof window === 'undefined')
 	        return m;
-	    if (typeof m.context['userId'] !== 'undefined')
+	    if (m.context['userId'] != null)
 	        return m;
 	    return Object.assign(Object.assign({}, m), { context: Object.assign(Object.assign({}, m.context), { userId: getUserId_1$1.default() }) });
 	}
 	function ensureAppId(appId, m) {
-	    if (typeof window === 'undefined')
-	        return m;
 	    if (appId == null)
 	        return m;
-	    if (typeof m.context['appId'] !== 'undefined')
+	    if (m.context['appId'] != null)
 	        return m;
-	    return Object.assign(Object.assign({}, m), { context: Object.assign(Object.assign({}, m.context), { appId: getUserId_1$1.default() }) });
+	    return Object.assign(Object.assign({}, m), { context: Object.assign(Object.assign({}, m.context), { appId }) });
 	}
 	function ensureName(name, m) {
 	    return m.name == null || m.name.length === 0 ? Object.assign(Object.assign({}, m), { name }) : m;
@@ -11009,7 +13409,7 @@
 	    }
 	    getTracer() {
 	        const hasTracer = this.getSupporters(features.OpenTelemetryHasTracer);
-	        return hasTracer.length === 0 ? new src$1.NoopTracer() : hasTracer[0].tracer;
+	        return hasTracer.length === 0 ? new src$4.NoopTracer() : hasTracer[0].tracer;
 	    }
 	    getLogger(...scopeName) {
 	        if (scopeName == null)
@@ -15515,12 +17915,12 @@
 
 	unwrapExports(console_1);
 
-	var types$3 = createCommonjsModule(function (module, exports) {
+	var types$4 = createCommonjsModule(function (module, exports) {
 	Object.defineProperty(exports, "__esModule", { value: true });
 
 	});
 
-	unwrapExports(types$3);
+	unwrapExports(types$4);
 
 	var LogaryExporter_1 = createCommonjsModule(function (module, exports) {
 	Object.defineProperty(exports, "__esModule", { value: true });
@@ -15547,7 +17947,7 @@
 
 	unwrapExports(LogaryExporter_1);
 
-	var trace$1 = createCommonjsModule(function (module, exports) {
+	var trace$2 = createCommonjsModule(function (module, exports) {
 	var __importDefault = (commonjsGlobal && commonjsGlobal.__importDefault) || function (mod) {
 	    return (mod && mod.__esModule) ? mod : { "default": mod };
 	};
@@ -15558,8 +17958,8 @@
 
 	});
 
-	unwrapExports(trace$1);
-	var trace_1$1 = trace$1.LogaryExporter;
+	unwrapExports(trace$2);
+	var trace_1$2 = trace$2.LogaryExporter;
 
 	const { EventEmitter } = events$1;
 
@@ -15817,9 +18217,9 @@
 	Object.defineProperty(exports, "createUserId", { enumerable: true, get: function () { return __importDefault(createUserId_1).default; } });
 
 	Object.defineProperty(exports, "getUserId", { enumerable: true, get: function () { return __importDefault(getUserId_1).default; } });
-	__exportStar(types$3, exports);
+	__exportStar(types$4, exports);
 	__exportStar(features, exports);
-	__exportStar(trace$1, exports);
+	__exportStar(trace$2, exports);
 
 	Object.defineProperty(exports, "ConsoleTarget", { enumerable: true, get: function () { return targets.ConsoleTarget; } });
 	Object.defineProperty(exports, "RuttaTarget", { enumerable: true, get: function () { return targets.RuttaTarget; } });
@@ -16302,6 +18702,3800 @@
 
 	unwrapExports(rootViewTracer);
 
+	var types$5 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.LogLevel = void 0;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var LogLevel;
+	(function (LogLevel) {
+	    LogLevel[LogLevel["ERROR"] = 0] = "ERROR";
+	    LogLevel[LogLevel["WARN"] = 1] = "WARN";
+	    LogLevel[LogLevel["INFO"] = 2] = "INFO";
+	    LogLevel[LogLevel["DEBUG"] = 3] = "DEBUG";
+	})(LogLevel = exports.LogLevel || (exports.LogLevel = {}));
+
+	});
+
+	unwrapExports(types$5);
+	var types_1$1 = types$5.LogLevel;
+
+	// Note: this is the semver.org version of the spec that it implements
+	// Not necessarily the package version of this code.
+	const SEMVER_SPEC_VERSION$1 = '2.0.0';
+
+	const MAX_LENGTH$3 = 256;
+	const MAX_SAFE_INTEGER$2 = Number.MAX_SAFE_INTEGER ||
+	  /* istanbul ignore next */ 9007199254740991;
+
+	// Max safe segment length for coercion.
+	const MAX_SAFE_COMPONENT_LENGTH$1 = 16;
+
+	var constants$1 = {
+	  SEMVER_SPEC_VERSION: SEMVER_SPEC_VERSION$1,
+	  MAX_LENGTH: MAX_LENGTH$3,
+	  MAX_SAFE_INTEGER: MAX_SAFE_INTEGER$2,
+	  MAX_SAFE_COMPONENT_LENGTH: MAX_SAFE_COMPONENT_LENGTH$1
+	};
+
+	const debug$1 = (
+	  typeof process === 'object' &&
+	  process.env &&
+	  process.env.NODE_DEBUG &&
+	  /\bsemver\b/i.test(process.env.NODE_DEBUG)
+	) ? (...args) => console.error('SEMVER', ...args)
+	  : () => {};
+
+	var debug_1$1 = debug$1;
+
+	var re_1$1 = createCommonjsModule(function (module, exports) {
+	const { MAX_SAFE_COMPONENT_LENGTH } = constants$1;
+
+	exports = module.exports = {};
+
+	// The actual regexps go on exports.re
+	const re = exports.re = [];
+	const src = exports.src = [];
+	const t = exports.t = {};
+	let R = 0;
+
+	const createToken = (name, value, isGlobal) => {
+	  const index = R++;
+	  debug_1$1(index, value);
+	  t[name] = index;
+	  src[index] = value;
+	  re[index] = new RegExp(value, isGlobal ? 'g' : undefined);
+	};
+
+	// The following Regular Expressions can be used for tokenizing,
+	// validating, and parsing SemVer version strings.
+
+	// ## Numeric Identifier
+	// A single `0`, or a non-zero digit followed by zero or more digits.
+
+	createToken('NUMERICIDENTIFIER', '0|[1-9]\\d*');
+	createToken('NUMERICIDENTIFIERLOOSE', '[0-9]+');
+
+	// ## Non-numeric Identifier
+	// Zero or more digits, followed by a letter or hyphen, and then zero or
+	// more letters, digits, or hyphens.
+
+	createToken('NONNUMERICIDENTIFIER', '\\d*[a-zA-Z-][a-zA-Z0-9-]*');
+
+	// ## Main Version
+	// Three dot-separated numeric identifiers.
+
+	createToken('MAINVERSION', `(${src[t.NUMERICIDENTIFIER]})\\.` +
+	                   `(${src[t.NUMERICIDENTIFIER]})\\.` +
+	                   `(${src[t.NUMERICIDENTIFIER]})`);
+
+	createToken('MAINVERSIONLOOSE', `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` +
+	                        `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` +
+	                        `(${src[t.NUMERICIDENTIFIERLOOSE]})`);
+
+	// ## Pre-release Version Identifier
+	// A numeric identifier, or a non-numeric identifier.
+
+	createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NUMERICIDENTIFIER]
+}|${src[t.NONNUMERICIDENTIFIER]})`);
+
+	createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NUMERICIDENTIFIERLOOSE]
+}|${src[t.NONNUMERICIDENTIFIER]})`);
+
+	// ## Pre-release Version
+	// Hyphen, followed by one or more dot-separated pre-release version
+	// identifiers.
+
+	createToken('PRERELEASE', `(?:-(${src[t.PRERELEASEIDENTIFIER]
+}(?:\\.${src[t.PRERELEASEIDENTIFIER]})*))`);
+
+	createToken('PRERELEASELOOSE', `(?:-?(${src[t.PRERELEASEIDENTIFIERLOOSE]
+}(?:\\.${src[t.PRERELEASEIDENTIFIERLOOSE]})*))`);
+
+	// ## Build Metadata Identifier
+	// Any combination of digits, letters, or hyphens.
+
+	createToken('BUILDIDENTIFIER', '[0-9A-Za-z-]+');
+
+	// ## Build Metadata
+	// Plus sign, followed by one or more period-separated build metadata
+	// identifiers.
+
+	createToken('BUILD', `(?:\\+(${src[t.BUILDIDENTIFIER]
+}(?:\\.${src[t.BUILDIDENTIFIER]})*))`);
+
+	// ## Full Version String
+	// A main version, followed optionally by a pre-release version and
+	// build metadata.
+
+	// Note that the only major, minor, patch, and pre-release sections of
+	// the version string are capturing groups.  The build metadata is not a
+	// capturing group, because it should not ever be used in version
+	// comparison.
+
+	createToken('FULLPLAIN', `v?${src[t.MAINVERSION]
+}${src[t.PRERELEASE]}?${
+  src[t.BUILD]}?`);
+
+	createToken('FULL', `^${src[t.FULLPLAIN]}$`);
+
+	// like full, but allows v1.2.3 and =1.2.3, which people do sometimes.
+	// also, 1.0.0alpha1 (prerelease without the hyphen) which is pretty
+	// common in the npm registry.
+	createToken('LOOSEPLAIN', `[v=\\s]*${src[t.MAINVERSIONLOOSE]
+}${src[t.PRERELEASELOOSE]}?${
+  src[t.BUILD]}?`);
+
+	createToken('LOOSE', `^${src[t.LOOSEPLAIN]}$`);
+
+	createToken('GTLT', '((?:<|>)?=?)');
+
+	// Something like "2.*" or "1.2.x".
+	// Note that "x.x" is a valid xRange identifer, meaning "any version"
+	// Only the first item is strictly required.
+	createToken('XRANGEIDENTIFIERLOOSE', `${src[t.NUMERICIDENTIFIERLOOSE]}|x|X|\\*`);
+	createToken('XRANGEIDENTIFIER', `${src[t.NUMERICIDENTIFIER]}|x|X|\\*`);
+
+	createToken('XRANGEPLAIN', `[v=\\s]*(${src[t.XRANGEIDENTIFIER]})` +
+	                   `(?:\\.(${src[t.XRANGEIDENTIFIER]})` +
+	                   `(?:\\.(${src[t.XRANGEIDENTIFIER]})` +
+	                   `(?:${src[t.PRERELEASE]})?${
+                     src[t.BUILD]}?` +
+	                   `)?)?`);
+
+	createToken('XRANGEPLAINLOOSE', `[v=\\s]*(${src[t.XRANGEIDENTIFIERLOOSE]})` +
+	                        `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` +
+	                        `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` +
+	                        `(?:${src[t.PRERELEASELOOSE]})?${
+                          src[t.BUILD]}?` +
+	                        `)?)?`);
+
+	createToken('XRANGE', `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAIN]}$`);
+	createToken('XRANGELOOSE', `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAINLOOSE]}$`);
+
+	// Coercion.
+	// Extract anything that could conceivably be a part of a valid semver
+	createToken('COERCE', `${'(^|[^\\d])' +
+              '(\\d{1,'}${MAX_SAFE_COMPONENT_LENGTH}})` +
+	              `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` +
+	              `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` +
+	              `(?:$|[^\\d])`);
+	createToken('COERCERTL', src[t.COERCE], true);
+
+	// Tilde ranges.
+	// Meaning is "reasonably at or greater than"
+	createToken('LONETILDE', '(?:~>?)');
+
+	createToken('TILDETRIM', `(\\s*)${src[t.LONETILDE]}\\s+`, true);
+	exports.tildeTrimReplace = '$1~';
+
+	createToken('TILDE', `^${src[t.LONETILDE]}${src[t.XRANGEPLAIN]}$`);
+	createToken('TILDELOOSE', `^${src[t.LONETILDE]}${src[t.XRANGEPLAINLOOSE]}$`);
+
+	// Caret ranges.
+	// Meaning is "at least and backwards compatible with"
+	createToken('LONECARET', '(?:\\^)');
+
+	createToken('CARETTRIM', `(\\s*)${src[t.LONECARET]}\\s+`, true);
+	exports.caretTrimReplace = '$1^';
+
+	createToken('CARET', `^${src[t.LONECARET]}${src[t.XRANGEPLAIN]}$`);
+	createToken('CARETLOOSE', `^${src[t.LONECARET]}${src[t.XRANGEPLAINLOOSE]}$`);
+
+	// A simple gt/lt/eq thing, or just "" to indicate "any version"
+	createToken('COMPARATORLOOSE', `^${src[t.GTLT]}\\s*(${src[t.LOOSEPLAIN]})$|^$`);
+	createToken('COMPARATOR', `^${src[t.GTLT]}\\s*(${src[t.FULLPLAIN]})$|^$`);
+
+	// An expression to strip any whitespace between the gtlt and the thing
+	// it modifies, so that `> 1.2.3` ==> `>1.2.3`
+	createToken('COMPARATORTRIM', `(\\s*)${src[t.GTLT]
+}\\s*(${src[t.LOOSEPLAIN]}|${src[t.XRANGEPLAIN]})`, true);
+	exports.comparatorTrimReplace = '$1$2$3';
+
+	// Something like `1.2.3 - 1.2.4`
+	// Note that these all use the loose form, because they'll be
+	// checked against either the strict or loose comparator form
+	// later.
+	createToken('HYPHENRANGE', `^\\s*(${src[t.XRANGEPLAIN]})` +
+	                   `\\s+-\\s+` +
+	                   `(${src[t.XRANGEPLAIN]})` +
+	                   `\\s*$`);
+
+	createToken('HYPHENRANGELOOSE', `^\\s*(${src[t.XRANGEPLAINLOOSE]})` +
+	                        `\\s+-\\s+` +
+	                        `(${src[t.XRANGEPLAINLOOSE]})` +
+	                        `\\s*$`);
+
+	// Star ranges basically just allow anything at all.
+	createToken('STAR', '(<|>)?=?\\s*\\*');
+	// >=0.0.0 is like a star
+	createToken('GTE0', '^\\s*>=\\s*0\.0\.0\\s*$');
+	createToken('GTE0PRE', '^\\s*>=\\s*0\.0\.0-0\\s*$');
+	});
+	var re_2$1 = re_1$1.re;
+	var re_3$1 = re_1$1.src;
+	var re_4$1 = re_1$1.t;
+	var re_5$1 = re_1$1.tildeTrimReplace;
+	var re_6$1 = re_1$1.caretTrimReplace;
+	var re_7$1 = re_1$1.comparatorTrimReplace;
+
+	const numeric$1 = /^[0-9]+$/;
+	const compareIdentifiers$2 = (a, b) => {
+	  const anum = numeric$1.test(a);
+	  const bnum = numeric$1.test(b);
+
+	  if (anum && bnum) {
+	    a = +a;
+	    b = +b;
+	  }
+
+	  return a === b ? 0
+	    : (anum && !bnum) ? -1
+	    : (bnum && !anum) ? 1
+	    : a < b ? -1
+	    : 1
+	};
+
+	const rcompareIdentifiers$1 = (a, b) => compareIdentifiers$2(b, a);
+
+	var identifiers$1 = {
+	  compareIdentifiers: compareIdentifiers$2,
+	  rcompareIdentifiers: rcompareIdentifiers$1
+	};
+
+	const { MAX_LENGTH: MAX_LENGTH$4, MAX_SAFE_INTEGER: MAX_SAFE_INTEGER$3 } = constants$1;
+	const { re: re$5, t: t$7 } = re_1$1;
+
+	const { compareIdentifiers: compareIdentifiers$3 } = identifiers$1;
+	class SemVer$1 {
+	  constructor (version, options) {
+	    if (!options || typeof options !== 'object') {
+	      options = {
+	        loose: !!options,
+	        includePrerelease: false
+	      };
+	    }
+	    if (version instanceof SemVer$1) {
+	      if (version.loose === !!options.loose &&
+	          version.includePrerelease === !!options.includePrerelease) {
+	        return version
+	      } else {
+	        version = version.version;
+	      }
+	    } else if (typeof version !== 'string') {
+	      throw new TypeError(`Invalid Version: ${version}`)
+	    }
+
+	    if (version.length > MAX_LENGTH$4) {
+	      throw new TypeError(
+	        `version is longer than ${MAX_LENGTH$4} characters`
+	      )
+	    }
+
+	    debug_1$1('SemVer', version, options);
+	    this.options = options;
+	    this.loose = !!options.loose;
+	    // this isn't actually relevant for versions, but keep it so that we
+	    // don't run into trouble passing this.options around.
+	    this.includePrerelease = !!options.includePrerelease;
+
+	    const m = version.trim().match(options.loose ? re$5[t$7.LOOSE] : re$5[t$7.FULL]);
+
+	    if (!m) {
+	      throw new TypeError(`Invalid Version: ${version}`)
+	    }
+
+	    this.raw = version;
+
+	    // these are actually numbers
+	    this.major = +m[1];
+	    this.minor = +m[2];
+	    this.patch = +m[3];
+
+	    if (this.major > MAX_SAFE_INTEGER$3 || this.major < 0) {
+	      throw new TypeError('Invalid major version')
+	    }
+
+	    if (this.minor > MAX_SAFE_INTEGER$3 || this.minor < 0) {
+	      throw new TypeError('Invalid minor version')
+	    }
+
+	    if (this.patch > MAX_SAFE_INTEGER$3 || this.patch < 0) {
+	      throw new TypeError('Invalid patch version')
+	    }
+
+	    // numberify any prerelease numeric ids
+	    if (!m[4]) {
+	      this.prerelease = [];
+	    } else {
+	      this.prerelease = m[4].split('.').map((id) => {
+	        if (/^[0-9]+$/.test(id)) {
+	          const num = +id;
+	          if (num >= 0 && num < MAX_SAFE_INTEGER$3) {
+	            return num
+	          }
+	        }
+	        return id
+	      });
+	    }
+
+	    this.build = m[5] ? m[5].split('.') : [];
+	    this.format();
+	  }
+
+	  format () {
+	    this.version = `${this.major}.${this.minor}.${this.patch}`;
+	    if (this.prerelease.length) {
+	      this.version += `-${this.prerelease.join('.')}`;
+	    }
+	    return this.version
+	  }
+
+	  toString () {
+	    return this.version
+	  }
+
+	  compare (other) {
+	    debug_1$1('SemVer.compare', this.version, this.options, other);
+	    if (!(other instanceof SemVer$1)) {
+	      if (typeof other === 'string' && other === this.version) {
+	        return 0
+	      }
+	      other = new SemVer$1(other, this.options);
+	    }
+
+	    if (other.version === this.version) {
+	      return 0
+	    }
+
+	    return this.compareMain(other) || this.comparePre(other)
+	  }
+
+	  compareMain (other) {
+	    if (!(other instanceof SemVer$1)) {
+	      other = new SemVer$1(other, this.options);
+	    }
+
+	    return (
+	      compareIdentifiers$3(this.major, other.major) ||
+	      compareIdentifiers$3(this.minor, other.minor) ||
+	      compareIdentifiers$3(this.patch, other.patch)
+	    )
+	  }
+
+	  comparePre (other) {
+	    if (!(other instanceof SemVer$1)) {
+	      other = new SemVer$1(other, this.options);
+	    }
+
+	    // NOT having a prerelease is > having one
+	    if (this.prerelease.length && !other.prerelease.length) {
+	      return -1
+	    } else if (!this.prerelease.length && other.prerelease.length) {
+	      return 1
+	    } else if (!this.prerelease.length && !other.prerelease.length) {
+	      return 0
+	    }
+
+	    let i = 0;
+	    do {
+	      const a = this.prerelease[i];
+	      const b = other.prerelease[i];
+	      debug_1$1('prerelease compare', i, a, b);
+	      if (a === undefined && b === undefined) {
+	        return 0
+	      } else if (b === undefined) {
+	        return 1
+	      } else if (a === undefined) {
+	        return -1
+	      } else if (a === b) {
+	        continue
+	      } else {
+	        return compareIdentifiers$3(a, b)
+	      }
+	    } while (++i)
+	  }
+
+	  compareBuild (other) {
+	    if (!(other instanceof SemVer$1)) {
+	      other = new SemVer$1(other, this.options);
+	    }
+
+	    let i = 0;
+	    do {
+	      const a = this.build[i];
+	      const b = other.build[i];
+	      debug_1$1('prerelease compare', i, a, b);
+	      if (a === undefined && b === undefined) {
+	        return 0
+	      } else if (b === undefined) {
+	        return 1
+	      } else if (a === undefined) {
+	        return -1
+	      } else if (a === b) {
+	        continue
+	      } else {
+	        return compareIdentifiers$3(a, b)
+	      }
+	    } while (++i)
+	  }
+
+	  // preminor will bump the version up to the next minor release, and immediately
+	  // down to pre-release. premajor and prepatch work the same way.
+	  inc (release, identifier) {
+	    switch (release) {
+	      case 'premajor':
+	        this.prerelease.length = 0;
+	        this.patch = 0;
+	        this.minor = 0;
+	        this.major++;
+	        this.inc('pre', identifier);
+	        break
+	      case 'preminor':
+	        this.prerelease.length = 0;
+	        this.patch = 0;
+	        this.minor++;
+	        this.inc('pre', identifier);
+	        break
+	      case 'prepatch':
+	        // If this is already a prerelease, it will bump to the next version
+	        // drop any prereleases that might already exist, since they are not
+	        // relevant at this point.
+	        this.prerelease.length = 0;
+	        this.inc('patch', identifier);
+	        this.inc('pre', identifier);
+	        break
+	      // If the input is a non-prerelease version, this acts the same as
+	      // prepatch.
+	      case 'prerelease':
+	        if (this.prerelease.length === 0) {
+	          this.inc('patch', identifier);
+	        }
+	        this.inc('pre', identifier);
+	        break
+
+	      case 'major':
+	        // If this is a pre-major version, bump up to the same major version.
+	        // Otherwise increment major.
+	        // 1.0.0-5 bumps to 1.0.0
+	        // 1.1.0 bumps to 2.0.0
+	        if (
+	          this.minor !== 0 ||
+	          this.patch !== 0 ||
+	          this.prerelease.length === 0
+	        ) {
+	          this.major++;
+	        }
+	        this.minor = 0;
+	        this.patch = 0;
+	        this.prerelease = [];
+	        break
+	      case 'minor':
+	        // If this is a pre-minor version, bump up to the same minor version.
+	        // Otherwise increment minor.
+	        // 1.2.0-5 bumps to 1.2.0
+	        // 1.2.1 bumps to 1.3.0
+	        if (this.patch !== 0 || this.prerelease.length === 0) {
+	          this.minor++;
+	        }
+	        this.patch = 0;
+	        this.prerelease = [];
+	        break
+	      case 'patch':
+	        // If this is not a pre-release version, it will increment the patch.
+	        // If it is a pre-release it will bump up to the same patch version.
+	        // 1.2.0-5 patches to 1.2.0
+	        // 1.2.0 patches to 1.2.1
+	        if (this.prerelease.length === 0) {
+	          this.patch++;
+	        }
+	        this.prerelease = [];
+	        break
+	      // This probably shouldn't be used publicly.
+	      // 1.0.0 'pre' would become 1.0.0-0 which is the wrong direction.
+	      case 'pre':
+	        if (this.prerelease.length === 0) {
+	          this.prerelease = [0];
+	        } else {
+	          let i = this.prerelease.length;
+	          while (--i >= 0) {
+	            if (typeof this.prerelease[i] === 'number') {
+	              this.prerelease[i]++;
+	              i = -2;
+	            }
+	          }
+	          if (i === -1) {
+	            // didn't increment anything
+	            this.prerelease.push(0);
+	          }
+	        }
+	        if (identifier) {
+	          // 1.2.0-beta.1 bumps to 1.2.0-beta.2,
+	          // 1.2.0-beta.fooblz or 1.2.0-beta bumps to 1.2.0-beta.0
+	          if (this.prerelease[0] === identifier) {
+	            if (isNaN(this.prerelease[1])) {
+	              this.prerelease = [identifier, 0];
+	            }
+	          } else {
+	            this.prerelease = [identifier, 0];
+	          }
+	        }
+	        break
+
+	      default:
+	        throw new Error(`invalid increment argument: ${release}`)
+	    }
+	    this.format();
+	    this.raw = this.version;
+	    return this
+	  }
+	}
+
+	var semver$2 = SemVer$1;
+
+	const {MAX_LENGTH: MAX_LENGTH$5} = constants$1;
+	const { re: re$6, t: t$8 } = re_1$1;
+
+
+	const parse$3 = (version, options) => {
+	  if (!options || typeof options !== 'object') {
+	    options = {
+	      loose: !!options,
+	      includePrerelease: false
+	    };
+	  }
+
+	  if (version instanceof semver$2) {
+	    return version
+	  }
+
+	  if (typeof version !== 'string') {
+	    return null
+	  }
+
+	  if (version.length > MAX_LENGTH$5) {
+	    return null
+	  }
+
+	  const r = options.loose ? re$6[t$8.LOOSE] : re$6[t$8.FULL];
+	  if (!r.test(version)) {
+	    return null
+	  }
+
+	  try {
+	    return new semver$2(version, options)
+	  } catch (er) {
+	    return null
+	  }
+	};
+
+	var parse_1$3 = parse$3;
+
+	const valid$2 = (version, options) => {
+	  const v = parse_1$3(version, options);
+	  return v ? v.version : null
+	};
+	var valid_1$1 = valid$2;
+
+	const clean$1 = (version, options) => {
+	  const s = parse_1$3(version.trim().replace(/^[=v]+/, ''), options);
+	  return s ? s.version : null
+	};
+	var clean_1$1 = clean$1;
+
+	const inc$1 = (version, release, options, identifier) => {
+	  if (typeof (options) === 'string') {
+	    identifier = options;
+	    options = undefined;
+	  }
+
+	  try {
+	    return new semver$2(version, options).inc(release, identifier).version
+	  } catch (er) {
+	    return null
+	  }
+	};
+	var inc_1$1 = inc$1;
+
+	const compare$1 = (a, b, loose) =>
+	  new semver$2(a, loose).compare(new semver$2(b, loose));
+
+	var compare_1$1 = compare$1;
+
+	const eq$1 = (a, b, loose) => compare_1$1(a, b, loose) === 0;
+	var eq_1$1 = eq$1;
+
+	const diff$1 = (version1, version2) => {
+	  if (eq_1$1(version1, version2)) {
+	    return null
+	  } else {
+	    const v1 = parse_1$3(version1);
+	    const v2 = parse_1$3(version2);
+	    const hasPre = v1.prerelease.length || v2.prerelease.length;
+	    const prefix = hasPre ? 'pre' : '';
+	    const defaultResult = hasPre ? 'prerelease' : '';
+	    for (const key in v1) {
+	      if (key === 'major' || key === 'minor' || key === 'patch') {
+	        if (v1[key] !== v2[key]) {
+	          return prefix + key
+	        }
+	      }
+	    }
+	    return defaultResult // may be undefined
+	  }
+	};
+	var diff_1$1 = diff$1;
+
+	const major$1 = (a, loose) => new semver$2(a, loose).major;
+	var major_1$1 = major$1;
+
+	const minor$1 = (a, loose) => new semver$2(a, loose).minor;
+	var minor_1$1 = minor$1;
+
+	const patch$1 = (a, loose) => new semver$2(a, loose).patch;
+	var patch_1$1 = patch$1;
+
+	const prerelease$1 = (version, options) => {
+	  const parsed = parse_1$3(version, options);
+	  return (parsed && parsed.prerelease.length) ? parsed.prerelease : null
+	};
+	var prerelease_1$1 = prerelease$1;
+
+	const rcompare$1 = (a, b, loose) => compare_1$1(b, a, loose);
+	var rcompare_1$1 = rcompare$1;
+
+	const compareLoose$1 = (a, b) => compare_1$1(a, b, true);
+	var compareLoose_1$1 = compareLoose$1;
+
+	const compareBuild$1 = (a, b, loose) => {
+	  const versionA = new semver$2(a, loose);
+	  const versionB = new semver$2(b, loose);
+	  return versionA.compare(versionB) || versionA.compareBuild(versionB)
+	};
+	var compareBuild_1$1 = compareBuild$1;
+
+	const sort$1 = (list, loose) => list.sort((a, b) => compareBuild_1$1(a, b, loose));
+	var sort_1$1 = sort$1;
+
+	const rsort$1 = (list, loose) => list.sort((a, b) => compareBuild_1$1(b, a, loose));
+	var rsort_1$1 = rsort$1;
+
+	const gt$1 = (a, b, loose) => compare_1$1(a, b, loose) > 0;
+	var gt_1$1 = gt$1;
+
+	const lt$1 = (a, b, loose) => compare_1$1(a, b, loose) < 0;
+	var lt_1$1 = lt$1;
+
+	const neq$1 = (a, b, loose) => compare_1$1(a, b, loose) !== 0;
+	var neq_1$1 = neq$1;
+
+	const gte$1 = (a, b, loose) => compare_1$1(a, b, loose) >= 0;
+	var gte_1$1 = gte$1;
+
+	const lte$1 = (a, b, loose) => compare_1$1(a, b, loose) <= 0;
+	var lte_1$1 = lte$1;
+
+	const cmp$1 = (a, op, b, loose) => {
+	  switch (op) {
+	    case '===':
+	      if (typeof a === 'object')
+	        a = a.version;
+	      if (typeof b === 'object')
+	        b = b.version;
+	      return a === b
+
+	    case '!==':
+	      if (typeof a === 'object')
+	        a = a.version;
+	      if (typeof b === 'object')
+	        b = b.version;
+	      return a !== b
+
+	    case '':
+	    case '=':
+	    case '==':
+	      return eq_1$1(a, b, loose)
+
+	    case '!=':
+	      return neq_1$1(a, b, loose)
+
+	    case '>':
+	      return gt_1$1(a, b, loose)
+
+	    case '>=':
+	      return gte_1$1(a, b, loose)
+
+	    case '<':
+	      return lt_1$1(a, b, loose)
+
+	    case '<=':
+	      return lte_1$1(a, b, loose)
+
+	    default:
+	      throw new TypeError(`Invalid operator: ${op}`)
+	  }
+	};
+	var cmp_1$1 = cmp$1;
+
+	const {re: re$7, t: t$9} = re_1$1;
+
+	const coerce$1 = (version, options) => {
+	  if (version instanceof semver$2) {
+	    return version
+	  }
+
+	  if (typeof version === 'number') {
+	    version = String(version);
+	  }
+
+	  if (typeof version !== 'string') {
+	    return null
+	  }
+
+	  options = options || {};
+
+	  let match = null;
+	  if (!options.rtl) {
+	    match = version.match(re$7[t$9.COERCE]);
+	  } else {
+	    // Find the right-most coercible string that does not share
+	    // a terminus with a more left-ward coercible string.
+	    // Eg, '1.2.3.4' wants to coerce '2.3.4', not '3.4' or '4'
+	    //
+	    // Walk through the string checking with a /g regexp
+	    // Manually set the index so as to pick up overlapping matches.
+	    // Stop when we get a match that ends at the string end, since no
+	    // coercible string can be more right-ward without the same terminus.
+	    let next;
+	    while ((next = re$7[t$9.COERCERTL].exec(version)) &&
+	        (!match || match.index + match[0].length !== version.length)
+	    ) {
+	      if (!match ||
+	            next.index + next[0].length !== match.index + match[0].length) {
+	        match = next;
+	      }
+	      re$7[t$9.COERCERTL].lastIndex = next.index + next[1].length + next[2].length;
+	    }
+	    // leave it in a clean state
+	    re$7[t$9.COERCERTL].lastIndex = -1;
+	  }
+
+	  if (match === null)
+	    return null
+
+	  return parse_1$3(`${match[2]}.${match[3] || '0'}.${match[4] || '0'}`, options)
+	};
+	var coerce_1$1 = coerce$1;
+
+	// hoisted class for cyclic dependency
+	class Range$1 {
+	  constructor (range, options) {
+	    if (!options || typeof options !== 'object') {
+	      options = {
+	        loose: !!options,
+	        includePrerelease: false
+	      };
+	    }
+
+	    if (range instanceof Range$1) {
+	      if (
+	        range.loose === !!options.loose &&
+	        range.includePrerelease === !!options.includePrerelease
+	      ) {
+	        return range
+	      } else {
+	        return new Range$1(range.raw, options)
+	      }
+	    }
+
+	    if (range instanceof comparator$1) {
+	      // just put it in the set and return
+	      this.raw = range.value;
+	      this.set = [[range]];
+	      this.format();
+	      return this
+	    }
+
+	    this.options = options;
+	    this.loose = !!options.loose;
+	    this.includePrerelease = !!options.includePrerelease;
+
+	    // First, split based on boolean or ||
+	    this.raw = range;
+	    this.set = range
+	      .split(/\s*\|\|\s*/)
+	      // map the range to a 2d array of comparators
+	      .map(range => this.parseRange(range.trim()))
+	      // throw out any comparator lists that are empty
+	      // this generally means that it was not a valid range, which is allowed
+	      // in loose mode, but will still throw if the WHOLE range is invalid.
+	      .filter(c => c.length);
+
+	    if (!this.set.length) {
+	      throw new TypeError(`Invalid SemVer Range: ${range}`)
+	    }
+
+	    this.format();
+	  }
+
+	  format () {
+	    this.range = this.set
+	      .map((comps) => {
+	        return comps.join(' ').trim()
+	      })
+	      .join('||')
+	      .trim();
+	    return this.range
+	  }
+
+	  toString () {
+	    return this.range
+	  }
+
+	  parseRange (range) {
+	    const loose = this.options.loose;
+	    range = range.trim();
+	    // `1.2.3 - 1.2.4` => `>=1.2.3 <=1.2.4`
+	    const hr = loose ? re$8[t$a.HYPHENRANGELOOSE] : re$8[t$a.HYPHENRANGE];
+	    range = range.replace(hr, hyphenReplace$1(this.options.includePrerelease));
+	    debug_1$1('hyphen replace', range);
+	    // `> 1.2.3 < 1.2.5` => `>1.2.3 <1.2.5`
+	    range = range.replace(re$8[t$a.COMPARATORTRIM], comparatorTrimReplace$1);
+	    debug_1$1('comparator trim', range, re$8[t$a.COMPARATORTRIM]);
+
+	    // `~ 1.2.3` => `~1.2.3`
+	    range = range.replace(re$8[t$a.TILDETRIM], tildeTrimReplace$1);
+
+	    // `^ 1.2.3` => `^1.2.3`
+	    range = range.replace(re$8[t$a.CARETTRIM], caretTrimReplace$1);
+
+	    // normalize spaces
+	    range = range.split(/\s+/).join(' ');
+
+	    // At this point, the range is completely trimmed and
+	    // ready to be split into comparators.
+
+	    const compRe = loose ? re$8[t$a.COMPARATORLOOSE] : re$8[t$a.COMPARATOR];
+	    return range
+	      .split(' ')
+	      .map(comp => parseComparator$1(comp, this.options))
+	      .join(' ')
+	      .split(/\s+/)
+	      .map(comp => replaceGTE0$1(comp, this.options))
+	      // in loose mode, throw out any that are not valid comparators
+	      .filter(this.options.loose ? comp => !!comp.match(compRe) : () => true)
+	      .map(comp => new comparator$1(comp, this.options))
+	  }
+
+	  intersects (range, options) {
+	    if (!(range instanceof Range$1)) {
+	      throw new TypeError('a Range is required')
+	    }
+
+	    return this.set.some((thisComparators) => {
+	      return (
+	        isSatisfiable$1(thisComparators, options) &&
+	        range.set.some((rangeComparators) => {
+	          return (
+	            isSatisfiable$1(rangeComparators, options) &&
+	            thisComparators.every((thisComparator) => {
+	              return rangeComparators.every((rangeComparator) => {
+	                return thisComparator.intersects(rangeComparator, options)
+	              })
+	            })
+	          )
+	        })
+	      )
+	    })
+	  }
+
+	  // if ANY of the sets match ALL of its comparators, then pass
+	  test (version) {
+	    if (!version) {
+	      return false
+	    }
+
+	    if (typeof version === 'string') {
+	      try {
+	        version = new semver$2(version, this.options);
+	      } catch (er) {
+	        return false
+	      }
+	    }
+
+	    for (let i = 0; i < this.set.length; i++) {
+	      if (testSet$1(this.set[i], version, this.options)) {
+	        return true
+	      }
+	    }
+	    return false
+	  }
+	}
+	var range$2 = Range$1;
+
+
+
+
+	const {
+	  re: re$8,
+	  t: t$a,
+	  comparatorTrimReplace: comparatorTrimReplace$1,
+	  tildeTrimReplace: tildeTrimReplace$1,
+	  caretTrimReplace: caretTrimReplace$1
+	} = re_1$1;
+
+	// take a set of comparators and determine whether there
+	// exists a version which can satisfy it
+	const isSatisfiable$1 = (comparators, options) => {
+	  let result = true;
+	  const remainingComparators = comparators.slice();
+	  let testComparator = remainingComparators.pop();
+
+	  while (result && remainingComparators.length) {
+	    result = remainingComparators.every((otherComparator) => {
+	      return testComparator.intersects(otherComparator, options)
+	    });
+
+	    testComparator = remainingComparators.pop();
+	  }
+
+	  return result
+	};
+
+	// comprised of xranges, tildes, stars, and gtlt's at this point.
+	// already replaced the hyphen ranges
+	// turn into a set of JUST comparators.
+	const parseComparator$1 = (comp, options) => {
+	  debug_1$1('comp', comp, options);
+	  comp = replaceCarets$1(comp, options);
+	  debug_1$1('caret', comp);
+	  comp = replaceTildes$1(comp, options);
+	  debug_1$1('tildes', comp);
+	  comp = replaceXRanges$1(comp, options);
+	  debug_1$1('xrange', comp);
+	  comp = replaceStars$1(comp, options);
+	  debug_1$1('stars', comp);
+	  return comp
+	};
+
+	const isX$1 = id => !id || id.toLowerCase() === 'x' || id === '*';
+
+	// ~, ~> --> * (any, kinda silly)
+	// ~2, ~2.x, ~2.x.x, ~>2, ~>2.x ~>2.x.x --> >=2.0.0 <3.0.0-0
+	// ~2.0, ~2.0.x, ~>2.0, ~>2.0.x --> >=2.0.0 <2.1.0-0
+	// ~1.2, ~1.2.x, ~>1.2, ~>1.2.x --> >=1.2.0 <1.3.0-0
+	// ~1.2.3, ~>1.2.3 --> >=1.2.3 <1.3.0-0
+	// ~1.2.0, ~>1.2.0 --> >=1.2.0 <1.3.0-0
+	const replaceTildes$1 = (comp, options) =>
+	  comp.trim().split(/\s+/).map((comp) => {
+	    return replaceTilde$1(comp, options)
+	  }).join(' ');
+
+	const replaceTilde$1 = (comp, options) => {
+	  const r = options.loose ? re$8[t$a.TILDELOOSE] : re$8[t$a.TILDE];
+	  return comp.replace(r, (_, M, m, p, pr) => {
+	    debug_1$1('tilde', comp, _, M, m, p, pr);
+	    let ret;
+
+	    if (isX$1(M)) {
+	      ret = '';
+	    } else if (isX$1(m)) {
+	      ret = `>=${M}.0.0 <${+M + 1}.0.0-0`;
+	    } else if (isX$1(p)) {
+	      // ~1.2 == >=1.2.0 <1.3.0-0
+	      ret = `>=${M}.${m}.0 <${M}.${+m + 1}.0-0`;
+	    } else if (pr) {
+	      debug_1$1('replaceTilde pr', pr);
+	      ret = `>=${M}.${m}.${p}-${pr
+      } <${M}.${+m + 1}.0-0`;
+	    } else {
+	      // ~1.2.3 == >=1.2.3 <1.3.0-0
+	      ret = `>=${M}.${m}.${p
+      } <${M}.${+m + 1}.0-0`;
+	    }
+
+	    debug_1$1('tilde return', ret);
+	    return ret
+	  })
+	};
+
+	// ^ --> * (any, kinda silly)
+	// ^2, ^2.x, ^2.x.x --> >=2.0.0 <3.0.0-0
+	// ^2.0, ^2.0.x --> >=2.0.0 <3.0.0-0
+	// ^1.2, ^1.2.x --> >=1.2.0 <2.0.0-0
+	// ^1.2.3 --> >=1.2.3 <2.0.0-0
+	// ^1.2.0 --> >=1.2.0 <2.0.0-0
+	const replaceCarets$1 = (comp, options) =>
+	  comp.trim().split(/\s+/).map((comp) => {
+	    return replaceCaret$1(comp, options)
+	  }).join(' ');
+
+	const replaceCaret$1 = (comp, options) => {
+	  debug_1$1('caret', comp, options);
+	  const r = options.loose ? re$8[t$a.CARETLOOSE] : re$8[t$a.CARET];
+	  const z = options.includePrerelease ? '-0' : '';
+	  return comp.replace(r, (_, M, m, p, pr) => {
+	    debug_1$1('caret', comp, _, M, m, p, pr);
+	    let ret;
+
+	    if (isX$1(M)) {
+	      ret = '';
+	    } else if (isX$1(m)) {
+	      ret = `>=${M}.0.0${z} <${+M + 1}.0.0-0`;
+	    } else if (isX$1(p)) {
+	      if (M === '0') {
+	        ret = `>=${M}.${m}.0${z} <${M}.${+m + 1}.0-0`;
+	      } else {
+	        ret = `>=${M}.${m}.0${z} <${+M + 1}.0.0-0`;
+	      }
+	    } else if (pr) {
+	      debug_1$1('replaceCaret pr', pr);
+	      if (M === '0') {
+	        if (m === '0') {
+	          ret = `>=${M}.${m}.${p}-${pr
+          } <${M}.${m}.${+p + 1}-0`;
+	        } else {
+	          ret = `>=${M}.${m}.${p}-${pr
+          } <${M}.${+m + 1}.0-0`;
+	        }
+	      } else {
+	        ret = `>=${M}.${m}.${p}-${pr
+        } <${+M + 1}.0.0-0`;
+	      }
+	    } else {
+	      debug_1$1('no pr');
+	      if (M === '0') {
+	        if (m === '0') {
+	          ret = `>=${M}.${m}.${p
+          }${z} <${M}.${m}.${+p + 1}-0`;
+	        } else {
+	          ret = `>=${M}.${m}.${p
+          }${z} <${M}.${+m + 1}.0-0`;
+	        }
+	      } else {
+	        ret = `>=${M}.${m}.${p
+        } <${+M + 1}.0.0-0`;
+	      }
+	    }
+
+	    debug_1$1('caret return', ret);
+	    return ret
+	  })
+	};
+
+	const replaceXRanges$1 = (comp, options) => {
+	  debug_1$1('replaceXRanges', comp, options);
+	  return comp.split(/\s+/).map((comp) => {
+	    return replaceXRange$1(comp, options)
+	  }).join(' ')
+	};
+
+	const replaceXRange$1 = (comp, options) => {
+	  comp = comp.trim();
+	  const r = options.loose ? re$8[t$a.XRANGELOOSE] : re$8[t$a.XRANGE];
+	  return comp.replace(r, (ret, gtlt, M, m, p, pr) => {
+	    debug_1$1('xRange', comp, ret, gtlt, M, m, p, pr);
+	    const xM = isX$1(M);
+	    const xm = xM || isX$1(m);
+	    const xp = xm || isX$1(p);
+	    const anyX = xp;
+
+	    if (gtlt === '=' && anyX) {
+	      gtlt = '';
+	    }
+
+	    // if we're including prereleases in the match, then we need
+	    // to fix this to -0, the lowest possible prerelease value
+	    pr = options.includePrerelease ? '-0' : '';
+
+	    if (xM) {
+	      if (gtlt === '>' || gtlt === '<') {
+	        // nothing is allowed
+	        ret = '<0.0.0-0';
+	      } else {
+	        // nothing is forbidden
+	        ret = '*';
+	      }
+	    } else if (gtlt && anyX) {
+	      // we know patch is an x, because we have any x at all.
+	      // replace X with 0
+	      if (xm) {
+	        m = 0;
+	      }
+	      p = 0;
+
+	      if (gtlt === '>') {
+	        // >1 => >=2.0.0
+	        // >1.2 => >=1.3.0
+	        gtlt = '>=';
+	        if (xm) {
+	          M = +M + 1;
+	          m = 0;
+	          p = 0;
+	        } else {
+	          m = +m + 1;
+	          p = 0;
+	        }
+	      } else if (gtlt === '<=') {
+	        // <=0.7.x is actually <0.8.0, since any 0.7.x should
+	        // pass.  Similarly, <=7.x is actually <8.0.0, etc.
+	        gtlt = '<';
+	        if (xm) {
+	          M = +M + 1;
+	        } else {
+	          m = +m + 1;
+	        }
+	      }
+
+	      if (gtlt === '<')
+	        pr = '-0';
+
+	      ret = `${gtlt + M}.${m}.${p}${pr}`;
+	    } else if (xm) {
+	      ret = `>=${M}.0.0${pr} <${+M + 1}.0.0-0`;
+	    } else if (xp) {
+	      ret = `>=${M}.${m}.0${pr
+      } <${M}.${+m + 1}.0-0`;
+	    }
+
+	    debug_1$1('xRange return', ret);
+
+	    return ret
+	  })
+	};
+
+	// Because * is AND-ed with everything else in the comparator,
+	// and '' means "any version", just remove the *s entirely.
+	const replaceStars$1 = (comp, options) => {
+	  debug_1$1('replaceStars', comp, options);
+	  // Looseness is ignored here.  star is always as loose as it gets!
+	  return comp.trim().replace(re$8[t$a.STAR], '')
+	};
+
+	const replaceGTE0$1 = (comp, options) => {
+	  debug_1$1('replaceGTE0', comp, options);
+	  return comp.trim()
+	    .replace(re$8[options.includePrerelease ? t$a.GTE0PRE : t$a.GTE0], '')
+	};
+
+	// This function is passed to string.replace(re[t.HYPHENRANGE])
+	// M, m, patch, prerelease, build
+	// 1.2 - 3.4.5 => >=1.2.0 <=3.4.5
+	// 1.2.3 - 3.4 => >=1.2.0 <3.5.0-0 Any 3.4.x will do
+	// 1.2 - 3.4 => >=1.2.0 <3.5.0-0
+	const hyphenReplace$1 = incPr => ($0,
+	  from, fM, fm, fp, fpr, fb,
+	  to, tM, tm, tp, tpr, tb) => {
+	  if (isX$1(fM)) {
+	    from = '';
+	  } else if (isX$1(fm)) {
+	    from = `>=${fM}.0.0${incPr ? '-0' : ''}`;
+	  } else if (isX$1(fp)) {
+	    from = `>=${fM}.${fm}.0${incPr ? '-0' : ''}`;
+	  } else if (fpr) {
+	    from = `>=${from}`;
+	  } else {
+	    from = `>=${from}${incPr ? '-0' : ''}`;
+	  }
+
+	  if (isX$1(tM)) {
+	    to = '';
+	  } else if (isX$1(tm)) {
+	    to = `<${+tM + 1}.0.0-0`;
+	  } else if (isX$1(tp)) {
+	    to = `<${tM}.${+tm + 1}.0-0`;
+	  } else if (tpr) {
+	    to = `<=${tM}.${tm}.${tp}-${tpr}`;
+	  } else if (incPr) {
+	    to = `<${tM}.${tm}.${+tp + 1}-0`;
+	  } else {
+	    to = `<=${to}`;
+	  }
+
+	  return (`${from} ${to}`).trim()
+	};
+
+	const testSet$1 = (set, version, options) => {
+	  for (let i = 0; i < set.length; i++) {
+	    if (!set[i].test(version)) {
+	      return false
+	    }
+	  }
+
+	  if (version.prerelease.length && !options.includePrerelease) {
+	    // Find the set of versions that are allowed to have prereleases
+	    // For example, ^1.2.3-pr.1 desugars to >=1.2.3-pr.1 <2.0.0
+	    // That should allow `1.2.3-pr.2` to pass.
+	    // However, `1.2.4-alpha.notready` should NOT be allowed,
+	    // even though it's within the range set by the comparators.
+	    for (let i = 0; i < set.length; i++) {
+	      debug_1$1(set[i].semver);
+	      if (set[i].semver === comparator$1.ANY) {
+	        continue
+	      }
+
+	      if (set[i].semver.prerelease.length > 0) {
+	        const allowed = set[i].semver;
+	        if (allowed.major === version.major &&
+	            allowed.minor === version.minor &&
+	            allowed.patch === version.patch) {
+	          return true
+	        }
+	      }
+	    }
+
+	    // Version has a -pre, but it's not one of the ones we like.
+	    return false
+	  }
+
+	  return true
+	};
+
+	const ANY$3 = Symbol('SemVer ANY');
+	// hoisted class for cyclic dependency
+	class Comparator$1 {
+	  static get ANY () {
+	    return ANY$3
+	  }
+	  constructor (comp, options) {
+	    if (!options || typeof options !== 'object') {
+	      options = {
+	        loose: !!options,
+	        includePrerelease: false
+	      };
+	    }
+
+	    if (comp instanceof Comparator$1) {
+	      if (comp.loose === !!options.loose) {
+	        return comp
+	      } else {
+	        comp = comp.value;
+	      }
+	    }
+
+	    debug_1$1('comparator', comp, options);
+	    this.options = options;
+	    this.loose = !!options.loose;
+	    this.parse(comp);
+
+	    if (this.semver === ANY$3) {
+	      this.value = '';
+	    } else {
+	      this.value = this.operator + this.semver.version;
+	    }
+
+	    debug_1$1('comp', this);
+	  }
+
+	  parse (comp) {
+	    const r = this.options.loose ? re$9[t$b.COMPARATORLOOSE] : re$9[t$b.COMPARATOR];
+	    const m = comp.match(r);
+
+	    if (!m) {
+	      throw new TypeError(`Invalid comparator: ${comp}`)
+	    }
+
+	    this.operator = m[1] !== undefined ? m[1] : '';
+	    if (this.operator === '=') {
+	      this.operator = '';
+	    }
+
+	    // if it literally is just '>' or '' then allow anything.
+	    if (!m[2]) {
+	      this.semver = ANY$3;
+	    } else {
+	      this.semver = new semver$2(m[2], this.options.loose);
+	    }
+	  }
+
+	  toString () {
+	    return this.value
+	  }
+
+	  test (version) {
+	    debug_1$1('Comparator.test', version, this.options.loose);
+
+	    if (this.semver === ANY$3 || version === ANY$3) {
+	      return true
+	    }
+
+	    if (typeof version === 'string') {
+	      try {
+	        version = new semver$2(version, this.options);
+	      } catch (er) {
+	        return false
+	      }
+	    }
+
+	    return cmp_1$1(version, this.operator, this.semver, this.options)
+	  }
+
+	  intersects (comp, options) {
+	    if (!(comp instanceof Comparator$1)) {
+	      throw new TypeError('a Comparator is required')
+	    }
+
+	    if (!options || typeof options !== 'object') {
+	      options = {
+	        loose: !!options,
+	        includePrerelease: false
+	      };
+	    }
+
+	    if (this.operator === '') {
+	      if (this.value === '') {
+	        return true
+	      }
+	      return new range$2(comp.value, options).test(this.value)
+	    } else if (comp.operator === '') {
+	      if (comp.value === '') {
+	        return true
+	      }
+	      return new range$2(this.value, options).test(comp.semver)
+	    }
+
+	    const sameDirectionIncreasing =
+	      (this.operator === '>=' || this.operator === '>') &&
+	      (comp.operator === '>=' || comp.operator === '>');
+	    const sameDirectionDecreasing =
+	      (this.operator === '<=' || this.operator === '<') &&
+	      (comp.operator === '<=' || comp.operator === '<');
+	    const sameSemVer = this.semver.version === comp.semver.version;
+	    const differentDirectionsInclusive =
+	      (this.operator === '>=' || this.operator === '<=') &&
+	      (comp.operator === '>=' || comp.operator === '<=');
+	    const oppositeDirectionsLessThan =
+	      cmp_1$1(this.semver, '<', comp.semver, options) &&
+	      (this.operator === '>=' || this.operator === '>') &&
+	        (comp.operator === '<=' || comp.operator === '<');
+	    const oppositeDirectionsGreaterThan =
+	      cmp_1$1(this.semver, '>', comp.semver, options) &&
+	      (this.operator === '<=' || this.operator === '<') &&
+	        (comp.operator === '>=' || comp.operator === '>');
+
+	    return (
+	      sameDirectionIncreasing ||
+	      sameDirectionDecreasing ||
+	      (sameSemVer && differentDirectionsInclusive) ||
+	      oppositeDirectionsLessThan ||
+	      oppositeDirectionsGreaterThan
+	    )
+	  }
+	}
+
+	var comparator$1 = Comparator$1;
+
+	const {re: re$9, t: t$b} = re_1$1;
+
+	const satisfies$1 = (version, range, options) => {
+	  try {
+	    range = new range$2(range, options);
+	  } catch (er) {
+	    return false
+	  }
+	  return range.test(version)
+	};
+	var satisfies_1$1 = satisfies$1;
+
+	// Mostly just for testing and legacy API reasons
+	const toComparators$1 = (range, options) =>
+	  new range$2(range, options).set
+	    .map(comp => comp.map(c => c.value).join(' ').trim().split(' '));
+
+	var toComparators_1$1 = toComparators$1;
+
+	const maxSatisfying$1 = (versions, range, options) => {
+	  let max = null;
+	  let maxSV = null;
+	  let rangeObj = null;
+	  try {
+	    rangeObj = new range$2(range, options);
+	  } catch (er) {
+	    return null
+	  }
+	  versions.forEach((v) => {
+	    if (rangeObj.test(v)) {
+	      // satisfies(v, range, options)
+	      if (!max || maxSV.compare(v) === -1) {
+	        // compare(max, v, true)
+	        max = v;
+	        maxSV = new semver$2(max, options);
+	      }
+	    }
+	  });
+	  return max
+	};
+	var maxSatisfying_1$1 = maxSatisfying$1;
+
+	const minSatisfying$1 = (versions, range, options) => {
+	  let min = null;
+	  let minSV = null;
+	  let rangeObj = null;
+	  try {
+	    rangeObj = new range$2(range, options);
+	  } catch (er) {
+	    return null
+	  }
+	  versions.forEach((v) => {
+	    if (rangeObj.test(v)) {
+	      // satisfies(v, range, options)
+	      if (!min || minSV.compare(v) === 1) {
+	        // compare(min, v, true)
+	        min = v;
+	        minSV = new semver$2(min, options);
+	      }
+	    }
+	  });
+	  return min
+	};
+	var minSatisfying_1$1 = minSatisfying$1;
+
+	const minVersion$1 = (range, loose) => {
+	  range = new range$2(range, loose);
+
+	  let minver = new semver$2('0.0.0');
+	  if (range.test(minver)) {
+	    return minver
+	  }
+
+	  minver = new semver$2('0.0.0-0');
+	  if (range.test(minver)) {
+	    return minver
+	  }
+
+	  minver = null;
+	  for (let i = 0; i < range.set.length; ++i) {
+	    const comparators = range.set[i];
+
+	    comparators.forEach((comparator) => {
+	      // Clone to avoid manipulating the comparator's semver object.
+	      const compver = new semver$2(comparator.semver.version);
+	      switch (comparator.operator) {
+	        case '>':
+	          if (compver.prerelease.length === 0) {
+	            compver.patch++;
+	          } else {
+	            compver.prerelease.push(0);
+	          }
+	          compver.raw = compver.format();
+	          /* fallthrough */
+	        case '':
+	        case '>=':
+	          if (!minver || gt_1$1(minver, compver)) {
+	            minver = compver;
+	          }
+	          break
+	        case '<':
+	        case '<=':
+	          /* Ignore maximum versions */
+	          break
+	        /* istanbul ignore next */
+	        default:
+	          throw new Error(`Unexpected operation: ${comparator.operator}`)
+	      }
+	    });
+	  }
+
+	  if (minver && range.test(minver)) {
+	    return minver
+	  }
+
+	  return null
+	};
+	var minVersion_1$1 = minVersion$1;
+
+	const validRange$1 = (range, options) => {
+	  try {
+	    // Return '*' instead of '' so that truthiness works.
+	    // This will throw if it's invalid anyway
+	    return new range$2(range, options).range || '*'
+	  } catch (er) {
+	    return null
+	  }
+	};
+	var valid$3 = validRange$1;
+
+	const {ANY: ANY$4} = comparator$1;
+
+
+
+
+
+
+
+	const outside$1 = (version, range, hilo, options) => {
+	  version = new semver$2(version, options);
+	  range = new range$2(range, options);
+
+	  let gtfn, ltefn, ltfn, comp, ecomp;
+	  switch (hilo) {
+	    case '>':
+	      gtfn = gt_1$1;
+	      ltefn = lte_1$1;
+	      ltfn = lt_1$1;
+	      comp = '>';
+	      ecomp = '>=';
+	      break
+	    case '<':
+	      gtfn = lt_1$1;
+	      ltefn = gte_1$1;
+	      ltfn = gt_1$1;
+	      comp = '<';
+	      ecomp = '<=';
+	      break
+	    default:
+	      throw new TypeError('Must provide a hilo val of "<" or ">"')
+	  }
+
+	  // If it satisifes the range it is not outside
+	  if (satisfies_1$1(version, range, options)) {
+	    return false
+	  }
+
+	  // From now on, variable terms are as if we're in "gtr" mode.
+	  // but note that everything is flipped for the "ltr" function.
+
+	  for (let i = 0; i < range.set.length; ++i) {
+	    const comparators = range.set[i];
+
+	    let high = null;
+	    let low = null;
+
+	    comparators.forEach((comparator) => {
+	      if (comparator.semver === ANY$4) {
+	        comparator = new comparator$1('>=0.0.0');
+	      }
+	      high = high || comparator;
+	      low = low || comparator;
+	      if (gtfn(comparator.semver, high.semver, options)) {
+	        high = comparator;
+	      } else if (ltfn(comparator.semver, low.semver, options)) {
+	        low = comparator;
+	      }
+	    });
+
+	    // If the edge version comparator has a operator then our version
+	    // isn't outside it
+	    if (high.operator === comp || high.operator === ecomp) {
+	      return false
+	    }
+
+	    // If the lowest version comparator has an operator and our version
+	    // is less than it then it isn't higher than the range
+	    if ((!low.operator || low.operator === comp) &&
+	        ltefn(version, low.semver)) {
+	      return false
+	    } else if (low.operator === ecomp && ltfn(version, low.semver)) {
+	      return false
+	    }
+	  }
+	  return true
+	};
+
+	var outside_1$1 = outside$1;
+
+	// Determine if version is greater than all the versions possible in the range.
+
+	const gtr$1 = (version, range, options) => outside_1$1(version, range, '>', options);
+	var gtr_1$1 = gtr$1;
+
+	// Determine if version is less than all the versions possible in the range
+	const ltr$1 = (version, range, options) => outside_1$1(version, range, '<', options);
+	var ltr_1$1 = ltr$1;
+
+	const intersects$1 = (r1, r2, options) => {
+	  r1 = new range$2(r1, options);
+	  r2 = new range$2(r2, options);
+	  return r1.intersects(r2)
+	};
+	var intersects_1$1 = intersects$1;
+
+	// given a set of versions and a range, create a "simplified" range
+	// that includes the same versions that the original range does
+	// If the original range is shorter than the simplified one, return that.
+
+
+	var simplify$1 = (versions, range, options) => {
+	  const set = [];
+	  let min = null;
+	  let prev = null;
+	  const v = versions.sort((a, b) => compare_1$1(a, b, options));
+	  for (const version of v) {
+	    const included = satisfies_1$1(version, range, options);
+	    if (included) {
+	      prev = version;
+	      if (!min)
+	        min = version;
+	    } else {
+	      if (prev) {
+	        set.push([min, prev]);
+	      }
+	      prev = null;
+	      min = null;
+	    }
+	  }
+	  if (min)
+	    set.push([min, null]);
+
+	  const ranges = [];
+	  for (const [min, max] of set) {
+	    if (min === max)
+	      ranges.push(min);
+	    else if (!max && min === v[0])
+	      ranges.push('*');
+	    else if (!max)
+	      ranges.push(`>=${min}`);
+	    else if (min === v[0])
+	      ranges.push(`<=${max}`);
+	    else
+	      ranges.push(`${min} - ${max}`);
+	  }
+	  const simplified = ranges.join(' || ');
+	  const original = typeof range.raw === 'string' ? range.raw : String(range);
+	  return simplified.length < original.length ? simplified : range
+	};
+
+	const { ANY: ANY$5 } = comparator$1;
+
+
+
+	// Complex range `r1 || r2 || ...` is a subset of `R1 || R2 || ...` iff:
+	// - Every simple range `r1, r2, ...` is a subset of some `R1, R2, ...`
+	//
+	// Simple range `c1 c2 ...` is a subset of simple range `C1 C2 ...` iff:
+	// - If c is only the ANY comparator
+	//   - If C is only the ANY comparator, return true
+	//   - Else return false
+	// - Let EQ be the set of = comparators in c
+	// - If EQ is more than one, return true (null set)
+	// - Let GT be the highest > or >= comparator in c
+	// - Let LT be the lowest < or <= comparator in c
+	// - If GT and LT, and GT.semver > LT.semver, return true (null set)
+	// - If EQ
+	//   - If GT, and EQ does not satisfy GT, return true (null set)
+	//   - If LT, and EQ does not satisfy LT, return true (null set)
+	//   - If EQ satisfies every C, return true
+	//   - Else return false
+	// - If GT
+	//   - If GT is lower than any > or >= comp in C, return false
+	//   - If GT is >=, and GT.semver does not satisfy every C, return false
+	// - If LT
+	//   - If LT.semver is greater than that of any > comp in C, return false
+	//   - If LT is <=, and LT.semver does not satisfy every C, return false
+	// - If any C is a = range, and GT or LT are set, return false
+	// - Else return true
+
+	const subset$1 = (sub, dom, options) => {
+	  sub = new range$2(sub, options);
+	  dom = new range$2(dom, options);
+	  let sawNonNull = false;
+
+	  OUTER: for (const simpleSub of sub.set) {
+	    for (const simpleDom of dom.set) {
+	      const isSub = simpleSubset$1(simpleSub, simpleDom, options);
+	      sawNonNull = sawNonNull || isSub !== null;
+	      if (isSub)
+	        continue OUTER
+	    }
+	    // the null set is a subset of everything, but null simple ranges in
+	    // a complex range should be ignored.  so if we saw a non-null range,
+	    // then we know this isn't a subset, but if EVERY simple range was null,
+	    // then it is a subset.
+	    if (sawNonNull)
+	      return false
+	  }
+	  return true
+	};
+
+	const simpleSubset$1 = (sub, dom, options) => {
+	  if (sub.length === 1 && sub[0].semver === ANY$5)
+	    return dom.length === 1 && dom[0].semver === ANY$5
+
+	  const eqSet = new Set();
+	  let gt, lt;
+	  for (const c of sub) {
+	    if (c.operator === '>' || c.operator === '>=')
+	      gt = higherGT$1(gt, c, options);
+	    else if (c.operator === '<' || c.operator === '<=')
+	      lt = lowerLT$1(lt, c, options);
+	    else
+	      eqSet.add(c.semver);
+	  }
+
+	  if (eqSet.size > 1)
+	    return null
+
+	  let gtltComp;
+	  if (gt && lt) {
+	    gtltComp = compare_1$1(gt.semver, lt.semver, options);
+	    if (gtltComp > 0)
+	      return null
+	    else if (gtltComp === 0 && (gt.operator !== '>=' || lt.operator !== '<='))
+	      return null
+	  }
+
+	  // will iterate one or zero times
+	  for (const eq of eqSet) {
+	    if (gt && !satisfies_1$1(eq, String(gt), options))
+	      return null
+
+	    if (lt && !satisfies_1$1(eq, String(lt), options))
+	      return null
+
+	    for (const c of dom) {
+	      if (!satisfies_1$1(eq, String(c), options))
+	        return false
+	    }
+	    return true
+	  }
+
+	  let higher, lower;
+	  let hasDomLT, hasDomGT;
+	  for (const c of dom) {
+	    hasDomGT = hasDomGT || c.operator === '>' || c.operator === '>=';
+	    hasDomLT = hasDomLT || c.operator === '<' || c.operator === '<=';
+	    if (gt) {
+	      if (c.operator === '>' || c.operator === '>=') {
+	        higher = higherGT$1(gt, c, options);
+	        if (higher === c)
+	          return false
+	      } else if (gt.operator === '>=' && !satisfies_1$1(gt.semver, String(c), options))
+	        return false
+	    }
+	    if (lt) {
+	      if (c.operator === '<' || c.operator === '<=') {
+	        lower = lowerLT$1(lt, c, options);
+	        if (lower === c)
+	          return false
+	      } else if (lt.operator === '<=' && !satisfies_1$1(lt.semver, String(c), options))
+	        return false
+	    }
+	    if (!c.operator && (lt || gt) && gtltComp !== 0)
+	      return false
+	  }
+
+	  // if there was a < or >, and nothing in the dom, then must be false
+	  // UNLESS it was limited by another range in the other direction.
+	  // Eg, >1.0.0 <1.0.1 is still a subset of <2.0.0
+	  if (gt && hasDomLT && !lt && gtltComp !== 0)
+	    return false
+
+	  if (lt && hasDomGT && !gt && gtltComp !== 0)
+	    return false
+
+	  return true
+	};
+
+	// >=1.2.3 is lower than >1.2.3
+	const higherGT$1 = (a, b, options) => {
+	  if (!a)
+	    return b
+	  const comp = compare_1$1(a.semver, b.semver, options);
+	  return comp > 0 ? a
+	    : comp < 0 ? b
+	    : b.operator === '>' && a.operator === '>=' ? b
+	    : a
+	};
+
+	// <=1.2.3 is higher than <1.2.3
+	const lowerLT$1 = (a, b, options) => {
+	  if (!a)
+	    return b
+	  const comp = compare_1$1(a.semver, b.semver, options);
+	  return comp < 0 ? a
+	    : comp > 0 ? b
+	    : b.operator === '<' && a.operator === '<=' ? b
+	    : a
+	};
+
+	var subset_1$1 = subset$1;
+
+	// just pre-load all the stuff that index.js lazily exports
+
+	var semver$3 = {
+	  re: re_1$1.re,
+	  src: re_1$1.src,
+	  tokens: re_1$1.t,
+	  SEMVER_SPEC_VERSION: constants$1.SEMVER_SPEC_VERSION,
+	  SemVer: semver$2,
+	  compareIdentifiers: identifiers$1.compareIdentifiers,
+	  rcompareIdentifiers: identifiers$1.rcompareIdentifiers,
+	  parse: parse_1$3,
+	  valid: valid_1$1,
+	  clean: clean_1$1,
+	  inc: inc_1$1,
+	  diff: diff_1$1,
+	  major: major_1$1,
+	  minor: minor_1$1,
+	  patch: patch_1$1,
+	  prerelease: prerelease_1$1,
+	  compare: compare_1$1,
+	  rcompare: rcompare_1$1,
+	  compareLoose: compareLoose_1$1,
+	  compareBuild: compareBuild_1$1,
+	  sort: sort_1$1,
+	  rsort: rsort_1$1,
+	  gt: gt_1$1,
+	  lt: lt_1$1,
+	  eq: eq_1$1,
+	  neq: neq_1$1,
+	  gte: gte_1$1,
+	  lte: lte_1$1,
+	  cmp: cmp_1$1,
+	  coerce: coerce_1$1,
+	  Comparator: comparator$1,
+	  Range: range$2,
+	  satisfies: satisfies_1$1,
+	  toComparators: toComparators_1$1,
+	  maxSatisfying: maxSatisfying_1$1,
+	  minSatisfying: minSatisfying_1$1,
+	  minVersion: minVersion_1$1,
+	  validRange: valid$3,
+	  outside: outside_1$1,
+	  gtr: gtr_1$1,
+	  ltr: ltr_1$1,
+	  intersects: intersects_1$1,
+	  simplifyRange: simplify$1,
+	  subset: subset_1$1,
+	};
+
+	var BaseAbstractPlugin_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.BaseAbstractPlugin = void 0;
+	/** This class represent the base to patch plugin. */
+	class BaseAbstractPlugin {
+	    constructor(_tracerName, _tracerVersion) {
+	        this._tracerName = _tracerName;
+	        this._tracerVersion = _tracerVersion;
+	    }
+	    disable() {
+	        this.unpatch();
+	    }
+	}
+	exports.BaseAbstractPlugin = BaseAbstractPlugin;
+
+	});
+
+	unwrapExports(BaseAbstractPlugin_1$1);
+	var BaseAbstractPlugin_2$1 = BaseAbstractPlugin_1$1.BaseAbstractPlugin;
+
+	var BasePlugin_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.BasePlugin = void 0;
+
+
+
+	/** This class represent the base to patch plugin. */
+	class BasePlugin extends BaseAbstractPlugin_1$1.BaseAbstractPlugin {
+	    enable(moduleExports, tracerProvider, logger, config) {
+	        this._moduleExports = moduleExports;
+	        this._tracer = tracerProvider.getTracer(this._tracerName, this._tracerVersion);
+	        this._logger = logger;
+	        this._internalFilesExports = this._loadInternalFilesExports();
+	        if (config)
+	            this._config = config;
+	        return this.patch();
+	    }
+	    disable() {
+	        this.unpatch();
+	    }
+	    /**
+	     * @TODO: To avoid circular dependencies, internal file loading functionality currently
+	     * lives in BasePlugin. It is not meant to work in the browser and so this logic
+	     * should eventually be moved somewhere else where it makes more sense.
+	     * https://github.com/open-telemetry/opentelemetry-js/issues/285
+	     */
+	    _loadInternalFilesExports() {
+	        if (!this._internalFilesList)
+	            return {};
+	        if (!this.version || !this.moduleName || !this._basedir) {
+	            // log here because internalFilesList was provided, so internal file loading
+	            // was expected to be working
+	            this._logger.debug('loadInternalFiles failed because one of the required fields was missing: moduleName=%s, version=%s, basedir=%s', this.moduleName, this.version, this._basedir);
+	            return {};
+	        }
+	        const extraModules = {};
+	        this._logger.debug('loadInternalFiles %o', this._internalFilesList);
+	        Object.keys(this._internalFilesList).forEach(versionRange => {
+	            this._loadInternalModule(versionRange, extraModules);
+	        });
+	        if (Object.keys(extraModules).length === 0) {
+	            this._logger.debug('No internal files could be loaded for %s@%s', this.moduleName, this.version);
+	        }
+	        return extraModules;
+	    }
+	    _loadInternalModule(versionRange, outExtraModules) {
+	        if (semver$3.satisfies(this.version, versionRange)) {
+	            if (Object.keys(outExtraModules).length > 0) {
+	                this._logger.warn('Plugin for %s@%s, has overlap version range (%s) for internal files: %o', this.moduleName, this.version, versionRange, this._internalFilesList);
+	            }
+	            this._requireInternalFiles(this._internalFilesList[versionRange], this._basedir, outExtraModules);
+	        }
+	    }
+	    _requireInternalFiles(extraModulesList, basedir, outExtraModules) {
+	        if (!extraModulesList)
+	            return;
+	        Object.keys(extraModulesList).forEach(moduleName => {
+	            try {
+	                this._logger.debug('loading File %s', extraModulesList[moduleName]);
+	                outExtraModules[moduleName] = commonjsRequire(path.join(basedir, extraModulesList[moduleName]));
+	            }
+	            catch (e) {
+	                this._logger.error('Could not load internal file %s of module %s. Error: %s', path.join(basedir, extraModulesList[moduleName]), this.moduleName, e.message);
+	            }
+	        });
+	    }
+	}
+	exports.BasePlugin = BasePlugin;
+
+	});
+
+	unwrapExports(BasePlugin_1$1);
+	var BasePlugin_2$1 = BasePlugin_1$1.BasePlugin;
+
+	var environment$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.parseEnvironment = exports.DEFAULT_ENVIRONMENT = void 0;
+
+	const ENVIRONMENT_NUMBERS = [
+	    'OTEL_SAMPLING_PROBABILITY',
+	];
+	/**
+	 * Default environment variables
+	 */
+	exports.DEFAULT_ENVIRONMENT = {
+	    OTEL_NO_PATCH_MODULES: '',
+	    OTEL_LOG_LEVEL: types$5.LogLevel.INFO,
+	    OTEL_SAMPLING_PROBABILITY: 1,
+	};
+	/**
+	 * Parses a variable as number with number validation
+	 * @param name
+	 * @param environment
+	 * @param values
+	 * @param min
+	 * @param max
+	 */
+	function parseNumber(name, environment, values, min = -Infinity, max = Infinity) {
+	    if (typeof values[name] !== 'undefined') {
+	        const value = Number(values[name]);
+	        if (!isNaN(value) && value >= min && value <= max) {
+	            environment[name] = value;
+	        }
+	    }
+	}
+	/**
+	 * Environmentally sets log level if valid log level string is provided
+	 * @param key
+	 * @param environment
+	 * @param values
+	 */
+	function setLogLevelFromEnv(key, environment, values) {
+	    const value = values[key];
+	    switch (typeof value === 'string' ? value.toUpperCase() : value) {
+	        case 'DEBUG':
+	            environment[key] = types$5.LogLevel.DEBUG;
+	            break;
+	        case 'INFO':
+	            environment[key] = types$5.LogLevel.INFO;
+	            break;
+	        case 'WARN':
+	            environment[key] = types$5.LogLevel.WARN;
+	            break;
+	        case 'ERROR':
+	            environment[key] = types$5.LogLevel.ERROR;
+	            break;
+	    }
+	}
+	/**
+	 * Parses environment values
+	 * @param values
+	 */
+	function parseEnvironment(values) {
+	    const environment = {};
+	    for (const env in exports.DEFAULT_ENVIRONMENT) {
+	        const key = env;
+	        switch (key) {
+	            case 'OTEL_SAMPLING_PROBABILITY':
+	                parseNumber(key, environment, values, 0, 1);
+	                break;
+	            case 'OTEL_LOG_LEVEL':
+	                setLogLevelFromEnv(key, environment, values);
+	                break;
+	            default:
+	                if (ENVIRONMENT_NUMBERS.indexOf(key) >= 0) {
+	                    parseNumber(key, environment, values);
+	                }
+	                else {
+	                    if (typeof values[key] !== 'undefined') {
+	                        environment[key] = values[key];
+	                    }
+	                }
+	        }
+	    }
+	    return environment;
+	}
+	exports.parseEnvironment = parseEnvironment;
+
+	});
+
+	unwrapExports(environment$2);
+	var environment_1$1 = environment$2.parseEnvironment;
+	var environment_2$2 = environment$2.DEFAULT_ENVIRONMENT;
+
+	var environment$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.getEnv = void 0;
+
+	/**
+	 * Gets the environment variables
+	 */
+	function getEnv() {
+	    const processEnv = environment$2.parseEnvironment(process.env);
+	    return Object.assign({}, environment$2.DEFAULT_ENVIRONMENT, processEnv);
+	}
+	exports.getEnv = getEnv;
+
+	});
+
+	unwrapExports(environment$3);
+	var environment_2$3 = environment$3.getEnv;
+
+	var hexToBase64_1$1 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.hexToBase64 = void 0;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	function hexToBase64(hexStr) {
+	    const hexStrLen = hexStr.length;
+	    let hexAsciiCharsStr = '';
+	    for (let i = 0; i < hexStrLen; i += 2) {
+	        const hexPair = hexStr.substring(i, i + 2);
+	        const hexVal = parseInt(hexPair, 16);
+	        hexAsciiCharsStr += String.fromCharCode(hexVal);
+	    }
+	    return Buffer.from(hexAsciiCharsStr, 'ascii').toString('base64');
+	}
+	exports.hexToBase64 = hexToBase64;
+
+	});
+
+	unwrapExports(hexToBase64_1$1);
+	var hexToBase64_2$1 = hexToBase64_1$1.hexToBase64;
+
+	var RandomIdGenerator_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.RandomIdGenerator = void 0;
+
+	const SPAN_ID_BYTES = 8;
+	const TRACE_ID_BYTES = 16;
+	class RandomIdGenerator {
+	    /**
+	     * Returns a random 16-byte trace ID formatted/encoded as a 32 lowercase hex
+	     * characters corresponding to 128 bits.
+	     */
+	    generateTraceId() {
+	        return crypto$1.randomBytes(TRACE_ID_BYTES).toString('hex');
+	    }
+	    /**
+	     * Returns a random 8-byte span ID formatted/encoded as a 16 lowercase hex
+	     * characters corresponding to 64 bits.
+	     */
+	    generateSpanId() {
+	        return crypto$1.randomBytes(SPAN_ID_BYTES).toString('hex');
+	    }
+	}
+	exports.RandomIdGenerator = RandomIdGenerator;
+
+	});
+
+	unwrapExports(RandomIdGenerator_1$1);
+	var RandomIdGenerator_2$1 = RandomIdGenerator_1$1.RandomIdGenerator;
+
+	var performance$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.otperformance = void 0;
+
+	exports.otperformance = perf_hooks.performance;
+
+	});
+
+	unwrapExports(performance$2);
+	var performance_1$1 = performance$2.otperformance;
+
+	var version$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.VERSION = void 0;
+	// this is autogenerated file, see scripts/version-update.js
+	exports.VERSION = '0.10.2';
+
+	});
+
+	unwrapExports(version$1);
+	var version_1$1 = version$1.VERSION;
+
+	var sdkInfo$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.SDK_INFO = void 0;
+
+	/** Constants describing the SDK in use */
+	exports.SDK_INFO = {
+	    NAME: 'opentelemetry',
+	    RUNTIME: 'node',
+	    LANGUAGE: 'nodejs',
+	    VERSION: version$1.VERSION,
+	};
+
+	});
+
+	unwrapExports(sdkInfo$1);
+	var sdkInfo_1$1 = sdkInfo$1.SDK_INFO;
+
+	var timerUtil$1 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.unrefTimer = void 0;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	function unrefTimer(timer) {
+	    timer.unref();
+	}
+	exports.unrefTimer = unrefTimer;
+
+	});
+
+	unwrapExports(timerUtil$1);
+	var timerUtil_1$1 = timerUtil$1.unrefTimer;
+
+	var node$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+	}) : (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    o[k2] = m[k];
+	}));
+	var __exportStar = (commonjsGlobal && commonjsGlobal.__exportStar) || function(m, exports) {
+	    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	__exportStar(BasePlugin_1$1, exports);
+	__exportStar(environment$3, exports);
+	__exportStar(hexToBase64_1$1, exports);
+	__exportStar(RandomIdGenerator_1$1, exports);
+	__exportStar(performance$2, exports);
+	__exportStar(sdkInfo$1, exports);
+	__exportStar(timerUtil$1, exports);
+
+	});
+
+	unwrapExports(node$3);
+
+	var platform$3 = createCommonjsModule(function (module, exports) {
+	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+	}) : (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    o[k2] = m[k];
+	}));
+	var __exportStar = (commonjsGlobal && commonjsGlobal.__exportStar) || function(m, exports) {
+	    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	__exportStar(node$3, exports);
+
+	});
+
+	unwrapExports(platform$3);
+
+	var ConsoleLogger_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ConsoleLogger = void 0;
+
+
+	class ConsoleLogger {
+	    constructor(level = platform$3.getEnv().OTEL_LOG_LEVEL) {
+	        if (level >= types$5.LogLevel.DEBUG) {
+	            this.debug = (...args) => {
+	                console.debug(...args);
+	            };
+	        }
+	        if (level >= types$5.LogLevel.INFO) {
+	            this.info = (...args) => {
+	                console.info(...args);
+	            };
+	        }
+	        if (level >= types$5.LogLevel.WARN) {
+	            this.warn = (...args) => {
+	                console.warn(...args);
+	            };
+	        }
+	        if (level >= types$5.LogLevel.ERROR) {
+	            this.error = (...args) => {
+	                console.error(...args);
+	            };
+	        }
+	    }
+	    debug(message, ...args) { }
+	    error(message, ...args) { }
+	    warn(message, ...args) { }
+	    info(message, ...args) { }
+	}
+	exports.ConsoleLogger = ConsoleLogger;
+
+	});
+
+	unwrapExports(ConsoleLogger_1$1);
+	var ConsoleLogger_2$1 = ConsoleLogger_1$1.ConsoleLogger;
+
+	var NoopLogger_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.NoopLogger = void 0;
+	/** No-op implementation of Logger */
+	class NoopLogger {
+	    // By default does nothing
+	    debug(message, ...args) { }
+	    // By default does nothing
+	    error(message, ...args) { }
+	    // By default does nothing
+	    warn(message, ...args) { }
+	    // By default does nothing
+	    info(message, ...args) { }
+	}
+	exports.NoopLogger = NoopLogger;
+
+	});
+
+	unwrapExports(NoopLogger_1$1);
+	var NoopLogger_2$1 = NoopLogger_1$1.NoopLogger;
+
+	var time$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.isTimeInput = exports.isTimeInputHrTime = exports.hrTimeToMicroseconds = exports.hrTimeToMilliseconds = exports.hrTimeToNanoseconds = exports.hrTimeToTimeStamp = exports.hrTimeDuration = exports.timeInputToHrTime = exports.hrTime = void 0;
+
+	const NANOSECOND_DIGITS = 9;
+	const SECOND_TO_NANOSECONDS = Math.pow(10, NANOSECOND_DIGITS);
+	/**
+	 * Converts a number to HrTime
+	 * @param epochMillis
+	 */
+	function numberToHrtime(epochMillis) {
+	    const epochSeconds = epochMillis / 1000;
+	    // Decimals only.
+	    const seconds = Math.trunc(epochSeconds);
+	    // Round sub-nanosecond accuracy to nanosecond.
+	    const nanos = Number((epochSeconds - seconds).toFixed(NANOSECOND_DIGITS)) *
+	        SECOND_TO_NANOSECONDS;
+	    return [seconds, nanos];
+	}
+	function getTimeOrigin() {
+	    let timeOrigin = platform$3.otperformance.timeOrigin;
+	    if (typeof timeOrigin !== 'number') {
+	        const perf = platform$3.otperformance;
+	        timeOrigin = perf.timing && perf.timing.fetchStart;
+	    }
+	    return timeOrigin;
+	}
+	/**
+	 * Returns an hrtime calculated via performance component.
+	 * @param performanceNow
+	 */
+	function hrTime(performanceNow) {
+	    const timeOrigin = numberToHrtime(getTimeOrigin());
+	    const now = numberToHrtime(typeof performanceNow === 'number' ? performanceNow : platform$3.otperformance.now());
+	    let seconds = timeOrigin[0] + now[0];
+	    let nanos = timeOrigin[1] + now[1];
+	    // Nanoseconds
+	    if (nanos > SECOND_TO_NANOSECONDS) {
+	        nanos -= SECOND_TO_NANOSECONDS;
+	        seconds += 1;
+	    }
+	    return [seconds, nanos];
+	}
+	exports.hrTime = hrTime;
+	/**
+	 *
+	 * Converts a TimeInput to an HrTime, defaults to _hrtime().
+	 * @param time
+	 */
+	function timeInputToHrTime(time) {
+	    // process.hrtime
+	    if (isTimeInputHrTime(time)) {
+	        return time;
+	    }
+	    else if (typeof time === 'number') {
+	        // Must be a performance.now() if it's smaller than process start time.
+	        if (time < getTimeOrigin()) {
+	            return hrTime(time);
+	        }
+	        else {
+	            // epoch milliseconds or performance.timeOrigin
+	            return numberToHrtime(time);
+	        }
+	    }
+	    else if (time instanceof Date) {
+	        return [time.getTime(), 0];
+	    }
+	    else {
+	        throw TypeError('Invalid input type');
+	    }
+	}
+	exports.timeInputToHrTime = timeInputToHrTime;
+	/**
+	 * Returns a duration of two hrTime.
+	 * @param startTime
+	 * @param endTime
+	 */
+	function hrTimeDuration(startTime, endTime) {
+	    let seconds = endTime[0] - startTime[0];
+	    let nanos = endTime[1] - startTime[1];
+	    // overflow
+	    if (nanos < 0) {
+	        seconds -= 1;
+	        // negate
+	        nanos += SECOND_TO_NANOSECONDS;
+	    }
+	    return [seconds, nanos];
+	}
+	exports.hrTimeDuration = hrTimeDuration;
+	/**
+	 * Convert hrTime to timestamp, for example "2019-05-14T17:00:00.000123456Z"
+	 * @param hrTime
+	 */
+	function hrTimeToTimeStamp(hrTime) {
+	    const precision = NANOSECOND_DIGITS;
+	    const tmp = `${'0'.repeat(precision)}${hrTime[1]}Z`;
+	    const nanoString = tmp.substr(tmp.length - precision - 1);
+	    const date = new Date(hrTime[0] * 1000).toISOString();
+	    return date.replace('000Z', nanoString);
+	}
+	exports.hrTimeToTimeStamp = hrTimeToTimeStamp;
+	/**
+	 * Convert hrTime to nanoseconds.
+	 * @param hrTime
+	 */
+	function hrTimeToNanoseconds(hrTime) {
+	    return hrTime[0] * SECOND_TO_NANOSECONDS + hrTime[1];
+	}
+	exports.hrTimeToNanoseconds = hrTimeToNanoseconds;
+	/**
+	 * Convert hrTime to milliseconds.
+	 * @param hrTime
+	 */
+	function hrTimeToMilliseconds(hrTime) {
+	    return Math.round(hrTime[0] * 1e3 + hrTime[1] / 1e6);
+	}
+	exports.hrTimeToMilliseconds = hrTimeToMilliseconds;
+	/**
+	 * Convert hrTime to microseconds.
+	 * @param hrTime
+	 */
+	function hrTimeToMicroseconds(hrTime) {
+	    return Math.round(hrTime[0] * 1e6 + hrTime[1] / 1e3);
+	}
+	exports.hrTimeToMicroseconds = hrTimeToMicroseconds;
+	/**
+	 * check if time is HrTime
+	 * @param value
+	 */
+	function isTimeInputHrTime(value) {
+	    return (Array.isArray(value) &&
+	        value.length === 2 &&
+	        typeof value[0] === 'number' &&
+	        typeof value[1] === 'number');
+	}
+	exports.isTimeInputHrTime = isTimeInputHrTime;
+	/**
+	 * check if input value is a correct types.TimeInput
+	 * @param value
+	 */
+	function isTimeInput(value) {
+	    return (isTimeInputHrTime(value) ||
+	        typeof value === 'number' ||
+	        value instanceof Date);
+	}
+	exports.isTimeInput = isTimeInput;
+
+	});
+
+	unwrapExports(time$2);
+	var time_1$2 = time$2.isTimeInput;
+	var time_2$1 = time$2.isTimeInputHrTime;
+	var time_3$1 = time$2.hrTimeToMicroseconds;
+	var time_4$1 = time$2.hrTimeToMilliseconds;
+	var time_5$1 = time$2.hrTimeToNanoseconds;
+	var time_6$1 = time$2.hrTimeToTimeStamp;
+	var time_7$1 = time$2.hrTimeDuration;
+	var time_8$1 = time$2.timeInputToHrTime;
+	var time_9$1 = time$2.hrTime;
+
+	var ExportResult_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ExportResult = void 0;
+	var ExportResult;
+	(function (ExportResult) {
+	    ExportResult[ExportResult["SUCCESS"] = 0] = "SUCCESS";
+	    ExportResult[ExportResult["FAILED_NOT_RETRYABLE"] = 1] = "FAILED_NOT_RETRYABLE";
+	    ExportResult[ExportResult["FAILED_RETRYABLE"] = 2] = "FAILED_RETRYABLE";
+	})(ExportResult = exports.ExportResult || (exports.ExportResult = {}));
+
+	});
+
+	unwrapExports(ExportResult_1$1);
+	var ExportResult_2$1 = ExportResult_1$1.ExportResult;
+
+	var context$5 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.getParentSpanContext = exports.setExtractedSpanContext = exports.getExtractedSpanContext = exports.setActiveSpan = exports.getActiveSpan = exports.ACTIVE_SPAN_KEY = void 0;
+
+	/**
+	 * Active span key
+	 */
+	exports.ACTIVE_SPAN_KEY = src$3.Context.createKey('OpenTelemetry Context Key ACTIVE_SPAN');
+	const EXTRACTED_SPAN_CONTEXT_KEY = src$3.Context.createKey('OpenTelemetry Context Key EXTRACTED_SPAN_CONTEXT');
+	/**
+	 * Return the active span if one exists
+	 *
+	 * @param context context to get span from
+	 */
+	function getActiveSpan(context) {
+	    return context.getValue(exports.ACTIVE_SPAN_KEY) || undefined;
+	}
+	exports.getActiveSpan = getActiveSpan;
+	/**
+	 * Set the active span on a context
+	 *
+	 * @param context context to use as parent
+	 * @param span span to set active
+	 */
+	function setActiveSpan(context, span) {
+	    return context.setValue(exports.ACTIVE_SPAN_KEY, span);
+	}
+	exports.setActiveSpan = setActiveSpan;
+	/**
+	 * Get the extracted span context from a context
+	 *
+	 * @param context context to get span context from
+	 */
+	function getExtractedSpanContext(context) {
+	    return (context.getValue(EXTRACTED_SPAN_CONTEXT_KEY) || undefined);
+	}
+	exports.getExtractedSpanContext = getExtractedSpanContext;
+	/**
+	 * Set the extracted span context on a context
+	 *
+	 * @param context context to set span context on
+	 * @param spanContext span context to set
+	 */
+	function setExtractedSpanContext(context, spanContext) {
+	    return context.setValue(EXTRACTED_SPAN_CONTEXT_KEY, spanContext);
+	}
+	exports.setExtractedSpanContext = setExtractedSpanContext;
+	/**
+	 * Get the span context of the parent span if it exists,
+	 * or the extracted span context if there is no active
+	 * span.
+	 *
+	 * @param context context to get values from
+	 */
+	function getParentSpanContext(context) {
+	    var _a;
+	    return ((_a = getActiveSpan(context)) === null || _a === void 0 ? void 0 : _a.context()) || getExtractedSpanContext(context);
+	}
+	exports.getParentSpanContext = getParentSpanContext;
+
+	});
+
+	unwrapExports(context$5);
+	var context_1$5 = context$5.getParentSpanContext;
+	var context_2$1 = context$5.setExtractedSpanContext;
+	var context_3$1 = context$5.getExtractedSpanContext;
+	var context_4$1 = context$5.setActiveSpan;
+	var context_5$1 = context$5.getActiveSpan;
+	var context_6$1 = context$5.ACTIVE_SPAN_KEY;
+
+	var B3Propagator_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.B3Propagator = exports.X_B3_SAMPLED = exports.X_B3_SPAN_ID = exports.X_B3_TRACE_ID = void 0;
+
+
+	exports.X_B3_TRACE_ID = 'x-b3-traceid';
+	exports.X_B3_SPAN_ID = 'x-b3-spanid';
+	exports.X_B3_SAMPLED = 'x-b3-sampled';
+	const VALID_TRACEID_REGEX = /^([0-9a-f]{16}){1,2}$/i;
+	const VALID_SPANID_REGEX = /^[0-9a-f]{16}$/i;
+	const INVALID_ID_REGEX = /^0+$/i;
+	function isValidTraceId(traceId) {
+	    return VALID_TRACEID_REGEX.test(traceId) && !INVALID_ID_REGEX.test(traceId);
+	}
+	function isValidSpanId(spanId) {
+	    return VALID_SPANID_REGEX.test(spanId) && !INVALID_ID_REGEX.test(spanId);
+	}
+	/**
+	 * Propagator for the B3 HTTP header format.
+	 * Based on: https://github.com/openzipkin/b3-propagation
+	 */
+	class B3Propagator {
+	    inject(context, carrier, setter) {
+	        const spanContext = context$5.getParentSpanContext(context);
+	        if (!spanContext)
+	            return;
+	        if (isValidTraceId(spanContext.traceId) &&
+	            isValidSpanId(spanContext.spanId)) {
+	            setter(carrier, exports.X_B3_TRACE_ID, spanContext.traceId);
+	            setter(carrier, exports.X_B3_SPAN_ID, spanContext.spanId);
+	            // We set the header only if there is an existing sampling decision.
+	            // Otherwise we will omit it => Absent.
+	            if (spanContext.traceFlags !== undefined) {
+	                setter(carrier, exports.X_B3_SAMPLED, (src$4.TraceFlags.SAMPLED & spanContext.traceFlags) === src$4.TraceFlags.SAMPLED
+	                    ? '1'
+	                    : '0');
+	            }
+	        }
+	    }
+	    extract(context, carrier, getter) {
+	        const traceIdHeader = getter(carrier, exports.X_B3_TRACE_ID);
+	        const spanIdHeader = getter(carrier, exports.X_B3_SPAN_ID);
+	        const sampledHeader = getter(carrier, exports.X_B3_SAMPLED);
+	        const traceIdHeaderValue = Array.isArray(traceIdHeader)
+	            ? traceIdHeader[0]
+	            : traceIdHeader;
+	        const spanId = Array.isArray(spanIdHeader) ? spanIdHeader[0] : spanIdHeader;
+	        const options = Array.isArray(sampledHeader)
+	            ? sampledHeader[0]
+	            : sampledHeader;
+	        if (typeof traceIdHeaderValue !== 'string' || typeof spanId !== 'string') {
+	            return context;
+	        }
+	        const traceId = traceIdHeaderValue.padStart(32, '0');
+	        if (isValidTraceId(traceId) && isValidSpanId(spanId)) {
+	            return context$5.setExtractedSpanContext(context, {
+	                traceId,
+	                spanId,
+	                isRemote: true,
+	                traceFlags: isNaN(Number(options)) ? src$4.TraceFlags.NONE : Number(options),
+	            });
+	        }
+	        return context;
+	    }
+	}
+	exports.B3Propagator = B3Propagator;
+
+	});
+
+	unwrapExports(B3Propagator_1$1);
+	var B3Propagator_2$1 = B3Propagator_1$1.B3Propagator;
+	var B3Propagator_3$1 = B3Propagator_1$1.X_B3_SAMPLED;
+	var B3Propagator_4$1 = B3Propagator_1$1.X_B3_SPAN_ID;
+	var B3Propagator_5$1 = B3Propagator_1$1.X_B3_TRACE_ID;
+
+	var composite$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.CompositePropagator = void 0;
+
+	/** Combines multiple propagators into a single propagator. */
+	class CompositePropagator {
+	    /**
+	     * Construct a composite propagator from a list of propagators.
+	     *
+	     * @param [config] Configuration object for composite propagator
+	     */
+	    constructor(config = {}) {
+	        var _a, _b;
+	        this._propagators = (_a = config.propagators) !== null && _a !== void 0 ? _a : [];
+	        this._logger = (_b = config.logger) !== null && _b !== void 0 ? _b : new NoopLogger_1$1.NoopLogger();
+	    }
+	    /**
+	     * Run each of the configured propagators with the given context and carrier.
+	     * Propagators are run in the order they are configured, so if multiple
+	     * propagators write the same carrier key, the propagator later in the list
+	     * will "win".
+	     *
+	     * @param context Context to inject
+	     * @param carrier Carrier into which context will be injected
+	     */
+	    inject(context, carrier, setter) {
+	        for (const propagator of this._propagators) {
+	            try {
+	                propagator.inject(context, carrier, setter);
+	            }
+	            catch (err) {
+	                this._logger.warn(`Failed to inject with ${propagator.constructor.name}. Err: ${err.message}`);
+	            }
+	        }
+	    }
+	    /**
+	     * Run each of the configured propagators with the given context and carrier.
+	     * Propagators are run in the order they are configured, so if multiple
+	     * propagators write the same context key, the propagator later in the list
+	     * will "win".
+	     *
+	     * @param context Context to add values to
+	     * @param carrier Carrier from which to extract context
+	     */
+	    extract(context, carrier, getter) {
+	        return this._propagators.reduce((ctx, propagator) => {
+	            try {
+	                return propagator.extract(ctx, carrier, getter);
+	            }
+	            catch (err) {
+	                this._logger.warn(`Failed to inject with ${propagator.constructor.name}. Err: ${err.message}`);
+	            }
+	            return ctx;
+	        }, context);
+	    }
+	}
+	exports.CompositePropagator = CompositePropagator;
+
+	});
+
+	unwrapExports(composite$1);
+	var composite_1$1 = composite$1.CompositePropagator;
+
+	var validators$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.validateValue = exports.validateKey = void 0;
+	const VALID_KEY_CHAR_RANGE = '[_0-9a-z-*/]';
+	const VALID_KEY = `[a-z]${VALID_KEY_CHAR_RANGE}{0,255}`;
+	const VALID_VENDOR_KEY = `[a-z0-9]${VALID_KEY_CHAR_RANGE}{0,240}@[a-z]${VALID_KEY_CHAR_RANGE}{0,13}`;
+	const VALID_KEY_REGEX = new RegExp(`^(?:${VALID_KEY}|${VALID_VENDOR_KEY})$`);
+	const VALID_VALUE_BASE_REGEX = /^[ -~]{0,255}[!-~]$/;
+	const INVALID_VALUE_COMMA_EQUAL_REGEX = /,|=/;
+	/**
+	 * Key is opaque string up to 256 characters printable. It MUST begin with a
+	 * lowercase letter, and can only contain lowercase letters a-z, digits 0-9,
+	 * underscores _, dashes -, asterisks *, and forward slashes /.
+	 * For multi-tenant vendor scenarios, an at sign (@) can be used to prefix the
+	 * vendor name. Vendors SHOULD set the tenant ID at the beginning of the key.
+	 * see https://www.w3.org/TR/trace-context/#key
+	 */
+	function validateKey(key) {
+	    return VALID_KEY_REGEX.test(key);
+	}
+	exports.validateKey = validateKey;
+	/**
+	 * Value is opaque string up to 256 characters printable ASCII RFC0020
+	 * characters (i.e., the range 0x20 to 0x7E) except comma , and =.
+	 */
+	function validateValue(value) {
+	    return (VALID_VALUE_BASE_REGEX.test(value) &&
+	        !INVALID_VALUE_COMMA_EQUAL_REGEX.test(value));
+	}
+	exports.validateValue = validateValue;
+
+	});
+
+	unwrapExports(validators$1);
+	var validators_1$1 = validators$1.validateValue;
+	var validators_2$1 = validators$1.validateKey;
+
+	var TraceState_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.TraceState = void 0;
+
+	const MAX_TRACE_STATE_ITEMS = 32;
+	const MAX_TRACE_STATE_LEN = 512;
+	const LIST_MEMBERS_SEPARATOR = ',';
+	const LIST_MEMBER_KEY_VALUE_SPLITTER = '=';
+	/**
+	 * TraceState must be a class and not a simple object type because of the spec
+	 * requirement (https://www.w3.org/TR/trace-context/#tracestate-field).
+	 *
+	 * Here is the list of allowed mutations:
+	 * - New key-value pair should be added into the beginning of the list
+	 * - The value of any key can be updated. Modified keys MUST be moved to the
+	 * beginning of the list.
+	 */
+	class TraceState {
+	    constructor(rawTraceState) {
+	        this._internalState = new Map();
+	        if (rawTraceState)
+	            this._parse(rawTraceState);
+	    }
+	    set(key, value) {
+	        // TODO: Benchmark the different approaches(map vs list) and
+	        // use the faster one.
+	        if (this._internalState.has(key))
+	            this._internalState.delete(key);
+	        this._internalState.set(key, value);
+	    }
+	    unset(key) {
+	        this._internalState.delete(key);
+	    }
+	    get(key) {
+	        return this._internalState.get(key);
+	    }
+	    serialize() {
+	        return this._keys()
+	            .reduce((agg, key) => {
+	            agg.push(key + LIST_MEMBER_KEY_VALUE_SPLITTER + this.get(key));
+	            return agg;
+	        }, [])
+	            .join(LIST_MEMBERS_SEPARATOR);
+	    }
+	    _parse(rawTraceState) {
+	        if (rawTraceState.length > MAX_TRACE_STATE_LEN)
+	            return;
+	        this._internalState = rawTraceState
+	            .split(LIST_MEMBERS_SEPARATOR)
+	            .reverse() // Store in reverse so new keys (.set(...)) will be placed at the beginning
+	            .reduce((agg, part) => {
+	            const i = part.indexOf(LIST_MEMBER_KEY_VALUE_SPLITTER);
+	            if (i !== -1) {
+	                const key = part.slice(0, i);
+	                const value = part.slice(i + 1, part.length);
+	                if (validators$1.validateKey(key) && validators$1.validateValue(value)) {
+	                    agg.set(key, value);
+	                }
+	            }
+	            return agg;
+	        }, new Map());
+	        // Because of the reverse() requirement, trunc must be done after map is created
+	        if (this._internalState.size > MAX_TRACE_STATE_ITEMS) {
+	            this._internalState = new Map(Array.from(this._internalState.entries())
+	                .reverse() // Use reverse same as original tracestate parse chain
+	                .slice(0, MAX_TRACE_STATE_ITEMS));
+	        }
+	    }
+	    _keys() {
+	        return Array.from(this._internalState.keys()).reverse();
+	    }
+	}
+	exports.TraceState = TraceState;
+
+	});
+
+	unwrapExports(TraceState_1$1);
+	var TraceState_2$1 = TraceState_1$1.TraceState;
+
+	var HttpTraceContext_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.HttpTraceContext = exports.parseTraceParent = exports.TRACE_STATE_HEADER = exports.TRACE_PARENT_HEADER = void 0;
+
+
+
+	exports.TRACE_PARENT_HEADER = 'traceparent';
+	exports.TRACE_STATE_HEADER = 'tracestate';
+	const VALID_TRACE_PARENT_REGEX = /^(?!ff)[\da-f]{2}-([\da-f]{32})-([\da-f]{16})-([\da-f]{2})(-|$)/;
+	const VERSION = '00';
+	/**
+	 * Parses information from the [traceparent] span tag and converts it into {@link SpanContext}
+	 * @param traceParent - A meta property that comes from server.
+	 *     It should be dynamically generated server side to have the server's request trace Id,
+	 *     a parent span Id that was set on the server's request span,
+	 *     and the trace flags to indicate the server's sampling decision
+	 *     (01 = sampled, 00 = not sampled).
+	 *     for example: '{version}-{traceId}-{spanId}-{sampleDecision}'
+	 *     For more information see {@link https://www.w3.org/TR/trace-context/}
+	 */
+	function parseTraceParent(traceParent) {
+	    const match = traceParent.match(VALID_TRACE_PARENT_REGEX);
+	    if (!match ||
+	        match[1] === '00000000000000000000000000000000' ||
+	        match[2] === '0000000000000000') {
+	        return null;
+	    }
+	    return {
+	        traceId: match[1],
+	        spanId: match[2],
+	        traceFlags: parseInt(match[3], 16),
+	    };
+	}
+	exports.parseTraceParent = parseTraceParent;
+	/**
+	 * Propagates {@link SpanContext} through Trace Context format propagation.
+	 *
+	 * Based on the Trace Context specification:
+	 * https://www.w3.org/TR/trace-context/
+	 */
+	class HttpTraceContext {
+	    inject(context, carrier, setter) {
+	        const spanContext = context$5.getParentSpanContext(context);
+	        if (!spanContext)
+	            return;
+	        const traceParent = `${VERSION}-${spanContext.traceId}-${spanContext.spanId}-0${Number(spanContext.traceFlags || src$4.TraceFlags.NONE).toString(16)}`;
+	        setter(carrier, exports.TRACE_PARENT_HEADER, traceParent);
+	        if (spanContext.traceState) {
+	            setter(carrier, exports.TRACE_STATE_HEADER, spanContext.traceState.serialize());
+	        }
+	    }
+	    extract(context, carrier, getter) {
+	        const traceParentHeader = getter(carrier, exports.TRACE_PARENT_HEADER);
+	        if (!traceParentHeader)
+	            return context;
+	        const traceParent = Array.isArray(traceParentHeader)
+	            ? traceParentHeader[0]
+	            : traceParentHeader;
+	        if (typeof traceParent !== 'string')
+	            return context;
+	        const spanContext = parseTraceParent(traceParent);
+	        if (!spanContext)
+	            return context;
+	        spanContext.isRemote = true;
+	        const traceStateHeader = getter(carrier, exports.TRACE_STATE_HEADER);
+	        if (traceStateHeader) {
+	            // If more than one `tracestate` header is found, we merge them into a
+	            // single header.
+	            const state = Array.isArray(traceStateHeader)
+	                ? traceStateHeader.join(',')
+	                : traceStateHeader;
+	            spanContext.traceState = new TraceState_1$1.TraceState(typeof state === 'string' ? state : undefined);
+	        }
+	        return context$5.setExtractedSpanContext(context, spanContext);
+	    }
+	}
+	exports.HttpTraceContext = HttpTraceContext;
+
+	});
+
+	unwrapExports(HttpTraceContext_1$1);
+	var HttpTraceContext_2$1 = HttpTraceContext_1$1.HttpTraceContext;
+	var HttpTraceContext_3$1 = HttpTraceContext_1$1.parseTraceParent;
+	var HttpTraceContext_4$1 = HttpTraceContext_1$1.TRACE_STATE_HEADER;
+	var HttpTraceContext_5$1 = HttpTraceContext_1$1.TRACE_PARENT_HEADER;
+
+	var types$6 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(types$6);
+
+	var correlationContext$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.setCorrelationContext = exports.getCorrelationContext = void 0;
+
+	const CORRELATION_CONTEXT = src$3.Context.createKey('OpenTelemetry Distributed Contexts Key');
+	/**
+	 * @param {Context} Context that manage all context values
+	 * @returns {CorrelationContext} Extracted correlation context from the context
+	 */
+	function getCorrelationContext(context) {
+	    return (context.getValue(CORRELATION_CONTEXT) || undefined);
+	}
+	exports.getCorrelationContext = getCorrelationContext;
+	/**
+	 * @param {Context} Context that manage all context values
+	 * @param {CorrelationContext} correlation context that will be set in the actual context
+	 */
+	function setCorrelationContext(context, correlationContext) {
+	    return context.setValue(CORRELATION_CONTEXT, correlationContext);
+	}
+	exports.setCorrelationContext = setCorrelationContext;
+
+	});
+
+	unwrapExports(correlationContext$1);
+	var correlationContext_1$1 = correlationContext$1.setCorrelationContext;
+	var correlationContext_2$1 = correlationContext$1.getCorrelationContext;
+
+	var HttpCorrelationContext_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.HttpCorrelationContext = exports.MAX_TOTAL_LENGTH = exports.MAX_PER_NAME_VALUE_PAIRS = exports.MAX_NAME_VALUE_PAIRS = exports.CORRELATION_CONTEXT_HEADER = void 0;
+
+	const KEY_PAIR_SEPARATOR = '=';
+	const PROPERTIES_SEPARATOR = ';';
+	const ITEMS_SEPARATOR = ',';
+	// Name of the http header used to propagate the correlation context
+	exports.CORRELATION_CONTEXT_HEADER = 'otcorrelations';
+	// Maximum number of name-value pairs allowed by w3c spec
+	exports.MAX_NAME_VALUE_PAIRS = 180;
+	// Maximum number of bytes per a single name-value pair allowed by w3c spec
+	exports.MAX_PER_NAME_VALUE_PAIRS = 4096;
+	// Maximum total length of all name-value pairs allowed by w3c spec
+	exports.MAX_TOTAL_LENGTH = 8192;
+	/**
+	 * Propagates {@link CorrelationContext} through Context format propagation.
+	 *
+	 * Based on the Correlation Context specification:
+	 * https://w3c.github.io/correlation-context/
+	 */
+	class HttpCorrelationContext {
+	    inject(context, carrier, setter) {
+	        const correlationContext = correlationContext$1.getCorrelationContext(context);
+	        if (!correlationContext)
+	            return;
+	        const keyPairs = this._getKeyPairs(correlationContext)
+	            .filter((pair) => {
+	            return pair.length <= exports.MAX_PER_NAME_VALUE_PAIRS;
+	        })
+	            .slice(0, exports.MAX_NAME_VALUE_PAIRS);
+	        const headerValue = this._serializeKeyPairs(keyPairs);
+	        if (headerValue.length > 0) {
+	            setter(carrier, exports.CORRELATION_CONTEXT_HEADER, headerValue);
+	        }
+	    }
+	    _serializeKeyPairs(keyPairs) {
+	        return keyPairs.reduce((hValue, current) => {
+	            const value = `${hValue}${hValue != '' ? ITEMS_SEPARATOR : ''}${current}`;
+	            return value.length > exports.MAX_TOTAL_LENGTH ? hValue : value;
+	        }, '');
+	    }
+	    _getKeyPairs(correlationContext) {
+	        return Object.keys(correlationContext).map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(correlationContext[key].value)}`);
+	    }
+	    extract(context, carrier, getter) {
+	        const headerValue = getter(carrier, exports.CORRELATION_CONTEXT_HEADER);
+	        if (!headerValue)
+	            return context;
+	        const correlationContext = {};
+	        if (headerValue.length == 0) {
+	            return context;
+	        }
+	        const pairs = headerValue.split(ITEMS_SEPARATOR);
+	        if (pairs.length == 1)
+	            return context;
+	        pairs.forEach(entry => {
+	            const keyPair = this._parsePairKeyValue(entry);
+	            if (keyPair) {
+	                correlationContext[keyPair.key] = { value: keyPair.value };
+	            }
+	        });
+	        return correlationContext$1.setCorrelationContext(context, correlationContext);
+	    }
+	    _parsePairKeyValue(entry) {
+	        const valueProps = entry.split(PROPERTIES_SEPARATOR);
+	        if (valueProps.length <= 0)
+	            return;
+	        const keyPairPart = valueProps.shift();
+	        if (!keyPairPart)
+	            return;
+	        const keyPair = keyPairPart.split(KEY_PAIR_SEPARATOR);
+	        if (keyPair.length <= 1)
+	            return;
+	        const key = decodeURIComponent(keyPair[0].trim());
+	        let value = decodeURIComponent(keyPair[1].trim());
+	        if (valueProps.length > 0) {
+	            value =
+	                value + PROPERTIES_SEPARATOR + valueProps.join(PROPERTIES_SEPARATOR);
+	        }
+	        return { key, value };
+	    }
+	}
+	exports.HttpCorrelationContext = HttpCorrelationContext;
+
+	});
+
+	unwrapExports(HttpCorrelationContext_1$1);
+	var HttpCorrelationContext_2$1 = HttpCorrelationContext_1$1.HttpCorrelationContext;
+	var HttpCorrelationContext_3$1 = HttpCorrelationContext_1$1.MAX_TOTAL_LENGTH;
+	var HttpCorrelationContext_4$1 = HttpCorrelationContext_1$1.MAX_PER_NAME_VALUE_PAIRS;
+	var HttpCorrelationContext_5$1 = HttpCorrelationContext_1$1.MAX_NAME_VALUE_PAIRS;
+	var HttpCorrelationContext_6$1 = HttpCorrelationContext_1$1.CORRELATION_CONTEXT_HEADER;
+
+	var spancontextUtils$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.isValid = exports.INVALID_SPAN_CONTEXT = exports.INVALID_TRACEID = exports.INVALID_SPANID = void 0;
+
+	exports.INVALID_SPANID = '0';
+	exports.INVALID_TRACEID = '0';
+	exports.INVALID_SPAN_CONTEXT = {
+	    traceId: exports.INVALID_TRACEID,
+	    spanId: exports.INVALID_SPANID,
+	    traceFlags: src$4.TraceFlags.NONE,
+	};
+	/**
+	 * Returns true if this {@link SpanContext} is valid.
+	 * @return true if this {@link SpanContext} is valid.
+	 */
+	function isValid(spanContext) {
+	    return (spanContext.traceId !== exports.INVALID_TRACEID &&
+	        spanContext.spanId !== exports.INVALID_SPANID);
+	}
+	exports.isValid = isValid;
+
+	});
+
+	unwrapExports(spancontextUtils$1);
+	var spancontextUtils_1$1 = spancontextUtils$1.isValid;
+	var spancontextUtils_2$1 = spancontextUtils$1.INVALID_SPAN_CONTEXT;
+	var spancontextUtils_3$1 = spancontextUtils$1.INVALID_TRACEID;
+	var spancontextUtils_4$1 = spancontextUtils$1.INVALID_SPANID;
+
+	var NoRecordingSpan_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.NoRecordingSpan = void 0;
+
+
+	/**
+	 * The NoRecordingSpan extends the {@link NoopSpan}, making all operations no-op
+	 * except context propagation.
+	 */
+	class NoRecordingSpan extends src$4.NoopSpan {
+	    constructor(spanContext) {
+	        super(spanContext);
+	        this._context = spanContext || spancontextUtils$1.INVALID_SPAN_CONTEXT;
+	    }
+	    // Returns a SpanContext.
+	    context() {
+	        return this._context;
+	    }
+	}
+	exports.NoRecordingSpan = NoRecordingSpan;
+
+	});
+
+	unwrapExports(NoRecordingSpan_1$1);
+	var NoRecordingSpan_2$1 = NoRecordingSpan_1$1.NoRecordingSpan;
+
+	var AlwaysOffSampler_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.AlwaysOffSampler = void 0;
+
+	/** Sampler that samples no traces. */
+	class AlwaysOffSampler {
+	    shouldSample() {
+	        return {
+	            decision: src$4.SamplingDecision.NOT_RECORD,
+	        };
+	    }
+	    toString() {
+	        return `AlwaysOffSampler`;
+	    }
+	}
+	exports.AlwaysOffSampler = AlwaysOffSampler;
+
+	});
+
+	unwrapExports(AlwaysOffSampler_1$1);
+	var AlwaysOffSampler_2$1 = AlwaysOffSampler_1$1.AlwaysOffSampler;
+
+	var AlwaysOnSampler_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.AlwaysOnSampler = void 0;
+
+	/** Sampler that samples all traces. */
+	class AlwaysOnSampler {
+	    shouldSample() {
+	        return {
+	            decision: src$4.SamplingDecision.RECORD_AND_SAMPLED,
+	        };
+	    }
+	    toString() {
+	        return `AlwaysOnSampler`;
+	    }
+	}
+	exports.AlwaysOnSampler = AlwaysOnSampler;
+
+	});
+
+	unwrapExports(AlwaysOnSampler_1$1);
+	var AlwaysOnSampler_2$1 = AlwaysOnSampler_1$1.AlwaysOnSampler;
+
+	var ParentOrElseSampler_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ParentOrElseSampler = void 0;
+
+	/**
+	 * A composite sampler that either respects the parent span's sampling decision
+	 * or delegates to `delegateSampler` for root spans.
+	 */
+	class ParentOrElseSampler {
+	    constructor(_delegateSampler) {
+	        this._delegateSampler = _delegateSampler;
+	    }
+	    shouldSample(parentContext, traceId, spanName, spanKind, attributes, links) {
+	        // Respect the parent sampling decision if there is one
+	        if (parentContext) {
+	            return {
+	                decision: (src$4.TraceFlags.SAMPLED & parentContext.traceFlags) === src$4.TraceFlags.SAMPLED
+	                    ? src$4.SamplingDecision.RECORD_AND_SAMPLED
+	                    : src$4.SamplingDecision.NOT_RECORD,
+	            };
+	        }
+	        return this._delegateSampler.shouldSample(parentContext, traceId, spanName, spanKind, attributes, links);
+	    }
+	    toString() {
+	        return `ParentOrElse{${this._delegateSampler.toString()}}`;
+	    }
+	}
+	exports.ParentOrElseSampler = ParentOrElseSampler;
+
+	});
+
+	unwrapExports(ParentOrElseSampler_1$1);
+	var ParentOrElseSampler_2$1 = ParentOrElseSampler_1$1.ParentOrElseSampler;
+
+	var ProbabilitySampler_1$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ProbabilitySampler = void 0;
+
+	/** Sampler that samples a given fraction of traces. */
+	class ProbabilitySampler {
+	    constructor(_probability = 0) {
+	        this._probability = _probability;
+	        this._probability = this._normalize(_probability);
+	    }
+	    shouldSample(parentContext) {
+	        // Respect the parent sampling decision if there is one.
+	        // TODO(#1284): add an option to ignore parent regarding to spec.
+	        if (parentContext) {
+	            return {
+	                decision: (src$4.TraceFlags.SAMPLED & parentContext.traceFlags) === src$4.TraceFlags.SAMPLED
+	                    ? src$4.SamplingDecision.RECORD_AND_SAMPLED
+	                    : src$4.SamplingDecision.NOT_RECORD,
+	            };
+	        }
+	        return {
+	            decision: Math.random() < this._probability
+	                ? src$4.SamplingDecision.RECORD_AND_SAMPLED
+	                : src$4.SamplingDecision.NOT_RECORD,
+	        };
+	    }
+	    toString() {
+	        return `ProbabilitySampler{${this._probability}}`;
+	    }
+	    _normalize(probability) {
+	        if (typeof probability !== 'number' || isNaN(probability))
+	            return 0;
+	        return probability >= 1 ? 1 : probability <= 0 ? 0 : probability;
+	    }
+	}
+	exports.ProbabilitySampler = ProbabilitySampler;
+
+	});
+
+	unwrapExports(ProbabilitySampler_1$1);
+	var ProbabilitySampler_2$1 = ProbabilitySampler_1$1.ProbabilitySampler;
+
+	var IdGenerator$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(IdGenerator$1);
+
+	var url$1 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.isUrlIgnored = exports.urlMatches = void 0;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	function urlMatches(url, urlToMatch) {
+	    if (typeof urlToMatch === 'string') {
+	        return url === urlToMatch;
+	    }
+	    else {
+	        return !!url.match(urlToMatch);
+	    }
+	}
+	exports.urlMatches = urlMatches;
+	/**
+	 * Check if {@param url} should be ignored when comparing against {@param ignoredUrls}
+	 * @param url
+	 * @param ignoredUrls
+	 */
+	function isUrlIgnored(url, ignoredUrls) {
+	    if (!ignoredUrls) {
+	        return false;
+	    }
+	    for (const ignoreUrl of ignoredUrls) {
+	        if (urlMatches(url, ignoreUrl)) {
+	            return true;
+	        }
+	    }
+	    return false;
+	}
+	exports.isUrlIgnored = isUrlIgnored;
+
+	});
+
+	unwrapExports(url$1);
+	var url_1$1 = url$1.isUrlIgnored;
+	var url_2$1 = url$1.urlMatches;
+
+	var wrap$1 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.isWrapped = void 0;
+	/**
+	 * Checks if certain function has been already wrapped
+	 * @param func
+	 */
+	function isWrapped(func) {
+	    return (typeof func === 'function' &&
+	        typeof func.__original === 'function' &&
+	        typeof func.__unwrap === 'function' &&
+	        func.__wrapped === true);
+	}
+	exports.isWrapped = isWrapped;
+
+	});
+
+	unwrapExports(wrap$1);
+	var wrap_1$1 = wrap$1.isWrapped;
+
+	var src$5 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+	}) : (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    o[k2] = m[k];
+	}));
+	var __exportStar = (commonjsGlobal && commonjsGlobal.__exportStar) || function(m, exports) {
+	    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	__exportStar(ConsoleLogger_1$1, exports);
+	__exportStar(NoopLogger_1$1, exports);
+	__exportStar(time$2, exports);
+	__exportStar(types$5, exports);
+	__exportStar(ExportResult_1$1, exports);
+	__exportStar(version$1, exports);
+	__exportStar(context$5, exports);
+	__exportStar(B3Propagator_1$1, exports);
+	__exportStar(composite$1, exports);
+	__exportStar(HttpTraceContext_1$1, exports);
+	__exportStar(types$6, exports);
+	__exportStar(correlationContext$1, exports);
+	__exportStar(HttpCorrelationContext_1$1, exports);
+	__exportStar(platform$3, exports);
+	__exportStar(NoRecordingSpan_1$1, exports);
+	__exportStar(AlwaysOffSampler_1$1, exports);
+	__exportStar(AlwaysOnSampler_1$1, exports);
+	__exportStar(ParentOrElseSampler_1$1, exports);
+	__exportStar(ProbabilitySampler_1$1, exports);
+	__exportStar(spancontextUtils$1, exports);
+	__exportStar(TraceState_1$1, exports);
+	__exportStar(IdGenerator$1, exports);
+	__exportStar(url$1, exports);
+	__exportStar(wrap$1, exports);
+
+	});
+
+	unwrapExports(src$5);
+
 	var Span_1 = createCommonjsModule(function (module, exports) {
 	/*
 	 * Copyright The OpenTelemetry Authors
@@ -16327,12 +22521,12 @@
 	 */
 	class Span {
 	    /** Constructs a new Span instance. */
-	    constructor(parentTracer, spanName, spanContext, kind, parentSpanId, links = [], startTime = src$2.hrTime()) {
+	    constructor(parentTracer, spanName, spanContext, kind, parentSpanId, links = [], startTime = src$5.hrTime()) {
 	        this.attributes = {};
 	        this.links = [];
 	        this.events = [];
 	        this.status = {
-	            code: src$1.CanonicalCode.OK,
+	            code: src$4.CanonicalCode.OK,
 	        };
 	        this.endTime = [0, 0];
 	        this._ended = false;
@@ -16342,7 +22536,7 @@
 	        this.parentSpanId = parentSpanId;
 	        this.kind = kind;
 	        this.links = links;
-	        this.startTime = src$2.timeInputToHrTime(startTime);
+	        this.startTime = src$5.timeInputToHrTime(startTime);
 	        this.resource = parentTracer.resource;
 	        this.instrumentationLibrary = parentTracer.instrumentationLibrary;
 	        this._logger = parentTracer.logger;
@@ -16387,19 +22581,19 @@
 	            this._logger.warn('Dropping extra events.');
 	            this.events.shift();
 	        }
-	        if (src$2.isTimeInput(attributesOrStartTime)) {
+	        if (src$5.isTimeInput(attributesOrStartTime)) {
 	            if (typeof startTime === 'undefined') {
 	                startTime = attributesOrStartTime;
 	            }
 	            attributesOrStartTime = undefined;
 	        }
 	        if (typeof startTime === 'undefined') {
-	            startTime = src$2.hrTime();
+	            startTime = src$5.hrTime();
 	        }
 	        this.events.push({
 	            name,
 	            attributes: attributesOrStartTime,
-	            time: src$2.timeInputToHrTime(startTime),
+	            time: src$5.timeInputToHrTime(startTime),
 	        });
 	        return this;
 	    }
@@ -16415,14 +22609,14 @@
 	        this.name = name;
 	        return this;
 	    }
-	    end(endTime = src$2.hrTime()) {
+	    end(endTime = src$5.hrTime()) {
 	        if (this._isSpanEnded()) {
 	            this._logger.error('You can only call end() on a span once.');
 	            return;
 	        }
 	        this._ended = true;
-	        this.endTime = src$2.timeInputToHrTime(endTime);
-	        this._duration = src$2.hrTimeDuration(this.startTime, this.endTime);
+	        this.endTime = src$5.timeInputToHrTime(endTime);
+	        this._duration = src$5.hrTimeDuration(this.startTime, this.endTime);
 	        if (this._duration[0] < 0) {
 	            this._logger.warn('Inconsistent start and end time, startTime > endTime', this.startTime, this.endTime);
 	        }
@@ -16483,8 +22677,8 @@
 	 * used to extend the default value.
 	 */
 	exports.DEFAULT_CONFIG = {
-	    logLevel: src$2.getEnv().OTEL_LOG_LEVEL,
-	    sampler: new src$2.AlwaysOnSampler(),
+	    logLevel: src$5.getEnv().OTEL_LOG_LEVEL,
+	    sampler: new src$5.AlwaysOnSampler(),
 	    traceParams: {
 	        numberOfAttributesPerSpan: exports.DEFAULT_MAX_ATTRIBUTES_PER_SPAN,
 	        numberOfLinksPerSpan: exports.DEFAULT_MAX_LINKS_PER_SPAN,
@@ -16526,12 +22720,12 @@
 	 */
 	function mergeConfig(userConfig) {
 	    const traceParams = userConfig.traceParams;
-	    const otelSamplingProbability = src$2.getEnv().OTEL_SAMPLING_PROBABILITY;
+	    const otelSamplingProbability = src$5.getEnv().OTEL_SAMPLING_PROBABILITY;
 	    const target = Object.assign(config$2.DEFAULT_CONFIG, 
 	    // use default AlwaysOnSampler if otelSamplingProbability is 1
 	    otelSamplingProbability !== undefined && otelSamplingProbability < 1
 	        ? {
-	            sampler: new src$2.ParentOrElseSampler(new src$2.ProbabilitySampler(otelSamplingProbability)),
+	            sampler: new src$5.ParentOrElseSampler(new src$5.ProbabilitySampler(otelSamplingProbability)),
 	        }
 	        : {}, userConfig);
 	    // the user-provided value will be used to extend the default value.
@@ -16586,22 +22780,22 @@
 	        const localConfig = utility.mergeConfig(config);
 	        this._sampler = localConfig.sampler;
 	        this._traceParams = localConfig.traceParams;
-	        this._idGenerator = config.idGenerator || new src$2.RandomIdGenerator();
+	        this._idGenerator = config.idGenerator || new src$5.RandomIdGenerator();
 	        this.resource = _tracerProvider.resource;
 	        this.instrumentationLibrary = instrumentationLibrary;
-	        this.logger = config.logger || new src$2.ConsoleLogger(config.logLevel);
+	        this.logger = config.logger || new src$5.ConsoleLogger(config.logLevel);
 	    }
 	    /**
 	     * Starts a new Span or returns the default NoopSpan based on the sampling
 	     * decision.
 	     */
-	    startSpan(name, options = {}, context = src$1.context.active()) {
+	    startSpan(name, options = {}, context = src$4.context.active()) {
 	        var _a, _b, _c;
 	        const parentContext = getParent(options, context);
 	        const spanId = this._idGenerator.generateSpanId();
 	        let traceId;
 	        let traceState;
-	        if (!parentContext || !src$2.isValid(parentContext)) {
+	        if (!parentContext || !src$5.isValid(parentContext)) {
 	            // New root span.
 	            traceId = this._idGenerator.generateTraceId();
 	        }
@@ -16610,18 +22804,18 @@
 	            traceId = parentContext.traceId;
 	            traceState = parentContext.traceState;
 	        }
-	        const spanKind = (_a = options.kind) !== null && _a !== void 0 ? _a : src$1.SpanKind.INTERNAL;
+	        const spanKind = (_a = options.kind) !== null && _a !== void 0 ? _a : src$4.SpanKind.INTERNAL;
 	        const links = (_b = options.links) !== null && _b !== void 0 ? _b : [];
 	        const attributes = (_c = options.attributes) !== null && _c !== void 0 ? _c : {};
 	        // make sampling decision
 	        const samplingResult = this._sampler.shouldSample(parentContext, traceId, name, spanKind, attributes, links);
-	        const traceFlags = samplingResult.decision === src$1.SamplingDecision.RECORD_AND_SAMPLED
-	            ? src$1.TraceFlags.SAMPLED
-	            : src$1.TraceFlags.NONE;
+	        const traceFlags = samplingResult.decision === src$4.SamplingDecision.RECORD_AND_SAMPLED
+	            ? src$4.TraceFlags.SAMPLED
+	            : src$4.TraceFlags.NONE;
 	        const spanContext = { traceId, spanId, traceFlags, traceState };
-	        if (samplingResult.decision === src$1.SamplingDecision.NOT_RECORD) {
+	        if (samplingResult.decision === src$4.SamplingDecision.NOT_RECORD) {
 	            this.logger.debug('Recording is off, starting no recording span');
-	            return new src$2.NoRecordingSpan(spanContext);
+	            return new src$5.NoRecordingSpan(spanContext);
 	        }
 	        const span = new Span_1.Span(this, name, spanContext, spanKind, parentContext ? parentContext.spanId : undefined, links, options.startTime);
 	        // Set default attributes
@@ -16634,22 +22828,22 @@
 	     * If there is no Span associated with the current context, undefined is returned.
 	     */
 	    getCurrentSpan() {
-	        const ctx = src$1.context.active();
+	        const ctx = src$4.context.active();
 	        // Get the current Span from the context or null if none found.
-	        return src$2.getActiveSpan(ctx);
+	        return src$5.getActiveSpan(ctx);
 	    }
 	    /**
 	     * Enters the context of code where the given Span is in the current context.
 	     */
 	    withSpan(span, fn) {
 	        // Set given span to context.
-	        return src$1.context.with(src$2.setActiveSpan(src$1.context.active(), span), fn);
+	        return src$4.context.with(src$5.setActiveSpan(src$4.context.active(), span), fn);
 	    }
 	    /**
 	     * Bind a span (or the current one) to the target's context
 	     */
 	    bind(target, span) {
-	        return src$1.context.bind(target, span ? src$2.setActiveSpan(src$1.context.active(), span) : src$1.context.active());
+	        return src$4.context.bind(target, span ? src$5.setActiveSpan(src$4.context.active(), span) : src$4.context.active());
 	    }
 	    /** Returns the active {@link TraceParams}. */
 	    getActiveTraceParams() {
@@ -16672,7 +22866,7 @@
 	        return undefined;
 	    if (options.parent)
 	        return getContext(options.parent);
-	    return src$2.getParentSpanContext(context);
+	    return src$5.getParentSpanContext(context);
 	}
 	function getContext(span) {
 	    return isSpan(span) ? span.context() : span;
@@ -16788,7 +22982,3801 @@
 	unwrapExports(NoopSpanProcessor_1);
 	var NoopSpanProcessor_2 = NoopSpanProcessor_1.NoopSpanProcessor;
 
-	var constants$1 = createCommonjsModule(function (module, exports) {
+	var types$7 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.LogLevel = void 0;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var LogLevel;
+	(function (LogLevel) {
+	    LogLevel[LogLevel["ERROR"] = 0] = "ERROR";
+	    LogLevel[LogLevel["WARN"] = 1] = "WARN";
+	    LogLevel[LogLevel["INFO"] = 2] = "INFO";
+	    LogLevel[LogLevel["DEBUG"] = 3] = "DEBUG";
+	})(LogLevel = exports.LogLevel || (exports.LogLevel = {}));
+
+	});
+
+	unwrapExports(types$7);
+	var types_1$2 = types$7.LogLevel;
+
+	// Note: this is the semver.org version of the spec that it implements
+	// Not necessarily the package version of this code.
+	const SEMVER_SPEC_VERSION$2 = '2.0.0';
+
+	const MAX_LENGTH$6 = 256;
+	const MAX_SAFE_INTEGER$4 = Number.MAX_SAFE_INTEGER ||
+	  /* istanbul ignore next */ 9007199254740991;
+
+	// Max safe segment length for coercion.
+	const MAX_SAFE_COMPONENT_LENGTH$2 = 16;
+
+	var constants$2 = {
+	  SEMVER_SPEC_VERSION: SEMVER_SPEC_VERSION$2,
+	  MAX_LENGTH: MAX_LENGTH$6,
+	  MAX_SAFE_INTEGER: MAX_SAFE_INTEGER$4,
+	  MAX_SAFE_COMPONENT_LENGTH: MAX_SAFE_COMPONENT_LENGTH$2
+	};
+
+	const debug$2 = (
+	  typeof process === 'object' &&
+	  process.env &&
+	  process.env.NODE_DEBUG &&
+	  /\bsemver\b/i.test(process.env.NODE_DEBUG)
+	) ? (...args) => console.error('SEMVER', ...args)
+	  : () => {};
+
+	var debug_1$2 = debug$2;
+
+	var re_1$2 = createCommonjsModule(function (module, exports) {
+	const { MAX_SAFE_COMPONENT_LENGTH } = constants$2;
+
+	exports = module.exports = {};
+
+	// The actual regexps go on exports.re
+	const re = exports.re = [];
+	const src = exports.src = [];
+	const t = exports.t = {};
+	let R = 0;
+
+	const createToken = (name, value, isGlobal) => {
+	  const index = R++;
+	  debug_1$2(index, value);
+	  t[name] = index;
+	  src[index] = value;
+	  re[index] = new RegExp(value, isGlobal ? 'g' : undefined);
+	};
+
+	// The following Regular Expressions can be used for tokenizing,
+	// validating, and parsing SemVer version strings.
+
+	// ## Numeric Identifier
+	// A single `0`, or a non-zero digit followed by zero or more digits.
+
+	createToken('NUMERICIDENTIFIER', '0|[1-9]\\d*');
+	createToken('NUMERICIDENTIFIERLOOSE', '[0-9]+');
+
+	// ## Non-numeric Identifier
+	// Zero or more digits, followed by a letter or hyphen, and then zero or
+	// more letters, digits, or hyphens.
+
+	createToken('NONNUMERICIDENTIFIER', '\\d*[a-zA-Z-][a-zA-Z0-9-]*');
+
+	// ## Main Version
+	// Three dot-separated numeric identifiers.
+
+	createToken('MAINVERSION', `(${src[t.NUMERICIDENTIFIER]})\\.` +
+	                   `(${src[t.NUMERICIDENTIFIER]})\\.` +
+	                   `(${src[t.NUMERICIDENTIFIER]})`);
+
+	createToken('MAINVERSIONLOOSE', `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` +
+	                        `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` +
+	                        `(${src[t.NUMERICIDENTIFIERLOOSE]})`);
+
+	// ## Pre-release Version Identifier
+	// A numeric identifier, or a non-numeric identifier.
+
+	createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NUMERICIDENTIFIER]
+}|${src[t.NONNUMERICIDENTIFIER]})`);
+
+	createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NUMERICIDENTIFIERLOOSE]
+}|${src[t.NONNUMERICIDENTIFIER]})`);
+
+	// ## Pre-release Version
+	// Hyphen, followed by one or more dot-separated pre-release version
+	// identifiers.
+
+	createToken('PRERELEASE', `(?:-(${src[t.PRERELEASEIDENTIFIER]
+}(?:\\.${src[t.PRERELEASEIDENTIFIER]})*))`);
+
+	createToken('PRERELEASELOOSE', `(?:-?(${src[t.PRERELEASEIDENTIFIERLOOSE]
+}(?:\\.${src[t.PRERELEASEIDENTIFIERLOOSE]})*))`);
+
+	// ## Build Metadata Identifier
+	// Any combination of digits, letters, or hyphens.
+
+	createToken('BUILDIDENTIFIER', '[0-9A-Za-z-]+');
+
+	// ## Build Metadata
+	// Plus sign, followed by one or more period-separated build metadata
+	// identifiers.
+
+	createToken('BUILD', `(?:\\+(${src[t.BUILDIDENTIFIER]
+}(?:\\.${src[t.BUILDIDENTIFIER]})*))`);
+
+	// ## Full Version String
+	// A main version, followed optionally by a pre-release version and
+	// build metadata.
+
+	// Note that the only major, minor, patch, and pre-release sections of
+	// the version string are capturing groups.  The build metadata is not a
+	// capturing group, because it should not ever be used in version
+	// comparison.
+
+	createToken('FULLPLAIN', `v?${src[t.MAINVERSION]
+}${src[t.PRERELEASE]}?${
+  src[t.BUILD]}?`);
+
+	createToken('FULL', `^${src[t.FULLPLAIN]}$`);
+
+	// like full, but allows v1.2.3 and =1.2.3, which people do sometimes.
+	// also, 1.0.0alpha1 (prerelease without the hyphen) which is pretty
+	// common in the npm registry.
+	createToken('LOOSEPLAIN', `[v=\\s]*${src[t.MAINVERSIONLOOSE]
+}${src[t.PRERELEASELOOSE]}?${
+  src[t.BUILD]}?`);
+
+	createToken('LOOSE', `^${src[t.LOOSEPLAIN]}$`);
+
+	createToken('GTLT', '((?:<|>)?=?)');
+
+	// Something like "2.*" or "1.2.x".
+	// Note that "x.x" is a valid xRange identifer, meaning "any version"
+	// Only the first item is strictly required.
+	createToken('XRANGEIDENTIFIERLOOSE', `${src[t.NUMERICIDENTIFIERLOOSE]}|x|X|\\*`);
+	createToken('XRANGEIDENTIFIER', `${src[t.NUMERICIDENTIFIER]}|x|X|\\*`);
+
+	createToken('XRANGEPLAIN', `[v=\\s]*(${src[t.XRANGEIDENTIFIER]})` +
+	                   `(?:\\.(${src[t.XRANGEIDENTIFIER]})` +
+	                   `(?:\\.(${src[t.XRANGEIDENTIFIER]})` +
+	                   `(?:${src[t.PRERELEASE]})?${
+                     src[t.BUILD]}?` +
+	                   `)?)?`);
+
+	createToken('XRANGEPLAINLOOSE', `[v=\\s]*(${src[t.XRANGEIDENTIFIERLOOSE]})` +
+	                        `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` +
+	                        `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` +
+	                        `(?:${src[t.PRERELEASELOOSE]})?${
+                          src[t.BUILD]}?` +
+	                        `)?)?`);
+
+	createToken('XRANGE', `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAIN]}$`);
+	createToken('XRANGELOOSE', `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAINLOOSE]}$`);
+
+	// Coercion.
+	// Extract anything that could conceivably be a part of a valid semver
+	createToken('COERCE', `${'(^|[^\\d])' +
+              '(\\d{1,'}${MAX_SAFE_COMPONENT_LENGTH}})` +
+	              `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` +
+	              `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` +
+	              `(?:$|[^\\d])`);
+	createToken('COERCERTL', src[t.COERCE], true);
+
+	// Tilde ranges.
+	// Meaning is "reasonably at or greater than"
+	createToken('LONETILDE', '(?:~>?)');
+
+	createToken('TILDETRIM', `(\\s*)${src[t.LONETILDE]}\\s+`, true);
+	exports.tildeTrimReplace = '$1~';
+
+	createToken('TILDE', `^${src[t.LONETILDE]}${src[t.XRANGEPLAIN]}$`);
+	createToken('TILDELOOSE', `^${src[t.LONETILDE]}${src[t.XRANGEPLAINLOOSE]}$`);
+
+	// Caret ranges.
+	// Meaning is "at least and backwards compatible with"
+	createToken('LONECARET', '(?:\\^)');
+
+	createToken('CARETTRIM', `(\\s*)${src[t.LONECARET]}\\s+`, true);
+	exports.caretTrimReplace = '$1^';
+
+	createToken('CARET', `^${src[t.LONECARET]}${src[t.XRANGEPLAIN]}$`);
+	createToken('CARETLOOSE', `^${src[t.LONECARET]}${src[t.XRANGEPLAINLOOSE]}$`);
+
+	// A simple gt/lt/eq thing, or just "" to indicate "any version"
+	createToken('COMPARATORLOOSE', `^${src[t.GTLT]}\\s*(${src[t.LOOSEPLAIN]})$|^$`);
+	createToken('COMPARATOR', `^${src[t.GTLT]}\\s*(${src[t.FULLPLAIN]})$|^$`);
+
+	// An expression to strip any whitespace between the gtlt and the thing
+	// it modifies, so that `> 1.2.3` ==> `>1.2.3`
+	createToken('COMPARATORTRIM', `(\\s*)${src[t.GTLT]
+}\\s*(${src[t.LOOSEPLAIN]}|${src[t.XRANGEPLAIN]})`, true);
+	exports.comparatorTrimReplace = '$1$2$3';
+
+	// Something like `1.2.3 - 1.2.4`
+	// Note that these all use the loose form, because they'll be
+	// checked against either the strict or loose comparator form
+	// later.
+	createToken('HYPHENRANGE', `^\\s*(${src[t.XRANGEPLAIN]})` +
+	                   `\\s+-\\s+` +
+	                   `(${src[t.XRANGEPLAIN]})` +
+	                   `\\s*$`);
+
+	createToken('HYPHENRANGELOOSE', `^\\s*(${src[t.XRANGEPLAINLOOSE]})` +
+	                        `\\s+-\\s+` +
+	                        `(${src[t.XRANGEPLAINLOOSE]})` +
+	                        `\\s*$`);
+
+	// Star ranges basically just allow anything at all.
+	createToken('STAR', '(<|>)?=?\\s*\\*');
+	// >=0.0.0 is like a star
+	createToken('GTE0', '^\\s*>=\\s*0\.0\.0\\s*$');
+	createToken('GTE0PRE', '^\\s*>=\\s*0\.0\.0-0\\s*$');
+	});
+	var re_2$2 = re_1$2.re;
+	var re_3$2 = re_1$2.src;
+	var re_4$2 = re_1$2.t;
+	var re_5$2 = re_1$2.tildeTrimReplace;
+	var re_6$2 = re_1$2.caretTrimReplace;
+	var re_7$2 = re_1$2.comparatorTrimReplace;
+
+	const numeric$2 = /^[0-9]+$/;
+	const compareIdentifiers$4 = (a, b) => {
+	  const anum = numeric$2.test(a);
+	  const bnum = numeric$2.test(b);
+
+	  if (anum && bnum) {
+	    a = +a;
+	    b = +b;
+	  }
+
+	  return a === b ? 0
+	    : (anum && !bnum) ? -1
+	    : (bnum && !anum) ? 1
+	    : a < b ? -1
+	    : 1
+	};
+
+	const rcompareIdentifiers$2 = (a, b) => compareIdentifiers$4(b, a);
+
+	var identifiers$2 = {
+	  compareIdentifiers: compareIdentifiers$4,
+	  rcompareIdentifiers: rcompareIdentifiers$2
+	};
+
+	const { MAX_LENGTH: MAX_LENGTH$7, MAX_SAFE_INTEGER: MAX_SAFE_INTEGER$5 } = constants$2;
+	const { re: re$a, t: t$c } = re_1$2;
+
+	const { compareIdentifiers: compareIdentifiers$5 } = identifiers$2;
+	class SemVer$2 {
+	  constructor (version, options) {
+	    if (!options || typeof options !== 'object') {
+	      options = {
+	        loose: !!options,
+	        includePrerelease: false
+	      };
+	    }
+	    if (version instanceof SemVer$2) {
+	      if (version.loose === !!options.loose &&
+	          version.includePrerelease === !!options.includePrerelease) {
+	        return version
+	      } else {
+	        version = version.version;
+	      }
+	    } else if (typeof version !== 'string') {
+	      throw new TypeError(`Invalid Version: ${version}`)
+	    }
+
+	    if (version.length > MAX_LENGTH$7) {
+	      throw new TypeError(
+	        `version is longer than ${MAX_LENGTH$7} characters`
+	      )
+	    }
+
+	    debug_1$2('SemVer', version, options);
+	    this.options = options;
+	    this.loose = !!options.loose;
+	    // this isn't actually relevant for versions, but keep it so that we
+	    // don't run into trouble passing this.options around.
+	    this.includePrerelease = !!options.includePrerelease;
+
+	    const m = version.trim().match(options.loose ? re$a[t$c.LOOSE] : re$a[t$c.FULL]);
+
+	    if (!m) {
+	      throw new TypeError(`Invalid Version: ${version}`)
+	    }
+
+	    this.raw = version;
+
+	    // these are actually numbers
+	    this.major = +m[1];
+	    this.minor = +m[2];
+	    this.patch = +m[3];
+
+	    if (this.major > MAX_SAFE_INTEGER$5 || this.major < 0) {
+	      throw new TypeError('Invalid major version')
+	    }
+
+	    if (this.minor > MAX_SAFE_INTEGER$5 || this.minor < 0) {
+	      throw new TypeError('Invalid minor version')
+	    }
+
+	    if (this.patch > MAX_SAFE_INTEGER$5 || this.patch < 0) {
+	      throw new TypeError('Invalid patch version')
+	    }
+
+	    // numberify any prerelease numeric ids
+	    if (!m[4]) {
+	      this.prerelease = [];
+	    } else {
+	      this.prerelease = m[4].split('.').map((id) => {
+	        if (/^[0-9]+$/.test(id)) {
+	          const num = +id;
+	          if (num >= 0 && num < MAX_SAFE_INTEGER$5) {
+	            return num
+	          }
+	        }
+	        return id
+	      });
+	    }
+
+	    this.build = m[5] ? m[5].split('.') : [];
+	    this.format();
+	  }
+
+	  format () {
+	    this.version = `${this.major}.${this.minor}.${this.patch}`;
+	    if (this.prerelease.length) {
+	      this.version += `-${this.prerelease.join('.')}`;
+	    }
+	    return this.version
+	  }
+
+	  toString () {
+	    return this.version
+	  }
+
+	  compare (other) {
+	    debug_1$2('SemVer.compare', this.version, this.options, other);
+	    if (!(other instanceof SemVer$2)) {
+	      if (typeof other === 'string' && other === this.version) {
+	        return 0
+	      }
+	      other = new SemVer$2(other, this.options);
+	    }
+
+	    if (other.version === this.version) {
+	      return 0
+	    }
+
+	    return this.compareMain(other) || this.comparePre(other)
+	  }
+
+	  compareMain (other) {
+	    if (!(other instanceof SemVer$2)) {
+	      other = new SemVer$2(other, this.options);
+	    }
+
+	    return (
+	      compareIdentifiers$5(this.major, other.major) ||
+	      compareIdentifiers$5(this.minor, other.minor) ||
+	      compareIdentifiers$5(this.patch, other.patch)
+	    )
+	  }
+
+	  comparePre (other) {
+	    if (!(other instanceof SemVer$2)) {
+	      other = new SemVer$2(other, this.options);
+	    }
+
+	    // NOT having a prerelease is > having one
+	    if (this.prerelease.length && !other.prerelease.length) {
+	      return -1
+	    } else if (!this.prerelease.length && other.prerelease.length) {
+	      return 1
+	    } else if (!this.prerelease.length && !other.prerelease.length) {
+	      return 0
+	    }
+
+	    let i = 0;
+	    do {
+	      const a = this.prerelease[i];
+	      const b = other.prerelease[i];
+	      debug_1$2('prerelease compare', i, a, b);
+	      if (a === undefined && b === undefined) {
+	        return 0
+	      } else if (b === undefined) {
+	        return 1
+	      } else if (a === undefined) {
+	        return -1
+	      } else if (a === b) {
+	        continue
+	      } else {
+	        return compareIdentifiers$5(a, b)
+	      }
+	    } while (++i)
+	  }
+
+	  compareBuild (other) {
+	    if (!(other instanceof SemVer$2)) {
+	      other = new SemVer$2(other, this.options);
+	    }
+
+	    let i = 0;
+	    do {
+	      const a = this.build[i];
+	      const b = other.build[i];
+	      debug_1$2('prerelease compare', i, a, b);
+	      if (a === undefined && b === undefined) {
+	        return 0
+	      } else if (b === undefined) {
+	        return 1
+	      } else if (a === undefined) {
+	        return -1
+	      } else if (a === b) {
+	        continue
+	      } else {
+	        return compareIdentifiers$5(a, b)
+	      }
+	    } while (++i)
+	  }
+
+	  // preminor will bump the version up to the next minor release, and immediately
+	  // down to pre-release. premajor and prepatch work the same way.
+	  inc (release, identifier) {
+	    switch (release) {
+	      case 'premajor':
+	        this.prerelease.length = 0;
+	        this.patch = 0;
+	        this.minor = 0;
+	        this.major++;
+	        this.inc('pre', identifier);
+	        break
+	      case 'preminor':
+	        this.prerelease.length = 0;
+	        this.patch = 0;
+	        this.minor++;
+	        this.inc('pre', identifier);
+	        break
+	      case 'prepatch':
+	        // If this is already a prerelease, it will bump to the next version
+	        // drop any prereleases that might already exist, since they are not
+	        // relevant at this point.
+	        this.prerelease.length = 0;
+	        this.inc('patch', identifier);
+	        this.inc('pre', identifier);
+	        break
+	      // If the input is a non-prerelease version, this acts the same as
+	      // prepatch.
+	      case 'prerelease':
+	        if (this.prerelease.length === 0) {
+	          this.inc('patch', identifier);
+	        }
+	        this.inc('pre', identifier);
+	        break
+
+	      case 'major':
+	        // If this is a pre-major version, bump up to the same major version.
+	        // Otherwise increment major.
+	        // 1.0.0-5 bumps to 1.0.0
+	        // 1.1.0 bumps to 2.0.0
+	        if (
+	          this.minor !== 0 ||
+	          this.patch !== 0 ||
+	          this.prerelease.length === 0
+	        ) {
+	          this.major++;
+	        }
+	        this.minor = 0;
+	        this.patch = 0;
+	        this.prerelease = [];
+	        break
+	      case 'minor':
+	        // If this is a pre-minor version, bump up to the same minor version.
+	        // Otherwise increment minor.
+	        // 1.2.0-5 bumps to 1.2.0
+	        // 1.2.1 bumps to 1.3.0
+	        if (this.patch !== 0 || this.prerelease.length === 0) {
+	          this.minor++;
+	        }
+	        this.patch = 0;
+	        this.prerelease = [];
+	        break
+	      case 'patch':
+	        // If this is not a pre-release version, it will increment the patch.
+	        // If it is a pre-release it will bump up to the same patch version.
+	        // 1.2.0-5 patches to 1.2.0
+	        // 1.2.0 patches to 1.2.1
+	        if (this.prerelease.length === 0) {
+	          this.patch++;
+	        }
+	        this.prerelease = [];
+	        break
+	      // This probably shouldn't be used publicly.
+	      // 1.0.0 'pre' would become 1.0.0-0 which is the wrong direction.
+	      case 'pre':
+	        if (this.prerelease.length === 0) {
+	          this.prerelease = [0];
+	        } else {
+	          let i = this.prerelease.length;
+	          while (--i >= 0) {
+	            if (typeof this.prerelease[i] === 'number') {
+	              this.prerelease[i]++;
+	              i = -2;
+	            }
+	          }
+	          if (i === -1) {
+	            // didn't increment anything
+	            this.prerelease.push(0);
+	          }
+	        }
+	        if (identifier) {
+	          // 1.2.0-beta.1 bumps to 1.2.0-beta.2,
+	          // 1.2.0-beta.fooblz or 1.2.0-beta bumps to 1.2.0-beta.0
+	          if (this.prerelease[0] === identifier) {
+	            if (isNaN(this.prerelease[1])) {
+	              this.prerelease = [identifier, 0];
+	            }
+	          } else {
+	            this.prerelease = [identifier, 0];
+	          }
+	        }
+	        break
+
+	      default:
+	        throw new Error(`invalid increment argument: ${release}`)
+	    }
+	    this.format();
+	    this.raw = this.version;
+	    return this
+	  }
+	}
+
+	var semver$4 = SemVer$2;
+
+	const {MAX_LENGTH: MAX_LENGTH$8} = constants$2;
+	const { re: re$b, t: t$d } = re_1$2;
+
+
+	const parse$4 = (version, options) => {
+	  if (!options || typeof options !== 'object') {
+	    options = {
+	      loose: !!options,
+	      includePrerelease: false
+	    };
+	  }
+
+	  if (version instanceof semver$4) {
+	    return version
+	  }
+
+	  if (typeof version !== 'string') {
+	    return null
+	  }
+
+	  if (version.length > MAX_LENGTH$8) {
+	    return null
+	  }
+
+	  const r = options.loose ? re$b[t$d.LOOSE] : re$b[t$d.FULL];
+	  if (!r.test(version)) {
+	    return null
+	  }
+
+	  try {
+	    return new semver$4(version, options)
+	  } catch (er) {
+	    return null
+	  }
+	};
+
+	var parse_1$4 = parse$4;
+
+	const valid$4 = (version, options) => {
+	  const v = parse_1$4(version, options);
+	  return v ? v.version : null
+	};
+	var valid_1$2 = valid$4;
+
+	const clean$2 = (version, options) => {
+	  const s = parse_1$4(version.trim().replace(/^[=v]+/, ''), options);
+	  return s ? s.version : null
+	};
+	var clean_1$2 = clean$2;
+
+	const inc$2 = (version, release, options, identifier) => {
+	  if (typeof (options) === 'string') {
+	    identifier = options;
+	    options = undefined;
+	  }
+
+	  try {
+	    return new semver$4(version, options).inc(release, identifier).version
+	  } catch (er) {
+	    return null
+	  }
+	};
+	var inc_1$2 = inc$2;
+
+	const compare$2 = (a, b, loose) =>
+	  new semver$4(a, loose).compare(new semver$4(b, loose));
+
+	var compare_1$2 = compare$2;
+
+	const eq$2 = (a, b, loose) => compare_1$2(a, b, loose) === 0;
+	var eq_1$2 = eq$2;
+
+	const diff$2 = (version1, version2) => {
+	  if (eq_1$2(version1, version2)) {
+	    return null
+	  } else {
+	    const v1 = parse_1$4(version1);
+	    const v2 = parse_1$4(version2);
+	    const hasPre = v1.prerelease.length || v2.prerelease.length;
+	    const prefix = hasPre ? 'pre' : '';
+	    const defaultResult = hasPre ? 'prerelease' : '';
+	    for (const key in v1) {
+	      if (key === 'major' || key === 'minor' || key === 'patch') {
+	        if (v1[key] !== v2[key]) {
+	          return prefix + key
+	        }
+	      }
+	    }
+	    return defaultResult // may be undefined
+	  }
+	};
+	var diff_1$2 = diff$2;
+
+	const major$2 = (a, loose) => new semver$4(a, loose).major;
+	var major_1$2 = major$2;
+
+	const minor$2 = (a, loose) => new semver$4(a, loose).minor;
+	var minor_1$2 = minor$2;
+
+	const patch$2 = (a, loose) => new semver$4(a, loose).patch;
+	var patch_1$2 = patch$2;
+
+	const prerelease$2 = (version, options) => {
+	  const parsed = parse_1$4(version, options);
+	  return (parsed && parsed.prerelease.length) ? parsed.prerelease : null
+	};
+	var prerelease_1$2 = prerelease$2;
+
+	const rcompare$2 = (a, b, loose) => compare_1$2(b, a, loose);
+	var rcompare_1$2 = rcompare$2;
+
+	const compareLoose$2 = (a, b) => compare_1$2(a, b, true);
+	var compareLoose_1$2 = compareLoose$2;
+
+	const compareBuild$2 = (a, b, loose) => {
+	  const versionA = new semver$4(a, loose);
+	  const versionB = new semver$4(b, loose);
+	  return versionA.compare(versionB) || versionA.compareBuild(versionB)
+	};
+	var compareBuild_1$2 = compareBuild$2;
+
+	const sort$2 = (list, loose) => list.sort((a, b) => compareBuild_1$2(a, b, loose));
+	var sort_1$2 = sort$2;
+
+	const rsort$2 = (list, loose) => list.sort((a, b) => compareBuild_1$2(b, a, loose));
+	var rsort_1$2 = rsort$2;
+
+	const gt$2 = (a, b, loose) => compare_1$2(a, b, loose) > 0;
+	var gt_1$2 = gt$2;
+
+	const lt$2 = (a, b, loose) => compare_1$2(a, b, loose) < 0;
+	var lt_1$2 = lt$2;
+
+	const neq$2 = (a, b, loose) => compare_1$2(a, b, loose) !== 0;
+	var neq_1$2 = neq$2;
+
+	const gte$2 = (a, b, loose) => compare_1$2(a, b, loose) >= 0;
+	var gte_1$2 = gte$2;
+
+	const lte$2 = (a, b, loose) => compare_1$2(a, b, loose) <= 0;
+	var lte_1$2 = lte$2;
+
+	const cmp$2 = (a, op, b, loose) => {
+	  switch (op) {
+	    case '===':
+	      if (typeof a === 'object')
+	        a = a.version;
+	      if (typeof b === 'object')
+	        b = b.version;
+	      return a === b
+
+	    case '!==':
+	      if (typeof a === 'object')
+	        a = a.version;
+	      if (typeof b === 'object')
+	        b = b.version;
+	      return a !== b
+
+	    case '':
+	    case '=':
+	    case '==':
+	      return eq_1$2(a, b, loose)
+
+	    case '!=':
+	      return neq_1$2(a, b, loose)
+
+	    case '>':
+	      return gt_1$2(a, b, loose)
+
+	    case '>=':
+	      return gte_1$2(a, b, loose)
+
+	    case '<':
+	      return lt_1$2(a, b, loose)
+
+	    case '<=':
+	      return lte_1$2(a, b, loose)
+
+	    default:
+	      throw new TypeError(`Invalid operator: ${op}`)
+	  }
+	};
+	var cmp_1$2 = cmp$2;
+
+	const {re: re$c, t: t$e} = re_1$2;
+
+	const coerce$2 = (version, options) => {
+	  if (version instanceof semver$4) {
+	    return version
+	  }
+
+	  if (typeof version === 'number') {
+	    version = String(version);
+	  }
+
+	  if (typeof version !== 'string') {
+	    return null
+	  }
+
+	  options = options || {};
+
+	  let match = null;
+	  if (!options.rtl) {
+	    match = version.match(re$c[t$e.COERCE]);
+	  } else {
+	    // Find the right-most coercible string that does not share
+	    // a terminus with a more left-ward coercible string.
+	    // Eg, '1.2.3.4' wants to coerce '2.3.4', not '3.4' or '4'
+	    //
+	    // Walk through the string checking with a /g regexp
+	    // Manually set the index so as to pick up overlapping matches.
+	    // Stop when we get a match that ends at the string end, since no
+	    // coercible string can be more right-ward without the same terminus.
+	    let next;
+	    while ((next = re$c[t$e.COERCERTL].exec(version)) &&
+	        (!match || match.index + match[0].length !== version.length)
+	    ) {
+	      if (!match ||
+	            next.index + next[0].length !== match.index + match[0].length) {
+	        match = next;
+	      }
+	      re$c[t$e.COERCERTL].lastIndex = next.index + next[1].length + next[2].length;
+	    }
+	    // leave it in a clean state
+	    re$c[t$e.COERCERTL].lastIndex = -1;
+	  }
+
+	  if (match === null)
+	    return null
+
+	  return parse_1$4(`${match[2]}.${match[3] || '0'}.${match[4] || '0'}`, options)
+	};
+	var coerce_1$2 = coerce$2;
+
+	// hoisted class for cyclic dependency
+	class Range$2 {
+	  constructor (range, options) {
+	    if (!options || typeof options !== 'object') {
+	      options = {
+	        loose: !!options,
+	        includePrerelease: false
+	      };
+	    }
+
+	    if (range instanceof Range$2) {
+	      if (
+	        range.loose === !!options.loose &&
+	        range.includePrerelease === !!options.includePrerelease
+	      ) {
+	        return range
+	      } else {
+	        return new Range$2(range.raw, options)
+	      }
+	    }
+
+	    if (range instanceof comparator$2) {
+	      // just put it in the set and return
+	      this.raw = range.value;
+	      this.set = [[range]];
+	      this.format();
+	      return this
+	    }
+
+	    this.options = options;
+	    this.loose = !!options.loose;
+	    this.includePrerelease = !!options.includePrerelease;
+
+	    // First, split based on boolean or ||
+	    this.raw = range;
+	    this.set = range
+	      .split(/\s*\|\|\s*/)
+	      // map the range to a 2d array of comparators
+	      .map(range => this.parseRange(range.trim()))
+	      // throw out any comparator lists that are empty
+	      // this generally means that it was not a valid range, which is allowed
+	      // in loose mode, but will still throw if the WHOLE range is invalid.
+	      .filter(c => c.length);
+
+	    if (!this.set.length) {
+	      throw new TypeError(`Invalid SemVer Range: ${range}`)
+	    }
+
+	    this.format();
+	  }
+
+	  format () {
+	    this.range = this.set
+	      .map((comps) => {
+	        return comps.join(' ').trim()
+	      })
+	      .join('||')
+	      .trim();
+	    return this.range
+	  }
+
+	  toString () {
+	    return this.range
+	  }
+
+	  parseRange (range) {
+	    const loose = this.options.loose;
+	    range = range.trim();
+	    // `1.2.3 - 1.2.4` => `>=1.2.3 <=1.2.4`
+	    const hr = loose ? re$d[t$f.HYPHENRANGELOOSE] : re$d[t$f.HYPHENRANGE];
+	    range = range.replace(hr, hyphenReplace$2(this.options.includePrerelease));
+	    debug_1$2('hyphen replace', range);
+	    // `> 1.2.3 < 1.2.5` => `>1.2.3 <1.2.5`
+	    range = range.replace(re$d[t$f.COMPARATORTRIM], comparatorTrimReplace$2);
+	    debug_1$2('comparator trim', range, re$d[t$f.COMPARATORTRIM]);
+
+	    // `~ 1.2.3` => `~1.2.3`
+	    range = range.replace(re$d[t$f.TILDETRIM], tildeTrimReplace$2);
+
+	    // `^ 1.2.3` => `^1.2.3`
+	    range = range.replace(re$d[t$f.CARETTRIM], caretTrimReplace$2);
+
+	    // normalize spaces
+	    range = range.split(/\s+/).join(' ');
+
+	    // At this point, the range is completely trimmed and
+	    // ready to be split into comparators.
+
+	    const compRe = loose ? re$d[t$f.COMPARATORLOOSE] : re$d[t$f.COMPARATOR];
+	    return range
+	      .split(' ')
+	      .map(comp => parseComparator$2(comp, this.options))
+	      .join(' ')
+	      .split(/\s+/)
+	      .map(comp => replaceGTE0$2(comp, this.options))
+	      // in loose mode, throw out any that are not valid comparators
+	      .filter(this.options.loose ? comp => !!comp.match(compRe) : () => true)
+	      .map(comp => new comparator$2(comp, this.options))
+	  }
+
+	  intersects (range, options) {
+	    if (!(range instanceof Range$2)) {
+	      throw new TypeError('a Range is required')
+	    }
+
+	    return this.set.some((thisComparators) => {
+	      return (
+	        isSatisfiable$2(thisComparators, options) &&
+	        range.set.some((rangeComparators) => {
+	          return (
+	            isSatisfiable$2(rangeComparators, options) &&
+	            thisComparators.every((thisComparator) => {
+	              return rangeComparators.every((rangeComparator) => {
+	                return thisComparator.intersects(rangeComparator, options)
+	              })
+	            })
+	          )
+	        })
+	      )
+	    })
+	  }
+
+	  // if ANY of the sets match ALL of its comparators, then pass
+	  test (version) {
+	    if (!version) {
+	      return false
+	    }
+
+	    if (typeof version === 'string') {
+	      try {
+	        version = new semver$4(version, this.options);
+	      } catch (er) {
+	        return false
+	      }
+	    }
+
+	    for (let i = 0; i < this.set.length; i++) {
+	      if (testSet$2(this.set[i], version, this.options)) {
+	        return true
+	      }
+	    }
+	    return false
+	  }
+	}
+	var range$3 = Range$2;
+
+
+
+
+	const {
+	  re: re$d,
+	  t: t$f,
+	  comparatorTrimReplace: comparatorTrimReplace$2,
+	  tildeTrimReplace: tildeTrimReplace$2,
+	  caretTrimReplace: caretTrimReplace$2
+	} = re_1$2;
+
+	// take a set of comparators and determine whether there
+	// exists a version which can satisfy it
+	const isSatisfiable$2 = (comparators, options) => {
+	  let result = true;
+	  const remainingComparators = comparators.slice();
+	  let testComparator = remainingComparators.pop();
+
+	  while (result && remainingComparators.length) {
+	    result = remainingComparators.every((otherComparator) => {
+	      return testComparator.intersects(otherComparator, options)
+	    });
+
+	    testComparator = remainingComparators.pop();
+	  }
+
+	  return result
+	};
+
+	// comprised of xranges, tildes, stars, and gtlt's at this point.
+	// already replaced the hyphen ranges
+	// turn into a set of JUST comparators.
+	const parseComparator$2 = (comp, options) => {
+	  debug_1$2('comp', comp, options);
+	  comp = replaceCarets$2(comp, options);
+	  debug_1$2('caret', comp);
+	  comp = replaceTildes$2(comp, options);
+	  debug_1$2('tildes', comp);
+	  comp = replaceXRanges$2(comp, options);
+	  debug_1$2('xrange', comp);
+	  comp = replaceStars$2(comp, options);
+	  debug_1$2('stars', comp);
+	  return comp
+	};
+
+	const isX$2 = id => !id || id.toLowerCase() === 'x' || id === '*';
+
+	// ~, ~> --> * (any, kinda silly)
+	// ~2, ~2.x, ~2.x.x, ~>2, ~>2.x ~>2.x.x --> >=2.0.0 <3.0.0-0
+	// ~2.0, ~2.0.x, ~>2.0, ~>2.0.x --> >=2.0.0 <2.1.0-0
+	// ~1.2, ~1.2.x, ~>1.2, ~>1.2.x --> >=1.2.0 <1.3.0-0
+	// ~1.2.3, ~>1.2.3 --> >=1.2.3 <1.3.0-0
+	// ~1.2.0, ~>1.2.0 --> >=1.2.0 <1.3.0-0
+	const replaceTildes$2 = (comp, options) =>
+	  comp.trim().split(/\s+/).map((comp) => {
+	    return replaceTilde$2(comp, options)
+	  }).join(' ');
+
+	const replaceTilde$2 = (comp, options) => {
+	  const r = options.loose ? re$d[t$f.TILDELOOSE] : re$d[t$f.TILDE];
+	  return comp.replace(r, (_, M, m, p, pr) => {
+	    debug_1$2('tilde', comp, _, M, m, p, pr);
+	    let ret;
+
+	    if (isX$2(M)) {
+	      ret = '';
+	    } else if (isX$2(m)) {
+	      ret = `>=${M}.0.0 <${+M + 1}.0.0-0`;
+	    } else if (isX$2(p)) {
+	      // ~1.2 == >=1.2.0 <1.3.0-0
+	      ret = `>=${M}.${m}.0 <${M}.${+m + 1}.0-0`;
+	    } else if (pr) {
+	      debug_1$2('replaceTilde pr', pr);
+	      ret = `>=${M}.${m}.${p}-${pr
+      } <${M}.${+m + 1}.0-0`;
+	    } else {
+	      // ~1.2.3 == >=1.2.3 <1.3.0-0
+	      ret = `>=${M}.${m}.${p
+      } <${M}.${+m + 1}.0-0`;
+	    }
+
+	    debug_1$2('tilde return', ret);
+	    return ret
+	  })
+	};
+
+	// ^ --> * (any, kinda silly)
+	// ^2, ^2.x, ^2.x.x --> >=2.0.0 <3.0.0-0
+	// ^2.0, ^2.0.x --> >=2.0.0 <3.0.0-0
+	// ^1.2, ^1.2.x --> >=1.2.0 <2.0.0-0
+	// ^1.2.3 --> >=1.2.3 <2.0.0-0
+	// ^1.2.0 --> >=1.2.0 <2.0.0-0
+	const replaceCarets$2 = (comp, options) =>
+	  comp.trim().split(/\s+/).map((comp) => {
+	    return replaceCaret$2(comp, options)
+	  }).join(' ');
+
+	const replaceCaret$2 = (comp, options) => {
+	  debug_1$2('caret', comp, options);
+	  const r = options.loose ? re$d[t$f.CARETLOOSE] : re$d[t$f.CARET];
+	  const z = options.includePrerelease ? '-0' : '';
+	  return comp.replace(r, (_, M, m, p, pr) => {
+	    debug_1$2('caret', comp, _, M, m, p, pr);
+	    let ret;
+
+	    if (isX$2(M)) {
+	      ret = '';
+	    } else if (isX$2(m)) {
+	      ret = `>=${M}.0.0${z} <${+M + 1}.0.0-0`;
+	    } else if (isX$2(p)) {
+	      if (M === '0') {
+	        ret = `>=${M}.${m}.0${z} <${M}.${+m + 1}.0-0`;
+	      } else {
+	        ret = `>=${M}.${m}.0${z} <${+M + 1}.0.0-0`;
+	      }
+	    } else if (pr) {
+	      debug_1$2('replaceCaret pr', pr);
+	      if (M === '0') {
+	        if (m === '0') {
+	          ret = `>=${M}.${m}.${p}-${pr
+          } <${M}.${m}.${+p + 1}-0`;
+	        } else {
+	          ret = `>=${M}.${m}.${p}-${pr
+          } <${M}.${+m + 1}.0-0`;
+	        }
+	      } else {
+	        ret = `>=${M}.${m}.${p}-${pr
+        } <${+M + 1}.0.0-0`;
+	      }
+	    } else {
+	      debug_1$2('no pr');
+	      if (M === '0') {
+	        if (m === '0') {
+	          ret = `>=${M}.${m}.${p
+          }${z} <${M}.${m}.${+p + 1}-0`;
+	        } else {
+	          ret = `>=${M}.${m}.${p
+          }${z} <${M}.${+m + 1}.0-0`;
+	        }
+	      } else {
+	        ret = `>=${M}.${m}.${p
+        } <${+M + 1}.0.0-0`;
+	      }
+	    }
+
+	    debug_1$2('caret return', ret);
+	    return ret
+	  })
+	};
+
+	const replaceXRanges$2 = (comp, options) => {
+	  debug_1$2('replaceXRanges', comp, options);
+	  return comp.split(/\s+/).map((comp) => {
+	    return replaceXRange$2(comp, options)
+	  }).join(' ')
+	};
+
+	const replaceXRange$2 = (comp, options) => {
+	  comp = comp.trim();
+	  const r = options.loose ? re$d[t$f.XRANGELOOSE] : re$d[t$f.XRANGE];
+	  return comp.replace(r, (ret, gtlt, M, m, p, pr) => {
+	    debug_1$2('xRange', comp, ret, gtlt, M, m, p, pr);
+	    const xM = isX$2(M);
+	    const xm = xM || isX$2(m);
+	    const xp = xm || isX$2(p);
+	    const anyX = xp;
+
+	    if (gtlt === '=' && anyX) {
+	      gtlt = '';
+	    }
+
+	    // if we're including prereleases in the match, then we need
+	    // to fix this to -0, the lowest possible prerelease value
+	    pr = options.includePrerelease ? '-0' : '';
+
+	    if (xM) {
+	      if (gtlt === '>' || gtlt === '<') {
+	        // nothing is allowed
+	        ret = '<0.0.0-0';
+	      } else {
+	        // nothing is forbidden
+	        ret = '*';
+	      }
+	    } else if (gtlt && anyX) {
+	      // we know patch is an x, because we have any x at all.
+	      // replace X with 0
+	      if (xm) {
+	        m = 0;
+	      }
+	      p = 0;
+
+	      if (gtlt === '>') {
+	        // >1 => >=2.0.0
+	        // >1.2 => >=1.3.0
+	        gtlt = '>=';
+	        if (xm) {
+	          M = +M + 1;
+	          m = 0;
+	          p = 0;
+	        } else {
+	          m = +m + 1;
+	          p = 0;
+	        }
+	      } else if (gtlt === '<=') {
+	        // <=0.7.x is actually <0.8.0, since any 0.7.x should
+	        // pass.  Similarly, <=7.x is actually <8.0.0, etc.
+	        gtlt = '<';
+	        if (xm) {
+	          M = +M + 1;
+	        } else {
+	          m = +m + 1;
+	        }
+	      }
+
+	      if (gtlt === '<')
+	        pr = '-0';
+
+	      ret = `${gtlt + M}.${m}.${p}${pr}`;
+	    } else if (xm) {
+	      ret = `>=${M}.0.0${pr} <${+M + 1}.0.0-0`;
+	    } else if (xp) {
+	      ret = `>=${M}.${m}.0${pr
+      } <${M}.${+m + 1}.0-0`;
+	    }
+
+	    debug_1$2('xRange return', ret);
+
+	    return ret
+	  })
+	};
+
+	// Because * is AND-ed with everything else in the comparator,
+	// and '' means "any version", just remove the *s entirely.
+	const replaceStars$2 = (comp, options) => {
+	  debug_1$2('replaceStars', comp, options);
+	  // Looseness is ignored here.  star is always as loose as it gets!
+	  return comp.trim().replace(re$d[t$f.STAR], '')
+	};
+
+	const replaceGTE0$2 = (comp, options) => {
+	  debug_1$2('replaceGTE0', comp, options);
+	  return comp.trim()
+	    .replace(re$d[options.includePrerelease ? t$f.GTE0PRE : t$f.GTE0], '')
+	};
+
+	// This function is passed to string.replace(re[t.HYPHENRANGE])
+	// M, m, patch, prerelease, build
+	// 1.2 - 3.4.5 => >=1.2.0 <=3.4.5
+	// 1.2.3 - 3.4 => >=1.2.0 <3.5.0-0 Any 3.4.x will do
+	// 1.2 - 3.4 => >=1.2.0 <3.5.0-0
+	const hyphenReplace$2 = incPr => ($0,
+	  from, fM, fm, fp, fpr, fb,
+	  to, tM, tm, tp, tpr, tb) => {
+	  if (isX$2(fM)) {
+	    from = '';
+	  } else if (isX$2(fm)) {
+	    from = `>=${fM}.0.0${incPr ? '-0' : ''}`;
+	  } else if (isX$2(fp)) {
+	    from = `>=${fM}.${fm}.0${incPr ? '-0' : ''}`;
+	  } else if (fpr) {
+	    from = `>=${from}`;
+	  } else {
+	    from = `>=${from}${incPr ? '-0' : ''}`;
+	  }
+
+	  if (isX$2(tM)) {
+	    to = '';
+	  } else if (isX$2(tm)) {
+	    to = `<${+tM + 1}.0.0-0`;
+	  } else if (isX$2(tp)) {
+	    to = `<${tM}.${+tm + 1}.0-0`;
+	  } else if (tpr) {
+	    to = `<=${tM}.${tm}.${tp}-${tpr}`;
+	  } else if (incPr) {
+	    to = `<${tM}.${tm}.${+tp + 1}-0`;
+	  } else {
+	    to = `<=${to}`;
+	  }
+
+	  return (`${from} ${to}`).trim()
+	};
+
+	const testSet$2 = (set, version, options) => {
+	  for (let i = 0; i < set.length; i++) {
+	    if (!set[i].test(version)) {
+	      return false
+	    }
+	  }
+
+	  if (version.prerelease.length && !options.includePrerelease) {
+	    // Find the set of versions that are allowed to have prereleases
+	    // For example, ^1.2.3-pr.1 desugars to >=1.2.3-pr.1 <2.0.0
+	    // That should allow `1.2.3-pr.2` to pass.
+	    // However, `1.2.4-alpha.notready` should NOT be allowed,
+	    // even though it's within the range set by the comparators.
+	    for (let i = 0; i < set.length; i++) {
+	      debug_1$2(set[i].semver);
+	      if (set[i].semver === comparator$2.ANY) {
+	        continue
+	      }
+
+	      if (set[i].semver.prerelease.length > 0) {
+	        const allowed = set[i].semver;
+	        if (allowed.major === version.major &&
+	            allowed.minor === version.minor &&
+	            allowed.patch === version.patch) {
+	          return true
+	        }
+	      }
+	    }
+
+	    // Version has a -pre, but it's not one of the ones we like.
+	    return false
+	  }
+
+	  return true
+	};
+
+	const ANY$6 = Symbol('SemVer ANY');
+	// hoisted class for cyclic dependency
+	class Comparator$2 {
+	  static get ANY () {
+	    return ANY$6
+	  }
+	  constructor (comp, options) {
+	    if (!options || typeof options !== 'object') {
+	      options = {
+	        loose: !!options,
+	        includePrerelease: false
+	      };
+	    }
+
+	    if (comp instanceof Comparator$2) {
+	      if (comp.loose === !!options.loose) {
+	        return comp
+	      } else {
+	        comp = comp.value;
+	      }
+	    }
+
+	    debug_1$2('comparator', comp, options);
+	    this.options = options;
+	    this.loose = !!options.loose;
+	    this.parse(comp);
+
+	    if (this.semver === ANY$6) {
+	      this.value = '';
+	    } else {
+	      this.value = this.operator + this.semver.version;
+	    }
+
+	    debug_1$2('comp', this);
+	  }
+
+	  parse (comp) {
+	    const r = this.options.loose ? re$e[t$g.COMPARATORLOOSE] : re$e[t$g.COMPARATOR];
+	    const m = comp.match(r);
+
+	    if (!m) {
+	      throw new TypeError(`Invalid comparator: ${comp}`)
+	    }
+
+	    this.operator = m[1] !== undefined ? m[1] : '';
+	    if (this.operator === '=') {
+	      this.operator = '';
+	    }
+
+	    // if it literally is just '>' or '' then allow anything.
+	    if (!m[2]) {
+	      this.semver = ANY$6;
+	    } else {
+	      this.semver = new semver$4(m[2], this.options.loose);
+	    }
+	  }
+
+	  toString () {
+	    return this.value
+	  }
+
+	  test (version) {
+	    debug_1$2('Comparator.test', version, this.options.loose);
+
+	    if (this.semver === ANY$6 || version === ANY$6) {
+	      return true
+	    }
+
+	    if (typeof version === 'string') {
+	      try {
+	        version = new semver$4(version, this.options);
+	      } catch (er) {
+	        return false
+	      }
+	    }
+
+	    return cmp_1$2(version, this.operator, this.semver, this.options)
+	  }
+
+	  intersects (comp, options) {
+	    if (!(comp instanceof Comparator$2)) {
+	      throw new TypeError('a Comparator is required')
+	    }
+
+	    if (!options || typeof options !== 'object') {
+	      options = {
+	        loose: !!options,
+	        includePrerelease: false
+	      };
+	    }
+
+	    if (this.operator === '') {
+	      if (this.value === '') {
+	        return true
+	      }
+	      return new range$3(comp.value, options).test(this.value)
+	    } else if (comp.operator === '') {
+	      if (comp.value === '') {
+	        return true
+	      }
+	      return new range$3(this.value, options).test(comp.semver)
+	    }
+
+	    const sameDirectionIncreasing =
+	      (this.operator === '>=' || this.operator === '>') &&
+	      (comp.operator === '>=' || comp.operator === '>');
+	    const sameDirectionDecreasing =
+	      (this.operator === '<=' || this.operator === '<') &&
+	      (comp.operator === '<=' || comp.operator === '<');
+	    const sameSemVer = this.semver.version === comp.semver.version;
+	    const differentDirectionsInclusive =
+	      (this.operator === '>=' || this.operator === '<=') &&
+	      (comp.operator === '>=' || comp.operator === '<=');
+	    const oppositeDirectionsLessThan =
+	      cmp_1$2(this.semver, '<', comp.semver, options) &&
+	      (this.operator === '>=' || this.operator === '>') &&
+	        (comp.operator === '<=' || comp.operator === '<');
+	    const oppositeDirectionsGreaterThan =
+	      cmp_1$2(this.semver, '>', comp.semver, options) &&
+	      (this.operator === '<=' || this.operator === '<') &&
+	        (comp.operator === '>=' || comp.operator === '>');
+
+	    return (
+	      sameDirectionIncreasing ||
+	      sameDirectionDecreasing ||
+	      (sameSemVer && differentDirectionsInclusive) ||
+	      oppositeDirectionsLessThan ||
+	      oppositeDirectionsGreaterThan
+	    )
+	  }
+	}
+
+	var comparator$2 = Comparator$2;
+
+	const {re: re$e, t: t$g} = re_1$2;
+
+	const satisfies$2 = (version, range, options) => {
+	  try {
+	    range = new range$3(range, options);
+	  } catch (er) {
+	    return false
+	  }
+	  return range.test(version)
+	};
+	var satisfies_1$2 = satisfies$2;
+
+	// Mostly just for testing and legacy API reasons
+	const toComparators$2 = (range, options) =>
+	  new range$3(range, options).set
+	    .map(comp => comp.map(c => c.value).join(' ').trim().split(' '));
+
+	var toComparators_1$2 = toComparators$2;
+
+	const maxSatisfying$2 = (versions, range, options) => {
+	  let max = null;
+	  let maxSV = null;
+	  let rangeObj = null;
+	  try {
+	    rangeObj = new range$3(range, options);
+	  } catch (er) {
+	    return null
+	  }
+	  versions.forEach((v) => {
+	    if (rangeObj.test(v)) {
+	      // satisfies(v, range, options)
+	      if (!max || maxSV.compare(v) === -1) {
+	        // compare(max, v, true)
+	        max = v;
+	        maxSV = new semver$4(max, options);
+	      }
+	    }
+	  });
+	  return max
+	};
+	var maxSatisfying_1$2 = maxSatisfying$2;
+
+	const minSatisfying$2 = (versions, range, options) => {
+	  let min = null;
+	  let minSV = null;
+	  let rangeObj = null;
+	  try {
+	    rangeObj = new range$3(range, options);
+	  } catch (er) {
+	    return null
+	  }
+	  versions.forEach((v) => {
+	    if (rangeObj.test(v)) {
+	      // satisfies(v, range, options)
+	      if (!min || minSV.compare(v) === 1) {
+	        // compare(min, v, true)
+	        min = v;
+	        minSV = new semver$4(min, options);
+	      }
+	    }
+	  });
+	  return min
+	};
+	var minSatisfying_1$2 = minSatisfying$2;
+
+	const minVersion$2 = (range, loose) => {
+	  range = new range$3(range, loose);
+
+	  let minver = new semver$4('0.0.0');
+	  if (range.test(minver)) {
+	    return minver
+	  }
+
+	  minver = new semver$4('0.0.0-0');
+	  if (range.test(minver)) {
+	    return minver
+	  }
+
+	  minver = null;
+	  for (let i = 0; i < range.set.length; ++i) {
+	    const comparators = range.set[i];
+
+	    comparators.forEach((comparator) => {
+	      // Clone to avoid manipulating the comparator's semver object.
+	      const compver = new semver$4(comparator.semver.version);
+	      switch (comparator.operator) {
+	        case '>':
+	          if (compver.prerelease.length === 0) {
+	            compver.patch++;
+	          } else {
+	            compver.prerelease.push(0);
+	          }
+	          compver.raw = compver.format();
+	          /* fallthrough */
+	        case '':
+	        case '>=':
+	          if (!minver || gt_1$2(minver, compver)) {
+	            minver = compver;
+	          }
+	          break
+	        case '<':
+	        case '<=':
+	          /* Ignore maximum versions */
+	          break
+	        /* istanbul ignore next */
+	        default:
+	          throw new Error(`Unexpected operation: ${comparator.operator}`)
+	      }
+	    });
+	  }
+
+	  if (minver && range.test(minver)) {
+	    return minver
+	  }
+
+	  return null
+	};
+	var minVersion_1$2 = minVersion$2;
+
+	const validRange$2 = (range, options) => {
+	  try {
+	    // Return '*' instead of '' so that truthiness works.
+	    // This will throw if it's invalid anyway
+	    return new range$3(range, options).range || '*'
+	  } catch (er) {
+	    return null
+	  }
+	};
+	var valid$5 = validRange$2;
+
+	const {ANY: ANY$7} = comparator$2;
+
+
+
+
+
+
+
+	const outside$2 = (version, range, hilo, options) => {
+	  version = new semver$4(version, options);
+	  range = new range$3(range, options);
+
+	  let gtfn, ltefn, ltfn, comp, ecomp;
+	  switch (hilo) {
+	    case '>':
+	      gtfn = gt_1$2;
+	      ltefn = lte_1$2;
+	      ltfn = lt_1$2;
+	      comp = '>';
+	      ecomp = '>=';
+	      break
+	    case '<':
+	      gtfn = lt_1$2;
+	      ltefn = gte_1$2;
+	      ltfn = gt_1$2;
+	      comp = '<';
+	      ecomp = '<=';
+	      break
+	    default:
+	      throw new TypeError('Must provide a hilo val of "<" or ">"')
+	  }
+
+	  // If it satisifes the range it is not outside
+	  if (satisfies_1$2(version, range, options)) {
+	    return false
+	  }
+
+	  // From now on, variable terms are as if we're in "gtr" mode.
+	  // but note that everything is flipped for the "ltr" function.
+
+	  for (let i = 0; i < range.set.length; ++i) {
+	    const comparators = range.set[i];
+
+	    let high = null;
+	    let low = null;
+
+	    comparators.forEach((comparator) => {
+	      if (comparator.semver === ANY$7) {
+	        comparator = new comparator$2('>=0.0.0');
+	      }
+	      high = high || comparator;
+	      low = low || comparator;
+	      if (gtfn(comparator.semver, high.semver, options)) {
+	        high = comparator;
+	      } else if (ltfn(comparator.semver, low.semver, options)) {
+	        low = comparator;
+	      }
+	    });
+
+	    // If the edge version comparator has a operator then our version
+	    // isn't outside it
+	    if (high.operator === comp || high.operator === ecomp) {
+	      return false
+	    }
+
+	    // If the lowest version comparator has an operator and our version
+	    // is less than it then it isn't higher than the range
+	    if ((!low.operator || low.operator === comp) &&
+	        ltefn(version, low.semver)) {
+	      return false
+	    } else if (low.operator === ecomp && ltfn(version, low.semver)) {
+	      return false
+	    }
+	  }
+	  return true
+	};
+
+	var outside_1$2 = outside$2;
+
+	// Determine if version is greater than all the versions possible in the range.
+
+	const gtr$2 = (version, range, options) => outside_1$2(version, range, '>', options);
+	var gtr_1$2 = gtr$2;
+
+	// Determine if version is less than all the versions possible in the range
+	const ltr$2 = (version, range, options) => outside_1$2(version, range, '<', options);
+	var ltr_1$2 = ltr$2;
+
+	const intersects$2 = (r1, r2, options) => {
+	  r1 = new range$3(r1, options);
+	  r2 = new range$3(r2, options);
+	  return r1.intersects(r2)
+	};
+	var intersects_1$2 = intersects$2;
+
+	// given a set of versions and a range, create a "simplified" range
+	// that includes the same versions that the original range does
+	// If the original range is shorter than the simplified one, return that.
+
+
+	var simplify$2 = (versions, range, options) => {
+	  const set = [];
+	  let min = null;
+	  let prev = null;
+	  const v = versions.sort((a, b) => compare_1$2(a, b, options));
+	  for (const version of v) {
+	    const included = satisfies_1$2(version, range, options);
+	    if (included) {
+	      prev = version;
+	      if (!min)
+	        min = version;
+	    } else {
+	      if (prev) {
+	        set.push([min, prev]);
+	      }
+	      prev = null;
+	      min = null;
+	    }
+	  }
+	  if (min)
+	    set.push([min, null]);
+
+	  const ranges = [];
+	  for (const [min, max] of set) {
+	    if (min === max)
+	      ranges.push(min);
+	    else if (!max && min === v[0])
+	      ranges.push('*');
+	    else if (!max)
+	      ranges.push(`>=${min}`);
+	    else if (min === v[0])
+	      ranges.push(`<=${max}`);
+	    else
+	      ranges.push(`${min} - ${max}`);
+	  }
+	  const simplified = ranges.join(' || ');
+	  const original = typeof range.raw === 'string' ? range.raw : String(range);
+	  return simplified.length < original.length ? simplified : range
+	};
+
+	const { ANY: ANY$8 } = comparator$2;
+
+
+
+	// Complex range `r1 || r2 || ...` is a subset of `R1 || R2 || ...` iff:
+	// - Every simple range `r1, r2, ...` is a subset of some `R1, R2, ...`
+	//
+	// Simple range `c1 c2 ...` is a subset of simple range `C1 C2 ...` iff:
+	// - If c is only the ANY comparator
+	//   - If C is only the ANY comparator, return true
+	//   - Else return false
+	// - Let EQ be the set of = comparators in c
+	// - If EQ is more than one, return true (null set)
+	// - Let GT be the highest > or >= comparator in c
+	// - Let LT be the lowest < or <= comparator in c
+	// - If GT and LT, and GT.semver > LT.semver, return true (null set)
+	// - If EQ
+	//   - If GT, and EQ does not satisfy GT, return true (null set)
+	//   - If LT, and EQ does not satisfy LT, return true (null set)
+	//   - If EQ satisfies every C, return true
+	//   - Else return false
+	// - If GT
+	//   - If GT is lower than any > or >= comp in C, return false
+	//   - If GT is >=, and GT.semver does not satisfy every C, return false
+	// - If LT
+	//   - If LT.semver is greater than that of any > comp in C, return false
+	//   - If LT is <=, and LT.semver does not satisfy every C, return false
+	// - If any C is a = range, and GT or LT are set, return false
+	// - Else return true
+
+	const subset$2 = (sub, dom, options) => {
+	  sub = new range$3(sub, options);
+	  dom = new range$3(dom, options);
+	  let sawNonNull = false;
+
+	  OUTER: for (const simpleSub of sub.set) {
+	    for (const simpleDom of dom.set) {
+	      const isSub = simpleSubset$2(simpleSub, simpleDom, options);
+	      sawNonNull = sawNonNull || isSub !== null;
+	      if (isSub)
+	        continue OUTER
+	    }
+	    // the null set is a subset of everything, but null simple ranges in
+	    // a complex range should be ignored.  so if we saw a non-null range,
+	    // then we know this isn't a subset, but if EVERY simple range was null,
+	    // then it is a subset.
+	    if (sawNonNull)
+	      return false
+	  }
+	  return true
+	};
+
+	const simpleSubset$2 = (sub, dom, options) => {
+	  if (sub.length === 1 && sub[0].semver === ANY$8)
+	    return dom.length === 1 && dom[0].semver === ANY$8
+
+	  const eqSet = new Set();
+	  let gt, lt;
+	  for (const c of sub) {
+	    if (c.operator === '>' || c.operator === '>=')
+	      gt = higherGT$2(gt, c, options);
+	    else if (c.operator === '<' || c.operator === '<=')
+	      lt = lowerLT$2(lt, c, options);
+	    else
+	      eqSet.add(c.semver);
+	  }
+
+	  if (eqSet.size > 1)
+	    return null
+
+	  let gtltComp;
+	  if (gt && lt) {
+	    gtltComp = compare_1$2(gt.semver, lt.semver, options);
+	    if (gtltComp > 0)
+	      return null
+	    else if (gtltComp === 0 && (gt.operator !== '>=' || lt.operator !== '<='))
+	      return null
+	  }
+
+	  // will iterate one or zero times
+	  for (const eq of eqSet) {
+	    if (gt && !satisfies_1$2(eq, String(gt), options))
+	      return null
+
+	    if (lt && !satisfies_1$2(eq, String(lt), options))
+	      return null
+
+	    for (const c of dom) {
+	      if (!satisfies_1$2(eq, String(c), options))
+	        return false
+	    }
+	    return true
+	  }
+
+	  let higher, lower;
+	  let hasDomLT, hasDomGT;
+	  for (const c of dom) {
+	    hasDomGT = hasDomGT || c.operator === '>' || c.operator === '>=';
+	    hasDomLT = hasDomLT || c.operator === '<' || c.operator === '<=';
+	    if (gt) {
+	      if (c.operator === '>' || c.operator === '>=') {
+	        higher = higherGT$2(gt, c, options);
+	        if (higher === c)
+	          return false
+	      } else if (gt.operator === '>=' && !satisfies_1$2(gt.semver, String(c), options))
+	        return false
+	    }
+	    if (lt) {
+	      if (c.operator === '<' || c.operator === '<=') {
+	        lower = lowerLT$2(lt, c, options);
+	        if (lower === c)
+	          return false
+	      } else if (lt.operator === '<=' && !satisfies_1$2(lt.semver, String(c), options))
+	        return false
+	    }
+	    if (!c.operator && (lt || gt) && gtltComp !== 0)
+	      return false
+	  }
+
+	  // if there was a < or >, and nothing in the dom, then must be false
+	  // UNLESS it was limited by another range in the other direction.
+	  // Eg, >1.0.0 <1.0.1 is still a subset of <2.0.0
+	  if (gt && hasDomLT && !lt && gtltComp !== 0)
+	    return false
+
+	  if (lt && hasDomGT && !gt && gtltComp !== 0)
+	    return false
+
+	  return true
+	};
+
+	// >=1.2.3 is lower than >1.2.3
+	const higherGT$2 = (a, b, options) => {
+	  if (!a)
+	    return b
+	  const comp = compare_1$2(a.semver, b.semver, options);
+	  return comp > 0 ? a
+	    : comp < 0 ? b
+	    : b.operator === '>' && a.operator === '>=' ? b
+	    : a
+	};
+
+	// <=1.2.3 is higher than <1.2.3
+	const lowerLT$2 = (a, b, options) => {
+	  if (!a)
+	    return b
+	  const comp = compare_1$2(a.semver, b.semver, options);
+	  return comp < 0 ? a
+	    : comp > 0 ? b
+	    : b.operator === '<' && a.operator === '<=' ? b
+	    : a
+	};
+
+	var subset_1$2 = subset$2;
+
+	// just pre-load all the stuff that index.js lazily exports
+
+	var semver$5 = {
+	  re: re_1$2.re,
+	  src: re_1$2.src,
+	  tokens: re_1$2.t,
+	  SEMVER_SPEC_VERSION: constants$2.SEMVER_SPEC_VERSION,
+	  SemVer: semver$4,
+	  compareIdentifiers: identifiers$2.compareIdentifiers,
+	  rcompareIdentifiers: identifiers$2.rcompareIdentifiers,
+	  parse: parse_1$4,
+	  valid: valid_1$2,
+	  clean: clean_1$2,
+	  inc: inc_1$2,
+	  diff: diff_1$2,
+	  major: major_1$2,
+	  minor: minor_1$2,
+	  patch: patch_1$2,
+	  prerelease: prerelease_1$2,
+	  compare: compare_1$2,
+	  rcompare: rcompare_1$2,
+	  compareLoose: compareLoose_1$2,
+	  compareBuild: compareBuild_1$2,
+	  sort: sort_1$2,
+	  rsort: rsort_1$2,
+	  gt: gt_1$2,
+	  lt: lt_1$2,
+	  eq: eq_1$2,
+	  neq: neq_1$2,
+	  gte: gte_1$2,
+	  lte: lte_1$2,
+	  cmp: cmp_1$2,
+	  coerce: coerce_1$2,
+	  Comparator: comparator$2,
+	  Range: range$3,
+	  satisfies: satisfies_1$2,
+	  toComparators: toComparators_1$2,
+	  maxSatisfying: maxSatisfying_1$2,
+	  minSatisfying: minSatisfying_1$2,
+	  minVersion: minVersion_1$2,
+	  validRange: valid$5,
+	  outside: outside_1$2,
+	  gtr: gtr_1$2,
+	  ltr: ltr_1$2,
+	  intersects: intersects_1$2,
+	  simplifyRange: simplify$2,
+	  subset: subset_1$2,
+	};
+
+	var BaseAbstractPlugin_1$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.BaseAbstractPlugin = void 0;
+	/** This class represent the base to patch plugin. */
+	class BaseAbstractPlugin {
+	    constructor(_tracerName, _tracerVersion) {
+	        this._tracerName = _tracerName;
+	        this._tracerVersion = _tracerVersion;
+	    }
+	    disable() {
+	        this.unpatch();
+	    }
+	}
+	exports.BaseAbstractPlugin = BaseAbstractPlugin;
+
+	});
+
+	unwrapExports(BaseAbstractPlugin_1$2);
+	var BaseAbstractPlugin_2$2 = BaseAbstractPlugin_1$2.BaseAbstractPlugin;
+
+	var BasePlugin_1$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.BasePlugin = void 0;
+
+
+
+	/** This class represent the base to patch plugin. */
+	class BasePlugin extends BaseAbstractPlugin_1$2.BaseAbstractPlugin {
+	    enable(moduleExports, tracerProvider, logger, config) {
+	        this._moduleExports = moduleExports;
+	        this._tracer = tracerProvider.getTracer(this._tracerName, this._tracerVersion);
+	        this._logger = logger;
+	        this._internalFilesExports = this._loadInternalFilesExports();
+	        if (config)
+	            this._config = config;
+	        return this.patch();
+	    }
+	    disable() {
+	        this.unpatch();
+	    }
+	    /**
+	     * @TODO: To avoid circular dependencies, internal file loading functionality currently
+	     * lives in BasePlugin. It is not meant to work in the browser and so this logic
+	     * should eventually be moved somewhere else where it makes more sense.
+	     * https://github.com/open-telemetry/opentelemetry-js/issues/285
+	     */
+	    _loadInternalFilesExports() {
+	        if (!this._internalFilesList)
+	            return {};
+	        if (!this.version || !this.moduleName || !this._basedir) {
+	            // log here because internalFilesList was provided, so internal file loading
+	            // was expected to be working
+	            this._logger.debug('loadInternalFiles failed because one of the required fields was missing: moduleName=%s, version=%s, basedir=%s', this.moduleName, this.version, this._basedir);
+	            return {};
+	        }
+	        const extraModules = {};
+	        this._logger.debug('loadInternalFiles %o', this._internalFilesList);
+	        Object.keys(this._internalFilesList).forEach(versionRange => {
+	            this._loadInternalModule(versionRange, extraModules);
+	        });
+	        if (Object.keys(extraModules).length === 0) {
+	            this._logger.debug('No internal files could be loaded for %s@%s', this.moduleName, this.version);
+	        }
+	        return extraModules;
+	    }
+	    _loadInternalModule(versionRange, outExtraModules) {
+	        if (semver$5.satisfies(this.version, versionRange)) {
+	            if (Object.keys(outExtraModules).length > 0) {
+	                this._logger.warn('Plugin for %s@%s, has overlap version range (%s) for internal files: %o', this.moduleName, this.version, versionRange, this._internalFilesList);
+	            }
+	            this._requireInternalFiles(this._internalFilesList[versionRange], this._basedir, outExtraModules);
+	        }
+	    }
+	    _requireInternalFiles(extraModulesList, basedir, outExtraModules) {
+	        if (!extraModulesList)
+	            return;
+	        Object.keys(extraModulesList).forEach(moduleName => {
+	            try {
+	                this._logger.debug('loading File %s', extraModulesList[moduleName]);
+	                outExtraModules[moduleName] = commonjsRequire(path.join(basedir, extraModulesList[moduleName]));
+	            }
+	            catch (e) {
+	                this._logger.error('Could not load internal file %s of module %s. Error: %s', path.join(basedir, extraModulesList[moduleName]), this.moduleName, e.message);
+	            }
+	        });
+	    }
+	}
+	exports.BasePlugin = BasePlugin;
+
+	});
+
+	unwrapExports(BasePlugin_1$2);
+	var BasePlugin_2$2 = BasePlugin_1$2.BasePlugin;
+
+	var environment$4 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.parseEnvironment = exports.DEFAULT_ENVIRONMENT = void 0;
+
+	const ENVIRONMENT_NUMBERS = [
+	    'OTEL_SAMPLING_PROBABILITY',
+	];
+	/**
+	 * Default environment variables
+	 */
+	exports.DEFAULT_ENVIRONMENT = {
+	    OTEL_NO_PATCH_MODULES: '',
+	    OTEL_LOG_LEVEL: types$7.LogLevel.INFO,
+	    OTEL_SAMPLING_PROBABILITY: 1,
+	};
+	/**
+	 * Parses a variable as number with number validation
+	 * @param name
+	 * @param environment
+	 * @param values
+	 * @param min
+	 * @param max
+	 */
+	function parseNumber(name, environment, values, min = -Infinity, max = Infinity) {
+	    if (typeof values[name] !== 'undefined') {
+	        const value = Number(values[name]);
+	        if (!isNaN(value) && value >= min && value <= max) {
+	            environment[name] = value;
+	        }
+	    }
+	}
+	/**
+	 * Environmentally sets log level if valid log level string is provided
+	 * @param key
+	 * @param environment
+	 * @param values
+	 */
+	function setLogLevelFromEnv(key, environment, values) {
+	    const value = values[key];
+	    switch (typeof value === 'string' ? value.toUpperCase() : value) {
+	        case 'DEBUG':
+	            environment[key] = types$7.LogLevel.DEBUG;
+	            break;
+	        case 'INFO':
+	            environment[key] = types$7.LogLevel.INFO;
+	            break;
+	        case 'WARN':
+	            environment[key] = types$7.LogLevel.WARN;
+	            break;
+	        case 'ERROR':
+	            environment[key] = types$7.LogLevel.ERROR;
+	            break;
+	    }
+	}
+	/**
+	 * Parses environment values
+	 * @param values
+	 */
+	function parseEnvironment(values) {
+	    const environment = {};
+	    for (const env in exports.DEFAULT_ENVIRONMENT) {
+	        const key = env;
+	        switch (key) {
+	            case 'OTEL_SAMPLING_PROBABILITY':
+	                parseNumber(key, environment, values, 0, 1);
+	                break;
+	            case 'OTEL_LOG_LEVEL':
+	                setLogLevelFromEnv(key, environment, values);
+	                break;
+	            default:
+	                if (ENVIRONMENT_NUMBERS.indexOf(key) >= 0) {
+	                    parseNumber(key, environment, values);
+	                }
+	                else {
+	                    if (typeof values[key] !== 'undefined') {
+	                        environment[key] = values[key];
+	                    }
+	                }
+	        }
+	    }
+	    return environment;
+	}
+	exports.parseEnvironment = parseEnvironment;
+
+	});
+
+	unwrapExports(environment$4);
+	var environment_1$2 = environment$4.parseEnvironment;
+	var environment_2$4 = environment$4.DEFAULT_ENVIRONMENT;
+
+	var environment$5 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.getEnv = void 0;
+
+	/**
+	 * Gets the environment variables
+	 */
+	function getEnv() {
+	    const processEnv = environment$4.parseEnvironment(process.env);
+	    return Object.assign({}, environment$4.DEFAULT_ENVIRONMENT, processEnv);
+	}
+	exports.getEnv = getEnv;
+
+	});
+
+	unwrapExports(environment$5);
+	var environment_2$5 = environment$5.getEnv;
+
+	var hexToBase64_1$2 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.hexToBase64 = void 0;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	function hexToBase64(hexStr) {
+	    const hexStrLen = hexStr.length;
+	    let hexAsciiCharsStr = '';
+	    for (let i = 0; i < hexStrLen; i += 2) {
+	        const hexPair = hexStr.substring(i, i + 2);
+	        const hexVal = parseInt(hexPair, 16);
+	        hexAsciiCharsStr += String.fromCharCode(hexVal);
+	    }
+	    return Buffer.from(hexAsciiCharsStr, 'ascii').toString('base64');
+	}
+	exports.hexToBase64 = hexToBase64;
+
+	});
+
+	unwrapExports(hexToBase64_1$2);
+	var hexToBase64_2$2 = hexToBase64_1$2.hexToBase64;
+
+	var RandomIdGenerator_1$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.RandomIdGenerator = void 0;
+
+	const SPAN_ID_BYTES = 8;
+	const TRACE_ID_BYTES = 16;
+	class RandomIdGenerator {
+	    /**
+	     * Returns a random 16-byte trace ID formatted/encoded as a 32 lowercase hex
+	     * characters corresponding to 128 bits.
+	     */
+	    generateTraceId() {
+	        return crypto$1.randomBytes(TRACE_ID_BYTES).toString('hex');
+	    }
+	    /**
+	     * Returns a random 8-byte span ID formatted/encoded as a 16 lowercase hex
+	     * characters corresponding to 64 bits.
+	     */
+	    generateSpanId() {
+	        return crypto$1.randomBytes(SPAN_ID_BYTES).toString('hex');
+	    }
+	}
+	exports.RandomIdGenerator = RandomIdGenerator;
+
+	});
+
+	unwrapExports(RandomIdGenerator_1$2);
+	var RandomIdGenerator_2$2 = RandomIdGenerator_1$2.RandomIdGenerator;
+
+	var performance$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.otperformance = void 0;
+
+	exports.otperformance = perf_hooks.performance;
+
+	});
+
+	unwrapExports(performance$3);
+	var performance_1$2 = performance$3.otperformance;
+
+	var version$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.VERSION = void 0;
+	// this is autogenerated file, see scripts/version-update.js
+	exports.VERSION = '0.10.2';
+
+	});
+
+	unwrapExports(version$2);
+	var version_1$2 = version$2.VERSION;
+
+	var sdkInfo$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.SDK_INFO = void 0;
+
+	/** Constants describing the SDK in use */
+	exports.SDK_INFO = {
+	    NAME: 'opentelemetry',
+	    RUNTIME: 'node',
+	    LANGUAGE: 'nodejs',
+	    VERSION: version$2.VERSION,
+	};
+
+	});
+
+	unwrapExports(sdkInfo$2);
+	var sdkInfo_1$2 = sdkInfo$2.SDK_INFO;
+
+	var timerUtil$2 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.unrefTimer = void 0;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	function unrefTimer(timer) {
+	    timer.unref();
+	}
+	exports.unrefTimer = unrefTimer;
+
+	});
+
+	unwrapExports(timerUtil$2);
+	var timerUtil_1$2 = timerUtil$2.unrefTimer;
+
+	var node$4 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+	}) : (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    o[k2] = m[k];
+	}));
+	var __exportStar = (commonjsGlobal && commonjsGlobal.__exportStar) || function(m, exports) {
+	    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	__exportStar(BasePlugin_1$2, exports);
+	__exportStar(environment$5, exports);
+	__exportStar(hexToBase64_1$2, exports);
+	__exportStar(RandomIdGenerator_1$2, exports);
+	__exportStar(performance$3, exports);
+	__exportStar(sdkInfo$2, exports);
+	__exportStar(timerUtil$2, exports);
+
+	});
+
+	unwrapExports(node$4);
+
+	var platform$4 = createCommonjsModule(function (module, exports) {
+	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+	}) : (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    o[k2] = m[k];
+	}));
+	var __exportStar = (commonjsGlobal && commonjsGlobal.__exportStar) || function(m, exports) {
+	    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	__exportStar(node$4, exports);
+
+	});
+
+	unwrapExports(platform$4);
+
+	var ConsoleLogger_1$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ConsoleLogger = void 0;
+
+
+	class ConsoleLogger {
+	    constructor(level = platform$4.getEnv().OTEL_LOG_LEVEL) {
+	        if (level >= types$7.LogLevel.DEBUG) {
+	            this.debug = (...args) => {
+	                console.debug(...args);
+	            };
+	        }
+	        if (level >= types$7.LogLevel.INFO) {
+	            this.info = (...args) => {
+	                console.info(...args);
+	            };
+	        }
+	        if (level >= types$7.LogLevel.WARN) {
+	            this.warn = (...args) => {
+	                console.warn(...args);
+	            };
+	        }
+	        if (level >= types$7.LogLevel.ERROR) {
+	            this.error = (...args) => {
+	                console.error(...args);
+	            };
+	        }
+	    }
+	    debug(message, ...args) { }
+	    error(message, ...args) { }
+	    warn(message, ...args) { }
+	    info(message, ...args) { }
+	}
+	exports.ConsoleLogger = ConsoleLogger;
+
+	});
+
+	unwrapExports(ConsoleLogger_1$2);
+	var ConsoleLogger_2$2 = ConsoleLogger_1$2.ConsoleLogger;
+
+	var NoopLogger_1$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.NoopLogger = void 0;
+	/** No-op implementation of Logger */
+	class NoopLogger {
+	    // By default does nothing
+	    debug(message, ...args) { }
+	    // By default does nothing
+	    error(message, ...args) { }
+	    // By default does nothing
+	    warn(message, ...args) { }
+	    // By default does nothing
+	    info(message, ...args) { }
+	}
+	exports.NoopLogger = NoopLogger;
+
+	});
+
+	unwrapExports(NoopLogger_1$2);
+	var NoopLogger_2$2 = NoopLogger_1$2.NoopLogger;
+
+	var time$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.isTimeInput = exports.isTimeInputHrTime = exports.hrTimeToMicroseconds = exports.hrTimeToMilliseconds = exports.hrTimeToNanoseconds = exports.hrTimeToTimeStamp = exports.hrTimeDuration = exports.timeInputToHrTime = exports.hrTime = void 0;
+
+	const NANOSECOND_DIGITS = 9;
+	const SECOND_TO_NANOSECONDS = Math.pow(10, NANOSECOND_DIGITS);
+	/**
+	 * Converts a number to HrTime
+	 * @param epochMillis
+	 */
+	function numberToHrtime(epochMillis) {
+	    const epochSeconds = epochMillis / 1000;
+	    // Decimals only.
+	    const seconds = Math.trunc(epochSeconds);
+	    // Round sub-nanosecond accuracy to nanosecond.
+	    const nanos = Number((epochSeconds - seconds).toFixed(NANOSECOND_DIGITS)) *
+	        SECOND_TO_NANOSECONDS;
+	    return [seconds, nanos];
+	}
+	function getTimeOrigin() {
+	    let timeOrigin = platform$4.otperformance.timeOrigin;
+	    if (typeof timeOrigin !== 'number') {
+	        const perf = platform$4.otperformance;
+	        timeOrigin = perf.timing && perf.timing.fetchStart;
+	    }
+	    return timeOrigin;
+	}
+	/**
+	 * Returns an hrtime calculated via performance component.
+	 * @param performanceNow
+	 */
+	function hrTime(performanceNow) {
+	    const timeOrigin = numberToHrtime(getTimeOrigin());
+	    const now = numberToHrtime(typeof performanceNow === 'number' ? performanceNow : platform$4.otperformance.now());
+	    let seconds = timeOrigin[0] + now[0];
+	    let nanos = timeOrigin[1] + now[1];
+	    // Nanoseconds
+	    if (nanos > SECOND_TO_NANOSECONDS) {
+	        nanos -= SECOND_TO_NANOSECONDS;
+	        seconds += 1;
+	    }
+	    return [seconds, nanos];
+	}
+	exports.hrTime = hrTime;
+	/**
+	 *
+	 * Converts a TimeInput to an HrTime, defaults to _hrtime().
+	 * @param time
+	 */
+	function timeInputToHrTime(time) {
+	    // process.hrtime
+	    if (isTimeInputHrTime(time)) {
+	        return time;
+	    }
+	    else if (typeof time === 'number') {
+	        // Must be a performance.now() if it's smaller than process start time.
+	        if (time < getTimeOrigin()) {
+	            return hrTime(time);
+	        }
+	        else {
+	            // epoch milliseconds or performance.timeOrigin
+	            return numberToHrtime(time);
+	        }
+	    }
+	    else if (time instanceof Date) {
+	        return [time.getTime(), 0];
+	    }
+	    else {
+	        throw TypeError('Invalid input type');
+	    }
+	}
+	exports.timeInputToHrTime = timeInputToHrTime;
+	/**
+	 * Returns a duration of two hrTime.
+	 * @param startTime
+	 * @param endTime
+	 */
+	function hrTimeDuration(startTime, endTime) {
+	    let seconds = endTime[0] - startTime[0];
+	    let nanos = endTime[1] - startTime[1];
+	    // overflow
+	    if (nanos < 0) {
+	        seconds -= 1;
+	        // negate
+	        nanos += SECOND_TO_NANOSECONDS;
+	    }
+	    return [seconds, nanos];
+	}
+	exports.hrTimeDuration = hrTimeDuration;
+	/**
+	 * Convert hrTime to timestamp, for example "2019-05-14T17:00:00.000123456Z"
+	 * @param hrTime
+	 */
+	function hrTimeToTimeStamp(hrTime) {
+	    const precision = NANOSECOND_DIGITS;
+	    const tmp = `${'0'.repeat(precision)}${hrTime[1]}Z`;
+	    const nanoString = tmp.substr(tmp.length - precision - 1);
+	    const date = new Date(hrTime[0] * 1000).toISOString();
+	    return date.replace('000Z', nanoString);
+	}
+	exports.hrTimeToTimeStamp = hrTimeToTimeStamp;
+	/**
+	 * Convert hrTime to nanoseconds.
+	 * @param hrTime
+	 */
+	function hrTimeToNanoseconds(hrTime) {
+	    return hrTime[0] * SECOND_TO_NANOSECONDS + hrTime[1];
+	}
+	exports.hrTimeToNanoseconds = hrTimeToNanoseconds;
+	/**
+	 * Convert hrTime to milliseconds.
+	 * @param hrTime
+	 */
+	function hrTimeToMilliseconds(hrTime) {
+	    return Math.round(hrTime[0] * 1e3 + hrTime[1] / 1e6);
+	}
+	exports.hrTimeToMilliseconds = hrTimeToMilliseconds;
+	/**
+	 * Convert hrTime to microseconds.
+	 * @param hrTime
+	 */
+	function hrTimeToMicroseconds(hrTime) {
+	    return Math.round(hrTime[0] * 1e6 + hrTime[1] / 1e3);
+	}
+	exports.hrTimeToMicroseconds = hrTimeToMicroseconds;
+	/**
+	 * check if time is HrTime
+	 * @param value
+	 */
+	function isTimeInputHrTime(value) {
+	    return (Array.isArray(value) &&
+	        value.length === 2 &&
+	        typeof value[0] === 'number' &&
+	        typeof value[1] === 'number');
+	}
+	exports.isTimeInputHrTime = isTimeInputHrTime;
+	/**
+	 * check if input value is a correct types.TimeInput
+	 * @param value
+	 */
+	function isTimeInput(value) {
+	    return (isTimeInputHrTime(value) ||
+	        typeof value === 'number' ||
+	        value instanceof Date);
+	}
+	exports.isTimeInput = isTimeInput;
+
+	});
+
+	unwrapExports(time$3);
+	var time_1$3 = time$3.isTimeInput;
+	var time_2$2 = time$3.isTimeInputHrTime;
+	var time_3$2 = time$3.hrTimeToMicroseconds;
+	var time_4$2 = time$3.hrTimeToMilliseconds;
+	var time_5$2 = time$3.hrTimeToNanoseconds;
+	var time_6$2 = time$3.hrTimeToTimeStamp;
+	var time_7$2 = time$3.hrTimeDuration;
+	var time_8$2 = time$3.timeInputToHrTime;
+	var time_9$2 = time$3.hrTime;
+
+	var ExportResult_1$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ExportResult = void 0;
+	var ExportResult;
+	(function (ExportResult) {
+	    ExportResult[ExportResult["SUCCESS"] = 0] = "SUCCESS";
+	    ExportResult[ExportResult["FAILED_NOT_RETRYABLE"] = 1] = "FAILED_NOT_RETRYABLE";
+	    ExportResult[ExportResult["FAILED_RETRYABLE"] = 2] = "FAILED_RETRYABLE";
+	})(ExportResult = exports.ExportResult || (exports.ExportResult = {}));
+
+	});
+
+	unwrapExports(ExportResult_1$2);
+	var ExportResult_2$2 = ExportResult_1$2.ExportResult;
+
+	var context$6 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.getParentSpanContext = exports.setExtractedSpanContext = exports.getExtractedSpanContext = exports.setActiveSpan = exports.getActiveSpan = exports.ACTIVE_SPAN_KEY = void 0;
+
+	/**
+	 * Active span key
+	 */
+	exports.ACTIVE_SPAN_KEY = src$3.Context.createKey('OpenTelemetry Context Key ACTIVE_SPAN');
+	const EXTRACTED_SPAN_CONTEXT_KEY = src$3.Context.createKey('OpenTelemetry Context Key EXTRACTED_SPAN_CONTEXT');
+	/**
+	 * Return the active span if one exists
+	 *
+	 * @param context context to get span from
+	 */
+	function getActiveSpan(context) {
+	    return context.getValue(exports.ACTIVE_SPAN_KEY) || undefined;
+	}
+	exports.getActiveSpan = getActiveSpan;
+	/**
+	 * Set the active span on a context
+	 *
+	 * @param context context to use as parent
+	 * @param span span to set active
+	 */
+	function setActiveSpan(context, span) {
+	    return context.setValue(exports.ACTIVE_SPAN_KEY, span);
+	}
+	exports.setActiveSpan = setActiveSpan;
+	/**
+	 * Get the extracted span context from a context
+	 *
+	 * @param context context to get span context from
+	 */
+	function getExtractedSpanContext(context) {
+	    return (context.getValue(EXTRACTED_SPAN_CONTEXT_KEY) || undefined);
+	}
+	exports.getExtractedSpanContext = getExtractedSpanContext;
+	/**
+	 * Set the extracted span context on a context
+	 *
+	 * @param context context to set span context on
+	 * @param spanContext span context to set
+	 */
+	function setExtractedSpanContext(context, spanContext) {
+	    return context.setValue(EXTRACTED_SPAN_CONTEXT_KEY, spanContext);
+	}
+	exports.setExtractedSpanContext = setExtractedSpanContext;
+	/**
+	 * Get the span context of the parent span if it exists,
+	 * or the extracted span context if there is no active
+	 * span.
+	 *
+	 * @param context context to get values from
+	 */
+	function getParentSpanContext(context) {
+	    var _a;
+	    return ((_a = getActiveSpan(context)) === null || _a === void 0 ? void 0 : _a.context()) || getExtractedSpanContext(context);
+	}
+	exports.getParentSpanContext = getParentSpanContext;
+
+	});
+
+	unwrapExports(context$6);
+	var context_1$6 = context$6.getParentSpanContext;
+	var context_2$2 = context$6.setExtractedSpanContext;
+	var context_3$2 = context$6.getExtractedSpanContext;
+	var context_4$2 = context$6.setActiveSpan;
+	var context_5$2 = context$6.getActiveSpan;
+	var context_6$2 = context$6.ACTIVE_SPAN_KEY;
+
+	var B3Propagator_1$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.B3Propagator = exports.X_B3_SAMPLED = exports.X_B3_SPAN_ID = exports.X_B3_TRACE_ID = void 0;
+
+
+	exports.X_B3_TRACE_ID = 'x-b3-traceid';
+	exports.X_B3_SPAN_ID = 'x-b3-spanid';
+	exports.X_B3_SAMPLED = 'x-b3-sampled';
+	const VALID_TRACEID_REGEX = /^([0-9a-f]{16}){1,2}$/i;
+	const VALID_SPANID_REGEX = /^[0-9a-f]{16}$/i;
+	const INVALID_ID_REGEX = /^0+$/i;
+	function isValidTraceId(traceId) {
+	    return VALID_TRACEID_REGEX.test(traceId) && !INVALID_ID_REGEX.test(traceId);
+	}
+	function isValidSpanId(spanId) {
+	    return VALID_SPANID_REGEX.test(spanId) && !INVALID_ID_REGEX.test(spanId);
+	}
+	/**
+	 * Propagator for the B3 HTTP header format.
+	 * Based on: https://github.com/openzipkin/b3-propagation
+	 */
+	class B3Propagator {
+	    inject(context, carrier, setter) {
+	        const spanContext = context$6.getParentSpanContext(context);
+	        if (!spanContext)
+	            return;
+	        if (isValidTraceId(spanContext.traceId) &&
+	            isValidSpanId(spanContext.spanId)) {
+	            setter(carrier, exports.X_B3_TRACE_ID, spanContext.traceId);
+	            setter(carrier, exports.X_B3_SPAN_ID, spanContext.spanId);
+	            // We set the header only if there is an existing sampling decision.
+	            // Otherwise we will omit it => Absent.
+	            if (spanContext.traceFlags !== undefined) {
+	                setter(carrier, exports.X_B3_SAMPLED, (src$4.TraceFlags.SAMPLED & spanContext.traceFlags) === src$4.TraceFlags.SAMPLED
+	                    ? '1'
+	                    : '0');
+	            }
+	        }
+	    }
+	    extract(context, carrier, getter) {
+	        const traceIdHeader = getter(carrier, exports.X_B3_TRACE_ID);
+	        const spanIdHeader = getter(carrier, exports.X_B3_SPAN_ID);
+	        const sampledHeader = getter(carrier, exports.X_B3_SAMPLED);
+	        const traceIdHeaderValue = Array.isArray(traceIdHeader)
+	            ? traceIdHeader[0]
+	            : traceIdHeader;
+	        const spanId = Array.isArray(spanIdHeader) ? spanIdHeader[0] : spanIdHeader;
+	        const options = Array.isArray(sampledHeader)
+	            ? sampledHeader[0]
+	            : sampledHeader;
+	        if (typeof traceIdHeaderValue !== 'string' || typeof spanId !== 'string') {
+	            return context;
+	        }
+	        const traceId = traceIdHeaderValue.padStart(32, '0');
+	        if (isValidTraceId(traceId) && isValidSpanId(spanId)) {
+	            return context$6.setExtractedSpanContext(context, {
+	                traceId,
+	                spanId,
+	                isRemote: true,
+	                traceFlags: isNaN(Number(options)) ? src$4.TraceFlags.NONE : Number(options),
+	            });
+	        }
+	        return context;
+	    }
+	}
+	exports.B3Propagator = B3Propagator;
+
+	});
+
+	unwrapExports(B3Propagator_1$2);
+	var B3Propagator_2$2 = B3Propagator_1$2.B3Propagator;
+	var B3Propagator_3$2 = B3Propagator_1$2.X_B3_SAMPLED;
+	var B3Propagator_4$2 = B3Propagator_1$2.X_B3_SPAN_ID;
+	var B3Propagator_5$2 = B3Propagator_1$2.X_B3_TRACE_ID;
+
+	var composite$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.CompositePropagator = void 0;
+
+	/** Combines multiple propagators into a single propagator. */
+	class CompositePropagator {
+	    /**
+	     * Construct a composite propagator from a list of propagators.
+	     *
+	     * @param [config] Configuration object for composite propagator
+	     */
+	    constructor(config = {}) {
+	        var _a, _b;
+	        this._propagators = (_a = config.propagators) !== null && _a !== void 0 ? _a : [];
+	        this._logger = (_b = config.logger) !== null && _b !== void 0 ? _b : new NoopLogger_1$2.NoopLogger();
+	    }
+	    /**
+	     * Run each of the configured propagators with the given context and carrier.
+	     * Propagators are run in the order they are configured, so if multiple
+	     * propagators write the same carrier key, the propagator later in the list
+	     * will "win".
+	     *
+	     * @param context Context to inject
+	     * @param carrier Carrier into which context will be injected
+	     */
+	    inject(context, carrier, setter) {
+	        for (const propagator of this._propagators) {
+	            try {
+	                propagator.inject(context, carrier, setter);
+	            }
+	            catch (err) {
+	                this._logger.warn(`Failed to inject with ${propagator.constructor.name}. Err: ${err.message}`);
+	            }
+	        }
+	    }
+	    /**
+	     * Run each of the configured propagators with the given context and carrier.
+	     * Propagators are run in the order they are configured, so if multiple
+	     * propagators write the same context key, the propagator later in the list
+	     * will "win".
+	     *
+	     * @param context Context to add values to
+	     * @param carrier Carrier from which to extract context
+	     */
+	    extract(context, carrier, getter) {
+	        return this._propagators.reduce((ctx, propagator) => {
+	            try {
+	                return propagator.extract(ctx, carrier, getter);
+	            }
+	            catch (err) {
+	                this._logger.warn(`Failed to inject with ${propagator.constructor.name}. Err: ${err.message}`);
+	            }
+	            return ctx;
+	        }, context);
+	    }
+	}
+	exports.CompositePropagator = CompositePropagator;
+
+	});
+
+	unwrapExports(composite$2);
+	var composite_1$2 = composite$2.CompositePropagator;
+
+	var validators$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.validateValue = exports.validateKey = void 0;
+	const VALID_KEY_CHAR_RANGE = '[_0-9a-z-*/]';
+	const VALID_KEY = `[a-z]${VALID_KEY_CHAR_RANGE}{0,255}`;
+	const VALID_VENDOR_KEY = `[a-z0-9]${VALID_KEY_CHAR_RANGE}{0,240}@[a-z]${VALID_KEY_CHAR_RANGE}{0,13}`;
+	const VALID_KEY_REGEX = new RegExp(`^(?:${VALID_KEY}|${VALID_VENDOR_KEY})$`);
+	const VALID_VALUE_BASE_REGEX = /^[ -~]{0,255}[!-~]$/;
+	const INVALID_VALUE_COMMA_EQUAL_REGEX = /,|=/;
+	/**
+	 * Key is opaque string up to 256 characters printable. It MUST begin with a
+	 * lowercase letter, and can only contain lowercase letters a-z, digits 0-9,
+	 * underscores _, dashes -, asterisks *, and forward slashes /.
+	 * For multi-tenant vendor scenarios, an at sign (@) can be used to prefix the
+	 * vendor name. Vendors SHOULD set the tenant ID at the beginning of the key.
+	 * see https://www.w3.org/TR/trace-context/#key
+	 */
+	function validateKey(key) {
+	    return VALID_KEY_REGEX.test(key);
+	}
+	exports.validateKey = validateKey;
+	/**
+	 * Value is opaque string up to 256 characters printable ASCII RFC0020
+	 * characters (i.e., the range 0x20 to 0x7E) except comma , and =.
+	 */
+	function validateValue(value) {
+	    return (VALID_VALUE_BASE_REGEX.test(value) &&
+	        !INVALID_VALUE_COMMA_EQUAL_REGEX.test(value));
+	}
+	exports.validateValue = validateValue;
+
+	});
+
+	unwrapExports(validators$2);
+	var validators_1$2 = validators$2.validateValue;
+	var validators_2$2 = validators$2.validateKey;
+
+	var TraceState_1$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.TraceState = void 0;
+
+	const MAX_TRACE_STATE_ITEMS = 32;
+	const MAX_TRACE_STATE_LEN = 512;
+	const LIST_MEMBERS_SEPARATOR = ',';
+	const LIST_MEMBER_KEY_VALUE_SPLITTER = '=';
+	/**
+	 * TraceState must be a class and not a simple object type because of the spec
+	 * requirement (https://www.w3.org/TR/trace-context/#tracestate-field).
+	 *
+	 * Here is the list of allowed mutations:
+	 * - New key-value pair should be added into the beginning of the list
+	 * - The value of any key can be updated. Modified keys MUST be moved to the
+	 * beginning of the list.
+	 */
+	class TraceState {
+	    constructor(rawTraceState) {
+	        this._internalState = new Map();
+	        if (rawTraceState)
+	            this._parse(rawTraceState);
+	    }
+	    set(key, value) {
+	        // TODO: Benchmark the different approaches(map vs list) and
+	        // use the faster one.
+	        if (this._internalState.has(key))
+	            this._internalState.delete(key);
+	        this._internalState.set(key, value);
+	    }
+	    unset(key) {
+	        this._internalState.delete(key);
+	    }
+	    get(key) {
+	        return this._internalState.get(key);
+	    }
+	    serialize() {
+	        return this._keys()
+	            .reduce((agg, key) => {
+	            agg.push(key + LIST_MEMBER_KEY_VALUE_SPLITTER + this.get(key));
+	            return agg;
+	        }, [])
+	            .join(LIST_MEMBERS_SEPARATOR);
+	    }
+	    _parse(rawTraceState) {
+	        if (rawTraceState.length > MAX_TRACE_STATE_LEN)
+	            return;
+	        this._internalState = rawTraceState
+	            .split(LIST_MEMBERS_SEPARATOR)
+	            .reverse() // Store in reverse so new keys (.set(...)) will be placed at the beginning
+	            .reduce((agg, part) => {
+	            const i = part.indexOf(LIST_MEMBER_KEY_VALUE_SPLITTER);
+	            if (i !== -1) {
+	                const key = part.slice(0, i);
+	                const value = part.slice(i + 1, part.length);
+	                if (validators$2.validateKey(key) && validators$2.validateValue(value)) {
+	                    agg.set(key, value);
+	                }
+	            }
+	            return agg;
+	        }, new Map());
+	        // Because of the reverse() requirement, trunc must be done after map is created
+	        if (this._internalState.size > MAX_TRACE_STATE_ITEMS) {
+	            this._internalState = new Map(Array.from(this._internalState.entries())
+	                .reverse() // Use reverse same as original tracestate parse chain
+	                .slice(0, MAX_TRACE_STATE_ITEMS));
+	        }
+	    }
+	    _keys() {
+	        return Array.from(this._internalState.keys()).reverse();
+	    }
+	}
+	exports.TraceState = TraceState;
+
+	});
+
+	unwrapExports(TraceState_1$2);
+	var TraceState_2$2 = TraceState_1$2.TraceState;
+
+	var HttpTraceContext_1$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.HttpTraceContext = exports.parseTraceParent = exports.TRACE_STATE_HEADER = exports.TRACE_PARENT_HEADER = void 0;
+
+
+
+	exports.TRACE_PARENT_HEADER = 'traceparent';
+	exports.TRACE_STATE_HEADER = 'tracestate';
+	const VALID_TRACE_PARENT_REGEX = /^(?!ff)[\da-f]{2}-([\da-f]{32})-([\da-f]{16})-([\da-f]{2})(-|$)/;
+	const VERSION = '00';
+	/**
+	 * Parses information from the [traceparent] span tag and converts it into {@link SpanContext}
+	 * @param traceParent - A meta property that comes from server.
+	 *     It should be dynamically generated server side to have the server's request trace Id,
+	 *     a parent span Id that was set on the server's request span,
+	 *     and the trace flags to indicate the server's sampling decision
+	 *     (01 = sampled, 00 = not sampled).
+	 *     for example: '{version}-{traceId}-{spanId}-{sampleDecision}'
+	 *     For more information see {@link https://www.w3.org/TR/trace-context/}
+	 */
+	function parseTraceParent(traceParent) {
+	    const match = traceParent.match(VALID_TRACE_PARENT_REGEX);
+	    if (!match ||
+	        match[1] === '00000000000000000000000000000000' ||
+	        match[2] === '0000000000000000') {
+	        return null;
+	    }
+	    return {
+	        traceId: match[1],
+	        spanId: match[2],
+	        traceFlags: parseInt(match[3], 16),
+	    };
+	}
+	exports.parseTraceParent = parseTraceParent;
+	/**
+	 * Propagates {@link SpanContext} through Trace Context format propagation.
+	 *
+	 * Based on the Trace Context specification:
+	 * https://www.w3.org/TR/trace-context/
+	 */
+	class HttpTraceContext {
+	    inject(context, carrier, setter) {
+	        const spanContext = context$6.getParentSpanContext(context);
+	        if (!spanContext)
+	            return;
+	        const traceParent = `${VERSION}-${spanContext.traceId}-${spanContext.spanId}-0${Number(spanContext.traceFlags || src$4.TraceFlags.NONE).toString(16)}`;
+	        setter(carrier, exports.TRACE_PARENT_HEADER, traceParent);
+	        if (spanContext.traceState) {
+	            setter(carrier, exports.TRACE_STATE_HEADER, spanContext.traceState.serialize());
+	        }
+	    }
+	    extract(context, carrier, getter) {
+	        const traceParentHeader = getter(carrier, exports.TRACE_PARENT_HEADER);
+	        if (!traceParentHeader)
+	            return context;
+	        const traceParent = Array.isArray(traceParentHeader)
+	            ? traceParentHeader[0]
+	            : traceParentHeader;
+	        if (typeof traceParent !== 'string')
+	            return context;
+	        const spanContext = parseTraceParent(traceParent);
+	        if (!spanContext)
+	            return context;
+	        spanContext.isRemote = true;
+	        const traceStateHeader = getter(carrier, exports.TRACE_STATE_HEADER);
+	        if (traceStateHeader) {
+	            // If more than one `tracestate` header is found, we merge them into a
+	            // single header.
+	            const state = Array.isArray(traceStateHeader)
+	                ? traceStateHeader.join(',')
+	                : traceStateHeader;
+	            spanContext.traceState = new TraceState_1$2.TraceState(typeof state === 'string' ? state : undefined);
+	        }
+	        return context$6.setExtractedSpanContext(context, spanContext);
+	    }
+	}
+	exports.HttpTraceContext = HttpTraceContext;
+
+	});
+
+	unwrapExports(HttpTraceContext_1$2);
+	var HttpTraceContext_2$2 = HttpTraceContext_1$2.HttpTraceContext;
+	var HttpTraceContext_3$2 = HttpTraceContext_1$2.parseTraceParent;
+	var HttpTraceContext_4$2 = HttpTraceContext_1$2.TRACE_STATE_HEADER;
+	var HttpTraceContext_5$2 = HttpTraceContext_1$2.TRACE_PARENT_HEADER;
+
+	var types$8 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(types$8);
+
+	var correlationContext$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.setCorrelationContext = exports.getCorrelationContext = void 0;
+
+	const CORRELATION_CONTEXT = src$3.Context.createKey('OpenTelemetry Distributed Contexts Key');
+	/**
+	 * @param {Context} Context that manage all context values
+	 * @returns {CorrelationContext} Extracted correlation context from the context
+	 */
+	function getCorrelationContext(context) {
+	    return (context.getValue(CORRELATION_CONTEXT) || undefined);
+	}
+	exports.getCorrelationContext = getCorrelationContext;
+	/**
+	 * @param {Context} Context that manage all context values
+	 * @param {CorrelationContext} correlation context that will be set in the actual context
+	 */
+	function setCorrelationContext(context, correlationContext) {
+	    return context.setValue(CORRELATION_CONTEXT, correlationContext);
+	}
+	exports.setCorrelationContext = setCorrelationContext;
+
+	});
+
+	unwrapExports(correlationContext$2);
+	var correlationContext_1$2 = correlationContext$2.setCorrelationContext;
+	var correlationContext_2$2 = correlationContext$2.getCorrelationContext;
+
+	var HttpCorrelationContext_1$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.HttpCorrelationContext = exports.MAX_TOTAL_LENGTH = exports.MAX_PER_NAME_VALUE_PAIRS = exports.MAX_NAME_VALUE_PAIRS = exports.CORRELATION_CONTEXT_HEADER = void 0;
+
+	const KEY_PAIR_SEPARATOR = '=';
+	const PROPERTIES_SEPARATOR = ';';
+	const ITEMS_SEPARATOR = ',';
+	// Name of the http header used to propagate the correlation context
+	exports.CORRELATION_CONTEXT_HEADER = 'otcorrelations';
+	// Maximum number of name-value pairs allowed by w3c spec
+	exports.MAX_NAME_VALUE_PAIRS = 180;
+	// Maximum number of bytes per a single name-value pair allowed by w3c spec
+	exports.MAX_PER_NAME_VALUE_PAIRS = 4096;
+	// Maximum total length of all name-value pairs allowed by w3c spec
+	exports.MAX_TOTAL_LENGTH = 8192;
+	/**
+	 * Propagates {@link CorrelationContext} through Context format propagation.
+	 *
+	 * Based on the Correlation Context specification:
+	 * https://w3c.github.io/correlation-context/
+	 */
+	class HttpCorrelationContext {
+	    inject(context, carrier, setter) {
+	        const correlationContext = correlationContext$2.getCorrelationContext(context);
+	        if (!correlationContext)
+	            return;
+	        const keyPairs = this._getKeyPairs(correlationContext)
+	            .filter((pair) => {
+	            return pair.length <= exports.MAX_PER_NAME_VALUE_PAIRS;
+	        })
+	            .slice(0, exports.MAX_NAME_VALUE_PAIRS);
+	        const headerValue = this._serializeKeyPairs(keyPairs);
+	        if (headerValue.length > 0) {
+	            setter(carrier, exports.CORRELATION_CONTEXT_HEADER, headerValue);
+	        }
+	    }
+	    _serializeKeyPairs(keyPairs) {
+	        return keyPairs.reduce((hValue, current) => {
+	            const value = `${hValue}${hValue != '' ? ITEMS_SEPARATOR : ''}${current}`;
+	            return value.length > exports.MAX_TOTAL_LENGTH ? hValue : value;
+	        }, '');
+	    }
+	    _getKeyPairs(correlationContext) {
+	        return Object.keys(correlationContext).map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(correlationContext[key].value)}`);
+	    }
+	    extract(context, carrier, getter) {
+	        const headerValue = getter(carrier, exports.CORRELATION_CONTEXT_HEADER);
+	        if (!headerValue)
+	            return context;
+	        const correlationContext = {};
+	        if (headerValue.length == 0) {
+	            return context;
+	        }
+	        const pairs = headerValue.split(ITEMS_SEPARATOR);
+	        if (pairs.length == 1)
+	            return context;
+	        pairs.forEach(entry => {
+	            const keyPair = this._parsePairKeyValue(entry);
+	            if (keyPair) {
+	                correlationContext[keyPair.key] = { value: keyPair.value };
+	            }
+	        });
+	        return correlationContext$2.setCorrelationContext(context, correlationContext);
+	    }
+	    _parsePairKeyValue(entry) {
+	        const valueProps = entry.split(PROPERTIES_SEPARATOR);
+	        if (valueProps.length <= 0)
+	            return;
+	        const keyPairPart = valueProps.shift();
+	        if (!keyPairPart)
+	            return;
+	        const keyPair = keyPairPart.split(KEY_PAIR_SEPARATOR);
+	        if (keyPair.length <= 1)
+	            return;
+	        const key = decodeURIComponent(keyPair[0].trim());
+	        let value = decodeURIComponent(keyPair[1].trim());
+	        if (valueProps.length > 0) {
+	            value =
+	                value + PROPERTIES_SEPARATOR + valueProps.join(PROPERTIES_SEPARATOR);
+	        }
+	        return { key, value };
+	    }
+	}
+	exports.HttpCorrelationContext = HttpCorrelationContext;
+
+	});
+
+	unwrapExports(HttpCorrelationContext_1$2);
+	var HttpCorrelationContext_2$2 = HttpCorrelationContext_1$2.HttpCorrelationContext;
+	var HttpCorrelationContext_3$2 = HttpCorrelationContext_1$2.MAX_TOTAL_LENGTH;
+	var HttpCorrelationContext_4$2 = HttpCorrelationContext_1$2.MAX_PER_NAME_VALUE_PAIRS;
+	var HttpCorrelationContext_5$2 = HttpCorrelationContext_1$2.MAX_NAME_VALUE_PAIRS;
+	var HttpCorrelationContext_6$2 = HttpCorrelationContext_1$2.CORRELATION_CONTEXT_HEADER;
+
+	var spancontextUtils$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.isValid = exports.INVALID_SPAN_CONTEXT = exports.INVALID_TRACEID = exports.INVALID_SPANID = void 0;
+
+	exports.INVALID_SPANID = '0';
+	exports.INVALID_TRACEID = '0';
+	exports.INVALID_SPAN_CONTEXT = {
+	    traceId: exports.INVALID_TRACEID,
+	    spanId: exports.INVALID_SPANID,
+	    traceFlags: src$4.TraceFlags.NONE,
+	};
+	/**
+	 * Returns true if this {@link SpanContext} is valid.
+	 * @return true if this {@link SpanContext} is valid.
+	 */
+	function isValid(spanContext) {
+	    return (spanContext.traceId !== exports.INVALID_TRACEID &&
+	        spanContext.spanId !== exports.INVALID_SPANID);
+	}
+	exports.isValid = isValid;
+
+	});
+
+	unwrapExports(spancontextUtils$2);
+	var spancontextUtils_1$2 = spancontextUtils$2.isValid;
+	var spancontextUtils_2$2 = spancontextUtils$2.INVALID_SPAN_CONTEXT;
+	var spancontextUtils_3$2 = spancontextUtils$2.INVALID_TRACEID;
+	var spancontextUtils_4$2 = spancontextUtils$2.INVALID_SPANID;
+
+	var NoRecordingSpan_1$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.NoRecordingSpan = void 0;
+
+
+	/**
+	 * The NoRecordingSpan extends the {@link NoopSpan}, making all operations no-op
+	 * except context propagation.
+	 */
+	class NoRecordingSpan extends src$4.NoopSpan {
+	    constructor(spanContext) {
+	        super(spanContext);
+	        this._context = spanContext || spancontextUtils$2.INVALID_SPAN_CONTEXT;
+	    }
+	    // Returns a SpanContext.
+	    context() {
+	        return this._context;
+	    }
+	}
+	exports.NoRecordingSpan = NoRecordingSpan;
+
+	});
+
+	unwrapExports(NoRecordingSpan_1$2);
+	var NoRecordingSpan_2$2 = NoRecordingSpan_1$2.NoRecordingSpan;
+
+	var AlwaysOffSampler_1$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.AlwaysOffSampler = void 0;
+
+	/** Sampler that samples no traces. */
+	class AlwaysOffSampler {
+	    shouldSample() {
+	        return {
+	            decision: src$4.SamplingDecision.NOT_RECORD,
+	        };
+	    }
+	    toString() {
+	        return `AlwaysOffSampler`;
+	    }
+	}
+	exports.AlwaysOffSampler = AlwaysOffSampler;
+
+	});
+
+	unwrapExports(AlwaysOffSampler_1$2);
+	var AlwaysOffSampler_2$2 = AlwaysOffSampler_1$2.AlwaysOffSampler;
+
+	var AlwaysOnSampler_1$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.AlwaysOnSampler = void 0;
+
+	/** Sampler that samples all traces. */
+	class AlwaysOnSampler {
+	    shouldSample() {
+	        return {
+	            decision: src$4.SamplingDecision.RECORD_AND_SAMPLED,
+	        };
+	    }
+	    toString() {
+	        return `AlwaysOnSampler`;
+	    }
+	}
+	exports.AlwaysOnSampler = AlwaysOnSampler;
+
+	});
+
+	unwrapExports(AlwaysOnSampler_1$2);
+	var AlwaysOnSampler_2$2 = AlwaysOnSampler_1$2.AlwaysOnSampler;
+
+	var ParentOrElseSampler_1$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ParentOrElseSampler = void 0;
+
+	/**
+	 * A composite sampler that either respects the parent span's sampling decision
+	 * or delegates to `delegateSampler` for root spans.
+	 */
+	class ParentOrElseSampler {
+	    constructor(_delegateSampler) {
+	        this._delegateSampler = _delegateSampler;
+	    }
+	    shouldSample(parentContext, traceId, spanName, spanKind, attributes, links) {
+	        // Respect the parent sampling decision if there is one
+	        if (parentContext) {
+	            return {
+	                decision: (src$4.TraceFlags.SAMPLED & parentContext.traceFlags) === src$4.TraceFlags.SAMPLED
+	                    ? src$4.SamplingDecision.RECORD_AND_SAMPLED
+	                    : src$4.SamplingDecision.NOT_RECORD,
+	            };
+	        }
+	        return this._delegateSampler.shouldSample(parentContext, traceId, spanName, spanKind, attributes, links);
+	    }
+	    toString() {
+	        return `ParentOrElse{${this._delegateSampler.toString()}}`;
+	    }
+	}
+	exports.ParentOrElseSampler = ParentOrElseSampler;
+
+	});
+
+	unwrapExports(ParentOrElseSampler_1$2);
+	var ParentOrElseSampler_2$2 = ParentOrElseSampler_1$2.ParentOrElseSampler;
+
+	var ProbabilitySampler_1$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ProbabilitySampler = void 0;
+
+	/** Sampler that samples a given fraction of traces. */
+	class ProbabilitySampler {
+	    constructor(_probability = 0) {
+	        this._probability = _probability;
+	        this._probability = this._normalize(_probability);
+	    }
+	    shouldSample(parentContext) {
+	        // Respect the parent sampling decision if there is one.
+	        // TODO(#1284): add an option to ignore parent regarding to spec.
+	        if (parentContext) {
+	            return {
+	                decision: (src$4.TraceFlags.SAMPLED & parentContext.traceFlags) === src$4.TraceFlags.SAMPLED
+	                    ? src$4.SamplingDecision.RECORD_AND_SAMPLED
+	                    : src$4.SamplingDecision.NOT_RECORD,
+	            };
+	        }
+	        return {
+	            decision: Math.random() < this._probability
+	                ? src$4.SamplingDecision.RECORD_AND_SAMPLED
+	                : src$4.SamplingDecision.NOT_RECORD,
+	        };
+	    }
+	    toString() {
+	        return `ProbabilitySampler{${this._probability}}`;
+	    }
+	    _normalize(probability) {
+	        if (typeof probability !== 'number' || isNaN(probability))
+	            return 0;
+	        return probability >= 1 ? 1 : probability <= 0 ? 0 : probability;
+	    }
+	}
+	exports.ProbabilitySampler = ProbabilitySampler;
+
+	});
+
+	unwrapExports(ProbabilitySampler_1$2);
+	var ProbabilitySampler_2$2 = ProbabilitySampler_1$2.ProbabilitySampler;
+
+	var IdGenerator$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(IdGenerator$2);
+
+	var url$2 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.isUrlIgnored = exports.urlMatches = void 0;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	function urlMatches(url, urlToMatch) {
+	    if (typeof urlToMatch === 'string') {
+	        return url === urlToMatch;
+	    }
+	    else {
+	        return !!url.match(urlToMatch);
+	    }
+	}
+	exports.urlMatches = urlMatches;
+	/**
+	 * Check if {@param url} should be ignored when comparing against {@param ignoredUrls}
+	 * @param url
+	 * @param ignoredUrls
+	 */
+	function isUrlIgnored(url, ignoredUrls) {
+	    if (!ignoredUrls) {
+	        return false;
+	    }
+	    for (const ignoreUrl of ignoredUrls) {
+	        if (urlMatches(url, ignoreUrl)) {
+	            return true;
+	        }
+	    }
+	    return false;
+	}
+	exports.isUrlIgnored = isUrlIgnored;
+
+	});
+
+	unwrapExports(url$2);
+	var url_1$2 = url$2.isUrlIgnored;
+	var url_2$2 = url$2.urlMatches;
+
+	var wrap$2 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.isWrapped = void 0;
+	/**
+	 * Checks if certain function has been already wrapped
+	 * @param func
+	 */
+	function isWrapped(func) {
+	    return (typeof func === 'function' &&
+	        typeof func.__original === 'function' &&
+	        typeof func.__unwrap === 'function' &&
+	        func.__wrapped === true);
+	}
+	exports.isWrapped = isWrapped;
+
+	});
+
+	unwrapExports(wrap$2);
+	var wrap_1$2 = wrap$2.isWrapped;
+
+	var src$6 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+	}) : (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    o[k2] = m[k];
+	}));
+	var __exportStar = (commonjsGlobal && commonjsGlobal.__exportStar) || function(m, exports) {
+	    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	__exportStar(ConsoleLogger_1$2, exports);
+	__exportStar(NoopLogger_1$2, exports);
+	__exportStar(time$3, exports);
+	__exportStar(types$7, exports);
+	__exportStar(ExportResult_1$2, exports);
+	__exportStar(version$2, exports);
+	__exportStar(context$6, exports);
+	__exportStar(B3Propagator_1$2, exports);
+	__exportStar(composite$2, exports);
+	__exportStar(HttpTraceContext_1$2, exports);
+	__exportStar(types$8, exports);
+	__exportStar(correlationContext$2, exports);
+	__exportStar(HttpCorrelationContext_1$2, exports);
+	__exportStar(platform$4, exports);
+	__exportStar(NoRecordingSpan_1$2, exports);
+	__exportStar(AlwaysOffSampler_1$2, exports);
+	__exportStar(AlwaysOnSampler_1$2, exports);
+	__exportStar(ParentOrElseSampler_1$2, exports);
+	__exportStar(ProbabilitySampler_1$2, exports);
+	__exportStar(spancontextUtils$2, exports);
+	__exportStar(TraceState_1$2, exports);
+	__exportStar(IdGenerator$2, exports);
+	__exportStar(url$2, exports);
+	__exportStar(wrap$2, exports);
+
+	});
+
+	unwrapExports(src$6);
+
+	var constants$3 = createCommonjsModule(function (module, exports) {
 	Object.defineProperty(exports, "__esModule", { value: true });
 	exports.SERVICE_RESOURCE = exports.TELEMETRY_SDK_RESOURCE = exports.K8S_RESOURCE = exports.HOST_RESOURCE = exports.CONTAINER_RESOURCE = exports.CLOUD_RESOURCE = void 0;
 	/*
@@ -16888,13 +26876,13 @@
 
 	});
 
-	unwrapExports(constants$1);
-	var constants_1 = constants$1.SERVICE_RESOURCE;
-	var constants_2 = constants$1.TELEMETRY_SDK_RESOURCE;
-	var constants_3 = constants$1.K8S_RESOURCE;
-	var constants_4 = constants$1.HOST_RESOURCE;
-	var constants_5 = constants$1.CONTAINER_RESOURCE;
-	var constants_6 = constants$1.CLOUD_RESOURCE;
+	unwrapExports(constants$3);
+	var constants_1 = constants$3.SERVICE_RESOURCE;
+	var constants_2 = constants$3.TELEMETRY_SDK_RESOURCE;
+	var constants_3 = constants$3.K8S_RESOURCE;
+	var constants_4 = constants$3.HOST_RESOURCE;
+	var constants_5 = constants$3.CONTAINER_RESOURCE;
+	var constants_6 = constants$3.CLOUD_RESOURCE;
 
 	var Resource_1 = createCommonjsModule(function (module, exports) {
 	/*
@@ -16941,9 +26929,9 @@
 	     */
 	    static createTelemetrySDKResource() {
 	        return new Resource({
-	            [constants$1.TELEMETRY_SDK_RESOURCE.LANGUAGE]: src$2.SDK_INFO.LANGUAGE,
-	            [constants$1.TELEMETRY_SDK_RESOURCE.NAME]: src$2.SDK_INFO.NAME,
-	            [constants$1.TELEMETRY_SDK_RESOURCE.VERSION]: src$2.SDK_INFO.VERSION,
+	            [constants$3.TELEMETRY_SDK_RESOURCE.LANGUAGE]: src$6.SDK_INFO.LANGUAGE,
+	            [constants$3.TELEMETRY_SDK_RESOURCE.NAME]: src$6.SDK_INFO.NAME,
+	            [constants$3.TELEMETRY_SDK_RESOURCE.VERSION]: src$6.SDK_INFO.VERSION,
 	        });
 	    }
 	    /**
@@ -17017,12 +27005,12 @@
 	        try {
 	            const { accountId, instanceId, instanceType, region, availabilityZone, } = await this._awsMetadataAccessor();
 	            return new Resource_1.Resource({
-	                [constants$1.CLOUD_RESOURCE.PROVIDER]: 'aws',
-	                [constants$1.CLOUD_RESOURCE.ACCOUNT_ID]: accountId,
-	                [constants$1.CLOUD_RESOURCE.REGION]: region,
-	                [constants$1.CLOUD_RESOURCE.ZONE]: availabilityZone,
-	                [constants$1.HOST_RESOURCE.ID]: instanceId,
-	                [constants$1.HOST_RESOURCE.TYPE]: instanceType,
+	                [constants$3.CLOUD_RESOURCE.PROVIDER]: 'aws',
+	                [constants$3.CLOUD_RESOURCE.ACCOUNT_ID]: accountId,
+	                [constants$3.CLOUD_RESOURCE.REGION]: region,
+	                [constants$3.CLOUD_RESOURCE.ZONE]: availabilityZone,
+	                [constants$3.HOST_RESOURCE.ID]: instanceId,
+	                [constants$3.HOST_RESOURCE.TYPE]: instanceType,
 	            });
 	        }
 	        catch (e) {
@@ -19302,7 +29290,7 @@
 	  options = options || {};
 	  var type = typeof val;
 	  if (type === 'string' && val.length > 0) {
-	    return parse$3(val);
+	    return parse$5(val);
 	  } else if (type === 'number' && isFinite(val)) {
 	    return options.long ? fmtLong(val) : fmtShort(val);
 	  }
@@ -19320,7 +29308,7 @@
 	 * @api private
 	 */
 
-	function parse$3(str) {
+	function parse$5(str) {
 	  str = String(str);
 	  if (str.length > 100) {
 	    return;
@@ -19554,13 +29542,11 @@
 			debug.namespace = namespace;
 			debug.enabled = createDebug.enabled(namespace);
 			debug.useColors = createDebug.useColors();
-			debug.color = selectColor(namespace);
+			debug.color = createDebug.selectColor(namespace);
 			debug.destroy = destroy;
 			debug.extend = extend;
-			// Debug.formatArgs = formatArgs;
-			// debug.rawLog = rawLog;
 
-			// env-specific initialization logic for debug instances
+			// Env-specific initialization logic for debug instances
 			if (typeof createDebug.init === 'function') {
 				createDebug.init(debug);
 			}
@@ -19709,7 +29695,6 @@
 	 * This is the web browser implementation of `debug()`.
 	 */
 
-	exports.log = log;
 	exports.formatArgs = formatArgs;
 	exports.save = save;
 	exports.load = load;
@@ -19875,18 +29860,14 @@
 	}
 
 	/**
-	 * Invokes `console.log()` when available.
-	 * No-op when `console.log` is not a "function".
+	 * Invokes `console.debug()` when available.
+	 * No-op when `console.debug` is not a "function".
+	 * If `console.debug` is not available, falls back
+	 * to `console.log`.
 	 *
 	 * @api public
 	 */
-	function log(...args) {
-		// This hackery is required for IE8/9, where
-		// the `console.log` function doesn't have 'apply'
-		return typeof console === 'object' &&
-			console.log &&
-			console.log(...args);
-	}
+	exports.log = console.debug || console.log || (() => {});
 
 	/**
 	 * Save `namespaces`.
@@ -19968,13 +29949,13 @@
 		}
 	};
 	});
-	var browser_1 = browser.log;
-	var browser_2 = browser.formatArgs;
-	var browser_3 = browser.save;
-	var browser_4 = browser.load;
-	var browser_5 = browser.useColors;
-	var browser_6 = browser.storage;
-	var browser_7 = browser.colors;
+	var browser_1 = browser.formatArgs;
+	var browser_2 = browser.save;
+	var browser_3 = browser.load;
+	var browser_4 = browser.useColors;
+	var browser_5 = browser.storage;
+	var browser_6 = browser.colors;
+	var browser_7 = browser.log;
 
 	var hasFlag = (flag, argv = process.argv) => {
 		const prefix = flag.startsWith('-') ? '' : (flag.length === 1 ? '-' : '--');
@@ -20114,7 +30095,7 @@
 		stderr: translateLevel(supportsColor(true, tty.isatty(2)))
 	};
 
-	var node$2 = createCommonjsModule(function (module, exports) {
+	var node$5 = createCommonjsModule(function (module, exports) {
 	/**
 	 * Module dependencies.
 	 */
@@ -20373,16 +30354,16 @@
 		return util.inspect(v, this.inspectOpts);
 	};
 	});
-	var node_1 = node$2.init;
-	var node_2 = node$2.log;
-	var node_3 = node$2.formatArgs;
-	var node_4 = node$2.save;
-	var node_5 = node$2.load;
-	var node_6 = node$2.useColors;
-	var node_7 = node$2.colors;
-	var node_8 = node$2.inspectOpts;
+	var node_1 = node$5.init;
+	var node_2 = node$5.log;
+	var node_3 = node$5.formatArgs;
+	var node_4 = node$5.save;
+	var node_5 = node$5.load;
+	var node_6 = node$5.useColors;
+	var node_7 = node$5.colors;
+	var node_8 = node$5.inspectOpts;
 
-	var src$3 = createCommonjsModule(function (module) {
+	var src$7 = createCommonjsModule(function (module) {
 	/**
 	 * Detect Electron renderer / nwjs process, which is node, but we should
 	 * treat as a browser.
@@ -20391,7 +30372,7 @@
 	if (typeof process === 'undefined' || process.type === 'renderer' || process.browser === true || process.__nwjs) {
 		module.exports = browser;
 	} else {
-		module.exports = node$2;
+		module.exports = node$5;
 	}
 	});
 
@@ -20417,12 +30398,12 @@
 
 	unwrapExports(promisify_1);
 
-	var src$4 = createCommonjsModule(function (module) {
+	var src$8 = createCommonjsModule(function (module) {
 	var __importDefault = (commonjsGlobal && commonjsGlobal.__importDefault) || function (mod) {
 	    return (mod && mod.__esModule) ? mod : { "default": mod };
 	};
 
-	const debug_1 = __importDefault(src$3);
+	const debug_1 = __importDefault(src$7);
 	const promisify_1$1 = __importDefault(promisify_1);
 	const debug = debug_1.default('agent-base');
 	function isAgent(v) {
@@ -20620,14 +30601,14 @@
 
 	});
 
-	unwrapExports(src$4);
+	unwrapExports(src$8);
 
 	var parseProxyResponse_1 = createCommonjsModule(function (module, exports) {
 	var __importDefault = (commonjsGlobal && commonjsGlobal.__importDefault) || function (mod) {
 	    return (mod && mod.__esModule) ? mod : { "default": mod };
 	};
 	Object.defineProperty(exports, "__esModule", { value: true });
-	const debug_1 = __importDefault(src$3);
+	const debug_1 = __importDefault(src$7);
 	const debug = debug_1.default('https-proxy-agent:parse-proxy-response');
 	function parseProxyResponse(socket) {
 	    return new Promise((resolve, reject) => {
@@ -20710,7 +30691,7 @@
 	const tls_1 = __importDefault(tls);
 	const url_1 = __importDefault(Url);
 	const assert_1 = __importDefault(assert);
-	const debug_1 = __importDefault(src$3);
+	const debug_1 = __importDefault(src$7);
 
 	const parse_proxy_response_1 = __importDefault(parseProxyResponse_1);
 	const debug = debug_1.default('https-proxy-agent:agent');
@@ -20728,7 +30709,7 @@
 	 *
 	 * @api public
 	 */
-	class HttpsProxyAgent extends src$4.Agent {
+	class HttpsProxyAgent extends src$8.Agent {
 	    constructor(_opts) {
 	        let opts;
 	        if (typeof _opts === 'string') {
@@ -21125,7 +31106,7 @@
 	unwrapExports(gaxios);
 	var gaxios_1 = gaxios.Gaxios;
 
-	var src$5 = createCommonjsModule(function (module, exports) {
+	var src$9 = createCommonjsModule(function (module, exports) {
 	// Copyright 2018 Google LLC
 	// Licensed under the Apache License, Version 2.0 (the "License");
 	// you may not use this file except in compliance with the License.
@@ -21159,11 +31140,11 @@
 
 	});
 
-	unwrapExports(src$5);
-	var src_1$1 = src$5.Gaxios;
-	var src_2$1 = src$5.GaxiosError;
-	var src_3$1 = src$5.instance;
-	var src_4$1 = src$5.request;
+	unwrapExports(src$9);
+	var src_1$2 = src$9.Gaxios;
+	var src_2$2 = src$9.GaxiosError;
+	var src_3$2 = src$9.instance;
+	var src_4$2 = src$9.request;
 
 	/*
 	 *      bignumber.js v9.0.0
@@ -21224,7 +31205,7 @@
 
 	  BASE = 1e14,
 	  LOG_BASE = 14,
-	  MAX_SAFE_INTEGER$2 = 0x1fffffffffffff,         // 2^53 - 1
+	  MAX_SAFE_INTEGER$6 = 0x1fffffffffffff,         // 2^53 - 1
 	  // MAX_INT32 = 0x7fffffff,                   // 2^31 - 1
 	  POWS_TEN = [1, 10, 100, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13],
 	  SQRT_BASE = 1e7,
@@ -21490,7 +31471,7 @@
 
 	      // '[BigNumber Error] Number primitive has more than 15 significant digits: {n}'
 	      if (isNum && BigNumber.DEBUG &&
-	        len > 15 && (v > MAX_SAFE_INTEGER$2 || v !== mathfloor(v))) {
+	        len > 15 && (v > MAX_SAFE_INTEGER$6 || v !== mathfloor(v))) {
 	          throw Error
 	           (tooManyDigits + (x.s * v));
 	      }
@@ -22758,7 +32739,7 @@
 	   *   or null if the value of either is NaN.
 	   */
 	  P.comparedTo = function (y, b) {
-	    return compare$1(this, new BigNumber(y, b));
+	    return compare$3(this, new BigNumber(y, b));
 	  };
 
 
@@ -22988,7 +32969,7 @@
 	   * otherwise return false.
 	   */
 	  P.isEqualTo = P.eq = function (y, b) {
-	    return compare$1(this, new BigNumber(y, b)) === 0;
+	    return compare$3(this, new BigNumber(y, b)) === 0;
 	  };
 
 
@@ -23005,7 +32986,7 @@
 	   * otherwise return false.
 	   */
 	  P.isGreaterThan = P.gt = function (y, b) {
-	    return compare$1(this, new BigNumber(y, b)) > 0;
+	    return compare$3(this, new BigNumber(y, b)) > 0;
 	  };
 
 
@@ -23014,7 +32995,7 @@
 	   * BigNumber(y, b), otherwise return false.
 	   */
 	  P.isGreaterThanOrEqualTo = P.gte = function (y, b) {
-	    return (b = compare$1(this, new BigNumber(y, b))) === 1 || b === 0;
+	    return (b = compare$3(this, new BigNumber(y, b))) === 1 || b === 0;
 
 	  };
 
@@ -23032,7 +33013,7 @@
 	   * otherwise return false.
 	   */
 	  P.isLessThan = P.lt = function (y, b) {
-	    return compare$1(this, new BigNumber(y, b)) < 0;
+	    return compare$3(this, new BigNumber(y, b)) < 0;
 	  };
 
 
@@ -23041,7 +33022,7 @@
 	   * BigNumber(y, b), otherwise return false.
 	   */
 	  P.isLessThanOrEqualTo = P.lte = function (y, b) {
-	    return (b = compare$1(this, new BigNumber(y, b))) === -1 || b === 0;
+	    return (b = compare$3(this, new BigNumber(y, b))) === -1 || b === 0;
 	  };
 
 
@@ -23519,7 +33500,7 @@
 	   * '[BigNumber Error] Argument {not a primitive number|not an integer|out of range}: {k}'
 	   */
 	  P.shiftedBy = function (k) {
-	    intCheck(k, -MAX_SAFE_INTEGER$2, MAX_SAFE_INTEGER$2);
+	    intCheck(k, -MAX_SAFE_INTEGER$6, MAX_SAFE_INTEGER$6);
 	    return this.times('1e' + k);
 	  };
 
@@ -23954,7 +33935,7 @@
 
 
 	// Compare the value of BigNumbers x and y.
-	function compare$1(x, y) {
+	function compare$3(x, y) {
 	  var a, b,
 	    xc = x.c,
 	    yc = y.c,
@@ -24819,24 +34800,24 @@
 	    };
 	};
 
-	var parse$4 = json_parse;
+	var parse$6 = json_parse;
 
 	var json_stringify = stringify.stringify;
 
 
 	var jsonBigint = function(options) {
 	    return  {
-	        parse: parse$4(options),
+	        parse: parse$6(options),
 	        stringify: json_stringify
 	    }
 	};
 	//create the default method members with no options applied for backwards compatibility
-	var parse$5 = parse$4();
+	var parse$7 = parse$6();
 	var stringify$1 = json_stringify;
-	jsonBigint.parse = parse$5;
+	jsonBigint.parse = parse$7;
 	jsonBigint.stringify = stringify$1;
 
-	var src$6 = createCommonjsModule(function (module, exports) {
+	var src$a = createCommonjsModule(function (module, exports) {
 	/**
 	 * Copyright 2018 Google LLC
 	 *
@@ -24884,7 +34865,7 @@
 	    }
 	    validate(options);
 	    try {
-	        const requestMethod = fastFail ? fastFailMetadataRequest : src$5.request;
+	        const requestMethod = fastFail ? fastFailMetadataRequest : src$9.request;
 	        const res = await requestMethod({
 	            url: `${exports.BASE_URL}/${type}${property}`,
 	            headers: Object.assign({}, exports.HEADERS, options.headers),
@@ -24935,7 +34916,7 @@
 	    // occur, this is for folks running locally.
 	    //
 	    let responded = false;
-	    const r1 = src$5.request(options)
+	    const r1 = src$9.request(options)
 	        .then(res => {
 	        responded = true;
 	        return res;
@@ -24949,7 +34930,7 @@
 	            throw err;
 	        }
 	    });
-	    const r2 = src$5.request(secondaryOptions)
+	    const r2 = src$9.request(secondaryOptions)
 	        .then(res => {
 	        responded = true;
 	        return res;
@@ -25052,20 +35033,20 @@
 
 	});
 
-	unwrapExports(src$6);
-	var src_1$2 = src$6.HOST_ADDRESS;
-	var src_2$2 = src$6.BASE_PATH;
-	var src_3$2 = src$6.BASE_URL;
-	var src_4$2 = src$6.SECONDARY_HOST_ADDRESS;
-	var src_5 = src$6.SECONDARY_BASE_URL;
-	var src_6 = src$6.HEADER_NAME;
-	var src_7 = src$6.HEADER_VALUE;
-	var src_8 = src$6.HEADERS;
-	var src_9 = src$6.instance;
-	var src_10 = src$6.project;
-	var src_11 = src$6.isAvailable;
-	var src_12 = src$6.resetIsAvailableCache;
-	var src_13 = src$6.requestTimeout;
+	unwrapExports(src$a);
+	var src_1$3 = src$a.HOST_ADDRESS;
+	var src_2$3 = src$a.BASE_PATH;
+	var src_3$3 = src$a.BASE_URL;
+	var src_4$3 = src$a.SECONDARY_HOST_ADDRESS;
+	var src_5 = src$a.SECONDARY_BASE_URL;
+	var src_6 = src$a.HEADER_NAME;
+	var src_7 = src$a.HEADER_VALUE;
+	var src_8 = src$a.HEADERS;
+	var src_9 = src$a.instance;
+	var src_10 = src$a.project;
+	var src_11 = src$a.isAvailable;
+	var src_12 = src$a.resetIsAvailableCache;
+	var src_13 = src$a.requestTimeout;
 
 	var GcpDetector_1 = createCommonjsModule(function (module, exports) {
 	/*
@@ -25104,7 +35085,7 @@
 	     * @param config The resource detection config with a required logger
 	     */
 	    async detect(config) {
-	        if (!(await src$6.isAvailable())) {
+	        if (!(await src$a.isAvailable())) {
 	            config.logger.debug('GcpDetector failed: GCP Metadata unavailable.');
 	            return Resource_1.Resource.empty();
 	        }
@@ -25115,25 +35096,25 @@
 	            this._getClusterName(),
 	        ]);
 	        const labels = {};
-	        labels[constants$1.CLOUD_RESOURCE.ACCOUNT_ID] = projectId;
-	        labels[constants$1.HOST_RESOURCE.ID] = instanceId;
-	        labels[constants$1.CLOUD_RESOURCE.ZONE] = zoneId;
-	        labels[constants$1.CLOUD_RESOURCE.PROVIDER] = 'gcp';
+	        labels[constants$3.CLOUD_RESOURCE.ACCOUNT_ID] = projectId;
+	        labels[constants$3.HOST_RESOURCE.ID] = instanceId;
+	        labels[constants$3.CLOUD_RESOURCE.ZONE] = zoneId;
+	        labels[constants$3.CLOUD_RESOURCE.PROVIDER] = 'gcp';
 	        if (process.env.KUBERNETES_SERVICE_HOST)
 	            this._addK8sLabels(labels, clusterName);
 	        return new Resource_1.Resource(labels);
 	    }
 	    /** Add resource labels for K8s */
 	    _addK8sLabels(labels, clusterName) {
-	        labels[constants$1.K8S_RESOURCE.CLUSTER_NAME] = clusterName;
-	        labels[constants$1.K8S_RESOURCE.NAMESPACE_NAME] = process.env.NAMESPACE || '';
-	        labels[constants$1.K8S_RESOURCE.POD_NAME] = process.env.HOSTNAME || os.hostname();
-	        labels[constants$1.CONTAINER_RESOURCE.NAME] = process.env.CONTAINER_NAME || '';
+	        labels[constants$3.K8S_RESOURCE.CLUSTER_NAME] = clusterName;
+	        labels[constants$3.K8S_RESOURCE.NAMESPACE_NAME] = process.env.NAMESPACE || '';
+	        labels[constants$3.K8S_RESOURCE.POD_NAME] = process.env.HOSTNAME || os.hostname();
+	        labels[constants$3.CONTAINER_RESOURCE.NAME] = process.env.CONTAINER_NAME || '';
 	    }
 	    /** Gets project id from GCP project metadata. */
 	    async _getProjectId() {
 	        try {
-	            return await src$6.project('project-id');
+	            return await src$a.project('project-id');
 	        }
 	        catch (_a) {
 	            return '';
@@ -25142,7 +35123,7 @@
 	    /** Gets instance id from GCP instance metadata. */
 	    async _getInstanceId() {
 	        try {
-	            const id = await src$6.instance('id');
+	            const id = await src$a.instance('id');
 	            return id.toString();
 	        }
 	        catch (_a) {
@@ -25152,7 +35133,7 @@
 	    /** Gets zone from GCP instance metadata. */
 	    async _getZone() {
 	        try {
-	            const zoneId = await src$6.instance('zone');
+	            const zoneId = await src$a.instance('zone');
 	            if (zoneId) {
 	                return zoneId.split('/').pop();
 	            }
@@ -25165,7 +35146,7 @@
 	    /** Gets cluster name from GCP instance metadata. */
 	    async _getClusterName() {
 	        try {
-	            return await src$6.instance('attributes/cluster-name');
+	            return await src$a.instance('attributes/cluster-name');
 	        }
 	        catch (_a) {
 	            return '';
@@ -25238,7 +35219,7 @@
 	 */
 	exports.detectResources = async (config = {}) => {
 	    const internalConfig = Object.assign({
-	        logger: new src$2.NoopLogger(),
+	        logger: new src$6.NoopLogger(),
 	    }, config);
 	    const resources = await Promise.all(DETECTORS.map(d => {
 	        try {
@@ -25284,7 +35265,7 @@
 	unwrapExports(detectResources);
 	var detectResources_1 = detectResources.detectResources;
 
-	var node$3 = createCommonjsModule(function (module, exports) {
+	var node$6 = createCommonjsModule(function (module, exports) {
 	/*
 	 * Copyright The OpenTelemetry Authors
 	 *
@@ -25315,9 +35296,9 @@
 
 	});
 
-	unwrapExports(node$3);
+	unwrapExports(node$6);
 
-	var platform$2 = createCommonjsModule(function (module, exports) {
+	var platform$5 = createCommonjsModule(function (module, exports) {
 	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
 	    if (k2 === undefined) k2 = k;
 	    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
@@ -25344,13 +35325,13 @@
 	 * See the License for the specific language governing permissions and
 	 * limitations under the License.
 	 */
-	__exportStar(node$3, exports);
+	__exportStar(node$6, exports);
 
 	});
 
-	unwrapExports(platform$2);
+	unwrapExports(platform$5);
 
-	var types$4 = createCommonjsModule(function (module, exports) {
+	var types$9 = createCommonjsModule(function (module, exports) {
 	/*
 	 * Copyright The OpenTelemetry Authors
 	 *
@@ -25370,9 +35351,9 @@
 
 	});
 
-	unwrapExports(types$4);
+	unwrapExports(types$9);
 
-	var src$7 = createCommonjsModule(function (module, exports) {
+	var src$b = createCommonjsModule(function (module, exports) {
 	/*
 	 * Copyright The OpenTelemetry Authors
 	 *
@@ -25400,13 +35381,13 @@
 	};
 	Object.defineProperty(exports, "__esModule", { value: true });
 	__exportStar(Resource_1, exports);
-	__exportStar(platform$2, exports);
-	__exportStar(constants$1, exports);
-	__exportStar(types$4, exports);
+	__exportStar(platform$5, exports);
+	__exportStar(constants$3, exports);
+	__exportStar(types$9, exports);
 
 	});
 
-	unwrapExports(src$7);
+	unwrapExports(src$b);
 
 	var BasicTracerProvider_1 = createCommonjsModule(function (module, exports) {
 	/*
@@ -25442,8 +35423,8 @@
 	        this._registeredSpanProcessors = [];
 	        this._tracers = new Map();
 	        this.activeSpanProcessor = new NoopSpanProcessor_1.NoopSpanProcessor();
-	        this.logger = (_a = config.logger) !== null && _a !== void 0 ? _a : new src$2.ConsoleLogger(config.logLevel);
-	        this.resource = (_b = config.resource) !== null && _b !== void 0 ? _b : src$7.Resource.createTelemetrySDKResource();
+	        this.logger = (_a = config.logger) !== null && _a !== void 0 ? _a : new src$5.ConsoleLogger(config.logLevel);
+	        this.resource = (_b = config.resource) !== null && _b !== void 0 ? _b : src$b.Resource.createTelemetrySDKResource();
 	        this._config = Object.assign({}, config, {
 	            logger: this.logger,
 	            resource: this.resource,
@@ -25452,7 +35433,7 @@
 	    getTracer(name, version = '*', config) {
 	        const key = `${name}@${version}`;
 	        if (!this._tracers.has(key)) {
-	            this._tracers.set(key, new src$8.Tracer({ name, version }, config || this._config, this));
+	            this._tracers.set(key, new src$c.Tracer({ name, version }, config || this._config, this));
 	        }
 	        return this._tracers.get(key);
 	    }
@@ -25475,17 +35456,17 @@
 	     * @param config Configuration object for SDK registration
 	     */
 	    register(config = {}) {
-	        src$1.trace.setGlobalTracerProvider(this);
+	        src$4.trace.setGlobalTracerProvider(this);
 	        if (config.propagator === undefined) {
-	            config.propagator = new src$2.CompositePropagator({
-	                propagators: [new src$2.HttpCorrelationContext(), new src$2.HttpTraceContext()],
+	            config.propagator = new src$5.CompositePropagator({
+	                propagators: [new src$5.HttpCorrelationContext(), new src$5.HttpTraceContext()],
 	            });
 	        }
 	        if (config.contextManager) {
-	            src$1.context.setGlobalContextManager(config.contextManager);
+	            src$4.context.setGlobalContextManager(config.contextManager);
 	        }
 	        if (config.propagator) {
-	            src$1.propagation.setGlobalPropagator(config.propagator);
+	            src$4.propagation.setGlobalPropagator(config.propagator);
 	        }
 	    }
 	}
@@ -25545,8 +35526,8 @@
 	            name: span.name,
 	            id: span.spanContext.spanId,
 	            kind: span.kind,
-	            timestamp: src$2.hrTimeToMicroseconds(span.startTime),
-	            duration: src$2.hrTimeToMicroseconds(span.duration),
+	            timestamp: src$5.hrTimeToMicroseconds(span.startTime),
+	            duration: src$5.hrTimeToMicroseconds(span.duration),
 	            attributes: span.attributes,
 	            status: span.status,
 	            events: span.events,
@@ -25562,7 +35543,7 @@
 	            console.log(this._exportInfo(span));
 	        }
 	        if (done) {
-	            return done(src$2.ExportResult.SUCCESS);
+	            return done(src$5.ExportResult.SUCCESS);
 	        }
 	    }
 	}
@@ -25658,7 +35639,7 @@
 	        this._timer = setTimeout(() => {
 	            this._flush();
 	        }, this._bufferTimeout);
-	        src$2.unrefTimer(this._timer);
+	        src$5.unrefTimer(this._timer);
 	    }
 	    _clearTimer() {
 	        if (this._timer !== undefined) {
@@ -25705,9 +35686,9 @@
 	    }
 	    export(spans, resultCallback) {
 	        if (this._stopped)
-	            return resultCallback(src$2.ExportResult.FAILED_NOT_RETRYABLE);
+	            return resultCallback(src$5.ExportResult.FAILED_NOT_RETRYABLE);
 	        this._finishedSpans.push(...spans);
-	        return resultCallback(src$2.ExportResult.SUCCESS);
+	        return resultCallback(src$5.ExportResult.SUCCESS);
 	    }
 	    shutdown() {
 	        this._stopped = true;
@@ -25851,7 +35832,7 @@
 
 	unwrapExports(SpanProcessor);
 
-	var types$5 = createCommonjsModule(function (module, exports) {
+	var types$a = createCommonjsModule(function (module, exports) {
 	/*
 	 * Copyright The OpenTelemetry Authors
 	 *
@@ -25871,9 +35852,9 @@
 
 	});
 
-	unwrapExports(types$5);
+	unwrapExports(types$a);
 
-	var src$8 = createCommonjsModule(function (module, exports) {
+	var src$c = createCommonjsModule(function (module, exports) {
 	/*
 	 * Copyright The OpenTelemetry Authors
 	 *
@@ -25910,11 +35891,11 @@
 	__exportStar(SpanExporter, exports);
 	__exportStar(Span_1, exports);
 	__exportStar(SpanProcessor, exports);
-	__exportStar(types$5, exports);
+	__exportStar(types$a, exports);
 
 	});
 
-	unwrapExports(src$8);
+	unwrapExports(src$c);
 
 	var StackContextManager_1 = createCommonjsModule(function (module, exports) {
 	/*
@@ -25948,14 +35929,14 @@
 	        /**
 	         * Keeps the reference to current context
 	         */
-	        this._currentContext = src$1.Context.ROOT_CONTEXT;
+	        this._currentContext = src$4.Context.ROOT_CONTEXT;
 	    }
 	    /**
 	     *
 	     * @param target Function to be executed within the context
 	     * @param context
 	     */
-	    _bindFunction(target, context = src$1.Context.ROOT_CONTEXT) {
+	    _bindFunction(target, context = src$4.Context.ROOT_CONTEXT) {
 	        const manager = this;
 	        const contextWrapper = function (...args) {
 	            return manager.with(context, () => target.apply(this, args));
@@ -25979,7 +35960,7 @@
 	     * @param target
 	     * @param context
 	     */
-	    bind(target, context = src$1.Context.ROOT_CONTEXT) {
+	    bind(target, context = src$4.Context.ROOT_CONTEXT) {
 	        // if no specific context to propagate is given, we use the current one
 	        if (context === undefined) {
 	            context = this.active();
@@ -25993,7 +35974,7 @@
 	     * Disable the context manager (clears the current context)
 	     */
 	    disable() {
-	        this._currentContext = src$1.Context.ROOT_CONTEXT;
+	        this._currentContext = src$4.Context.ROOT_CONTEXT;
 	        this._enabled = false;
 	        return this;
 	    }
@@ -26005,7 +35986,7 @@
 	            return this;
 	        }
 	        this._enabled = true;
-	        this._currentContext = src$1.Context.ROOT_CONTEXT;
+	        this._currentContext = src$4.Context.ROOT_CONTEXT;
 	        return this;
 	    }
 	    /**
@@ -26016,7 +35997,7 @@
 	     */
 	    with(context, fn) {
 	        const previousContext = this._currentContext;
-	        this._currentContext = context || src$1.Context.ROOT_CONTEXT;
+	        this._currentContext = context || src$4.Context.ROOT_CONTEXT;
 	        try {
 	            return fn();
 	        }
@@ -26055,7 +36036,7 @@
 	/**
 	 * This class represents a web tracer with {@link StackContextManager}
 	 */
-	class WebTracerProvider extends src$8.BasicTracerProvider {
+	class WebTracerProvider extends src$c.BasicTracerProvider {
 	    /**
 	     * Constructs a new Tracer instance.
 	     * @param config Web Tracer config
@@ -26147,7 +36128,7 @@
 	unwrapExports(PerformanceTimingNames_1);
 	var PerformanceTimingNames_2 = PerformanceTimingNames_1.PerformanceTimingNames;
 
-	var types$6 = createCommonjsModule(function (module, exports) {
+	var types$b = createCommonjsModule(function (module, exports) {
 	Object.defineProperty(exports, "__esModule", { value: true });
 	/*
 	 * Copyright The OpenTelemetry Authors
@@ -26168,7 +36149,3801 @@
 
 	});
 
-	unwrapExports(types$6);
+	unwrapExports(types$b);
+
+	var types$c = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.LogLevel = void 0;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var LogLevel;
+	(function (LogLevel) {
+	    LogLevel[LogLevel["ERROR"] = 0] = "ERROR";
+	    LogLevel[LogLevel["WARN"] = 1] = "WARN";
+	    LogLevel[LogLevel["INFO"] = 2] = "INFO";
+	    LogLevel[LogLevel["DEBUG"] = 3] = "DEBUG";
+	})(LogLevel = exports.LogLevel || (exports.LogLevel = {}));
+
+	});
+
+	unwrapExports(types$c);
+	var types_1$3 = types$c.LogLevel;
+
+	// Note: this is the semver.org version of the spec that it implements
+	// Not necessarily the package version of this code.
+	const SEMVER_SPEC_VERSION$3 = '2.0.0';
+
+	const MAX_LENGTH$9 = 256;
+	const MAX_SAFE_INTEGER$7 = Number.MAX_SAFE_INTEGER ||
+	  /* istanbul ignore next */ 9007199254740991;
+
+	// Max safe segment length for coercion.
+	const MAX_SAFE_COMPONENT_LENGTH$3 = 16;
+
+	var constants$4 = {
+	  SEMVER_SPEC_VERSION: SEMVER_SPEC_VERSION$3,
+	  MAX_LENGTH: MAX_LENGTH$9,
+	  MAX_SAFE_INTEGER: MAX_SAFE_INTEGER$7,
+	  MAX_SAFE_COMPONENT_LENGTH: MAX_SAFE_COMPONENT_LENGTH$3
+	};
+
+	const debug$3 = (
+	  typeof process === 'object' &&
+	  process.env &&
+	  process.env.NODE_DEBUG &&
+	  /\bsemver\b/i.test(process.env.NODE_DEBUG)
+	) ? (...args) => console.error('SEMVER', ...args)
+	  : () => {};
+
+	var debug_1$3 = debug$3;
+
+	var re_1$3 = createCommonjsModule(function (module, exports) {
+	const { MAX_SAFE_COMPONENT_LENGTH } = constants$4;
+
+	exports = module.exports = {};
+
+	// The actual regexps go on exports.re
+	const re = exports.re = [];
+	const src = exports.src = [];
+	const t = exports.t = {};
+	let R = 0;
+
+	const createToken = (name, value, isGlobal) => {
+	  const index = R++;
+	  debug_1$3(index, value);
+	  t[name] = index;
+	  src[index] = value;
+	  re[index] = new RegExp(value, isGlobal ? 'g' : undefined);
+	};
+
+	// The following Regular Expressions can be used for tokenizing,
+	// validating, and parsing SemVer version strings.
+
+	// ## Numeric Identifier
+	// A single `0`, or a non-zero digit followed by zero or more digits.
+
+	createToken('NUMERICIDENTIFIER', '0|[1-9]\\d*');
+	createToken('NUMERICIDENTIFIERLOOSE', '[0-9]+');
+
+	// ## Non-numeric Identifier
+	// Zero or more digits, followed by a letter or hyphen, and then zero or
+	// more letters, digits, or hyphens.
+
+	createToken('NONNUMERICIDENTIFIER', '\\d*[a-zA-Z-][a-zA-Z0-9-]*');
+
+	// ## Main Version
+	// Three dot-separated numeric identifiers.
+
+	createToken('MAINVERSION', `(${src[t.NUMERICIDENTIFIER]})\\.` +
+	                   `(${src[t.NUMERICIDENTIFIER]})\\.` +
+	                   `(${src[t.NUMERICIDENTIFIER]})`);
+
+	createToken('MAINVERSIONLOOSE', `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` +
+	                        `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` +
+	                        `(${src[t.NUMERICIDENTIFIERLOOSE]})`);
+
+	// ## Pre-release Version Identifier
+	// A numeric identifier, or a non-numeric identifier.
+
+	createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NUMERICIDENTIFIER]
+}|${src[t.NONNUMERICIDENTIFIER]})`);
+
+	createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NUMERICIDENTIFIERLOOSE]
+}|${src[t.NONNUMERICIDENTIFIER]})`);
+
+	// ## Pre-release Version
+	// Hyphen, followed by one or more dot-separated pre-release version
+	// identifiers.
+
+	createToken('PRERELEASE', `(?:-(${src[t.PRERELEASEIDENTIFIER]
+}(?:\\.${src[t.PRERELEASEIDENTIFIER]})*))`);
+
+	createToken('PRERELEASELOOSE', `(?:-?(${src[t.PRERELEASEIDENTIFIERLOOSE]
+}(?:\\.${src[t.PRERELEASEIDENTIFIERLOOSE]})*))`);
+
+	// ## Build Metadata Identifier
+	// Any combination of digits, letters, or hyphens.
+
+	createToken('BUILDIDENTIFIER', '[0-9A-Za-z-]+');
+
+	// ## Build Metadata
+	// Plus sign, followed by one or more period-separated build metadata
+	// identifiers.
+
+	createToken('BUILD', `(?:\\+(${src[t.BUILDIDENTIFIER]
+}(?:\\.${src[t.BUILDIDENTIFIER]})*))`);
+
+	// ## Full Version String
+	// A main version, followed optionally by a pre-release version and
+	// build metadata.
+
+	// Note that the only major, minor, patch, and pre-release sections of
+	// the version string are capturing groups.  The build metadata is not a
+	// capturing group, because it should not ever be used in version
+	// comparison.
+
+	createToken('FULLPLAIN', `v?${src[t.MAINVERSION]
+}${src[t.PRERELEASE]}?${
+  src[t.BUILD]}?`);
+
+	createToken('FULL', `^${src[t.FULLPLAIN]}$`);
+
+	// like full, but allows v1.2.3 and =1.2.3, which people do sometimes.
+	// also, 1.0.0alpha1 (prerelease without the hyphen) which is pretty
+	// common in the npm registry.
+	createToken('LOOSEPLAIN', `[v=\\s]*${src[t.MAINVERSIONLOOSE]
+}${src[t.PRERELEASELOOSE]}?${
+  src[t.BUILD]}?`);
+
+	createToken('LOOSE', `^${src[t.LOOSEPLAIN]}$`);
+
+	createToken('GTLT', '((?:<|>)?=?)');
+
+	// Something like "2.*" or "1.2.x".
+	// Note that "x.x" is a valid xRange identifer, meaning "any version"
+	// Only the first item is strictly required.
+	createToken('XRANGEIDENTIFIERLOOSE', `${src[t.NUMERICIDENTIFIERLOOSE]}|x|X|\\*`);
+	createToken('XRANGEIDENTIFIER', `${src[t.NUMERICIDENTIFIER]}|x|X|\\*`);
+
+	createToken('XRANGEPLAIN', `[v=\\s]*(${src[t.XRANGEIDENTIFIER]})` +
+	                   `(?:\\.(${src[t.XRANGEIDENTIFIER]})` +
+	                   `(?:\\.(${src[t.XRANGEIDENTIFIER]})` +
+	                   `(?:${src[t.PRERELEASE]})?${
+                     src[t.BUILD]}?` +
+	                   `)?)?`);
+
+	createToken('XRANGEPLAINLOOSE', `[v=\\s]*(${src[t.XRANGEIDENTIFIERLOOSE]})` +
+	                        `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` +
+	                        `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` +
+	                        `(?:${src[t.PRERELEASELOOSE]})?${
+                          src[t.BUILD]}?` +
+	                        `)?)?`);
+
+	createToken('XRANGE', `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAIN]}$`);
+	createToken('XRANGELOOSE', `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAINLOOSE]}$`);
+
+	// Coercion.
+	// Extract anything that could conceivably be a part of a valid semver
+	createToken('COERCE', `${'(^|[^\\d])' +
+              '(\\d{1,'}${MAX_SAFE_COMPONENT_LENGTH}})` +
+	              `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` +
+	              `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` +
+	              `(?:$|[^\\d])`);
+	createToken('COERCERTL', src[t.COERCE], true);
+
+	// Tilde ranges.
+	// Meaning is "reasonably at or greater than"
+	createToken('LONETILDE', '(?:~>?)');
+
+	createToken('TILDETRIM', `(\\s*)${src[t.LONETILDE]}\\s+`, true);
+	exports.tildeTrimReplace = '$1~';
+
+	createToken('TILDE', `^${src[t.LONETILDE]}${src[t.XRANGEPLAIN]}$`);
+	createToken('TILDELOOSE', `^${src[t.LONETILDE]}${src[t.XRANGEPLAINLOOSE]}$`);
+
+	// Caret ranges.
+	// Meaning is "at least and backwards compatible with"
+	createToken('LONECARET', '(?:\\^)');
+
+	createToken('CARETTRIM', `(\\s*)${src[t.LONECARET]}\\s+`, true);
+	exports.caretTrimReplace = '$1^';
+
+	createToken('CARET', `^${src[t.LONECARET]}${src[t.XRANGEPLAIN]}$`);
+	createToken('CARETLOOSE', `^${src[t.LONECARET]}${src[t.XRANGEPLAINLOOSE]}$`);
+
+	// A simple gt/lt/eq thing, or just "" to indicate "any version"
+	createToken('COMPARATORLOOSE', `^${src[t.GTLT]}\\s*(${src[t.LOOSEPLAIN]})$|^$`);
+	createToken('COMPARATOR', `^${src[t.GTLT]}\\s*(${src[t.FULLPLAIN]})$|^$`);
+
+	// An expression to strip any whitespace between the gtlt and the thing
+	// it modifies, so that `> 1.2.3` ==> `>1.2.3`
+	createToken('COMPARATORTRIM', `(\\s*)${src[t.GTLT]
+}\\s*(${src[t.LOOSEPLAIN]}|${src[t.XRANGEPLAIN]})`, true);
+	exports.comparatorTrimReplace = '$1$2$3';
+
+	// Something like `1.2.3 - 1.2.4`
+	// Note that these all use the loose form, because they'll be
+	// checked against either the strict or loose comparator form
+	// later.
+	createToken('HYPHENRANGE', `^\\s*(${src[t.XRANGEPLAIN]})` +
+	                   `\\s+-\\s+` +
+	                   `(${src[t.XRANGEPLAIN]})` +
+	                   `\\s*$`);
+
+	createToken('HYPHENRANGELOOSE', `^\\s*(${src[t.XRANGEPLAINLOOSE]})` +
+	                        `\\s+-\\s+` +
+	                        `(${src[t.XRANGEPLAINLOOSE]})` +
+	                        `\\s*$`);
+
+	// Star ranges basically just allow anything at all.
+	createToken('STAR', '(<|>)?=?\\s*\\*');
+	// >=0.0.0 is like a star
+	createToken('GTE0', '^\\s*>=\\s*0\.0\.0\\s*$');
+	createToken('GTE0PRE', '^\\s*>=\\s*0\.0\.0-0\\s*$');
+	});
+	var re_2$3 = re_1$3.re;
+	var re_3$3 = re_1$3.src;
+	var re_4$3 = re_1$3.t;
+	var re_5$3 = re_1$3.tildeTrimReplace;
+	var re_6$3 = re_1$3.caretTrimReplace;
+	var re_7$3 = re_1$3.comparatorTrimReplace;
+
+	const numeric$3 = /^[0-9]+$/;
+	const compareIdentifiers$6 = (a, b) => {
+	  const anum = numeric$3.test(a);
+	  const bnum = numeric$3.test(b);
+
+	  if (anum && bnum) {
+	    a = +a;
+	    b = +b;
+	  }
+
+	  return a === b ? 0
+	    : (anum && !bnum) ? -1
+	    : (bnum && !anum) ? 1
+	    : a < b ? -1
+	    : 1
+	};
+
+	const rcompareIdentifiers$3 = (a, b) => compareIdentifiers$6(b, a);
+
+	var identifiers$3 = {
+	  compareIdentifiers: compareIdentifiers$6,
+	  rcompareIdentifiers: rcompareIdentifiers$3
+	};
+
+	const { MAX_LENGTH: MAX_LENGTH$a, MAX_SAFE_INTEGER: MAX_SAFE_INTEGER$8 } = constants$4;
+	const { re: re$f, t: t$h } = re_1$3;
+
+	const { compareIdentifiers: compareIdentifiers$7 } = identifiers$3;
+	class SemVer$3 {
+	  constructor (version, options) {
+	    if (!options || typeof options !== 'object') {
+	      options = {
+	        loose: !!options,
+	        includePrerelease: false
+	      };
+	    }
+	    if (version instanceof SemVer$3) {
+	      if (version.loose === !!options.loose &&
+	          version.includePrerelease === !!options.includePrerelease) {
+	        return version
+	      } else {
+	        version = version.version;
+	      }
+	    } else if (typeof version !== 'string') {
+	      throw new TypeError(`Invalid Version: ${version}`)
+	    }
+
+	    if (version.length > MAX_LENGTH$a) {
+	      throw new TypeError(
+	        `version is longer than ${MAX_LENGTH$a} characters`
+	      )
+	    }
+
+	    debug_1$3('SemVer', version, options);
+	    this.options = options;
+	    this.loose = !!options.loose;
+	    // this isn't actually relevant for versions, but keep it so that we
+	    // don't run into trouble passing this.options around.
+	    this.includePrerelease = !!options.includePrerelease;
+
+	    const m = version.trim().match(options.loose ? re$f[t$h.LOOSE] : re$f[t$h.FULL]);
+
+	    if (!m) {
+	      throw new TypeError(`Invalid Version: ${version}`)
+	    }
+
+	    this.raw = version;
+
+	    // these are actually numbers
+	    this.major = +m[1];
+	    this.minor = +m[2];
+	    this.patch = +m[3];
+
+	    if (this.major > MAX_SAFE_INTEGER$8 || this.major < 0) {
+	      throw new TypeError('Invalid major version')
+	    }
+
+	    if (this.minor > MAX_SAFE_INTEGER$8 || this.minor < 0) {
+	      throw new TypeError('Invalid minor version')
+	    }
+
+	    if (this.patch > MAX_SAFE_INTEGER$8 || this.patch < 0) {
+	      throw new TypeError('Invalid patch version')
+	    }
+
+	    // numberify any prerelease numeric ids
+	    if (!m[4]) {
+	      this.prerelease = [];
+	    } else {
+	      this.prerelease = m[4].split('.').map((id) => {
+	        if (/^[0-9]+$/.test(id)) {
+	          const num = +id;
+	          if (num >= 0 && num < MAX_SAFE_INTEGER$8) {
+	            return num
+	          }
+	        }
+	        return id
+	      });
+	    }
+
+	    this.build = m[5] ? m[5].split('.') : [];
+	    this.format();
+	  }
+
+	  format () {
+	    this.version = `${this.major}.${this.minor}.${this.patch}`;
+	    if (this.prerelease.length) {
+	      this.version += `-${this.prerelease.join('.')}`;
+	    }
+	    return this.version
+	  }
+
+	  toString () {
+	    return this.version
+	  }
+
+	  compare (other) {
+	    debug_1$3('SemVer.compare', this.version, this.options, other);
+	    if (!(other instanceof SemVer$3)) {
+	      if (typeof other === 'string' && other === this.version) {
+	        return 0
+	      }
+	      other = new SemVer$3(other, this.options);
+	    }
+
+	    if (other.version === this.version) {
+	      return 0
+	    }
+
+	    return this.compareMain(other) || this.comparePre(other)
+	  }
+
+	  compareMain (other) {
+	    if (!(other instanceof SemVer$3)) {
+	      other = new SemVer$3(other, this.options);
+	    }
+
+	    return (
+	      compareIdentifiers$7(this.major, other.major) ||
+	      compareIdentifiers$7(this.minor, other.minor) ||
+	      compareIdentifiers$7(this.patch, other.patch)
+	    )
+	  }
+
+	  comparePre (other) {
+	    if (!(other instanceof SemVer$3)) {
+	      other = new SemVer$3(other, this.options);
+	    }
+
+	    // NOT having a prerelease is > having one
+	    if (this.prerelease.length && !other.prerelease.length) {
+	      return -1
+	    } else if (!this.prerelease.length && other.prerelease.length) {
+	      return 1
+	    } else if (!this.prerelease.length && !other.prerelease.length) {
+	      return 0
+	    }
+
+	    let i = 0;
+	    do {
+	      const a = this.prerelease[i];
+	      const b = other.prerelease[i];
+	      debug_1$3('prerelease compare', i, a, b);
+	      if (a === undefined && b === undefined) {
+	        return 0
+	      } else if (b === undefined) {
+	        return 1
+	      } else if (a === undefined) {
+	        return -1
+	      } else if (a === b) {
+	        continue
+	      } else {
+	        return compareIdentifiers$7(a, b)
+	      }
+	    } while (++i)
+	  }
+
+	  compareBuild (other) {
+	    if (!(other instanceof SemVer$3)) {
+	      other = new SemVer$3(other, this.options);
+	    }
+
+	    let i = 0;
+	    do {
+	      const a = this.build[i];
+	      const b = other.build[i];
+	      debug_1$3('prerelease compare', i, a, b);
+	      if (a === undefined && b === undefined) {
+	        return 0
+	      } else if (b === undefined) {
+	        return 1
+	      } else if (a === undefined) {
+	        return -1
+	      } else if (a === b) {
+	        continue
+	      } else {
+	        return compareIdentifiers$7(a, b)
+	      }
+	    } while (++i)
+	  }
+
+	  // preminor will bump the version up to the next minor release, and immediately
+	  // down to pre-release. premajor and prepatch work the same way.
+	  inc (release, identifier) {
+	    switch (release) {
+	      case 'premajor':
+	        this.prerelease.length = 0;
+	        this.patch = 0;
+	        this.minor = 0;
+	        this.major++;
+	        this.inc('pre', identifier);
+	        break
+	      case 'preminor':
+	        this.prerelease.length = 0;
+	        this.patch = 0;
+	        this.minor++;
+	        this.inc('pre', identifier);
+	        break
+	      case 'prepatch':
+	        // If this is already a prerelease, it will bump to the next version
+	        // drop any prereleases that might already exist, since they are not
+	        // relevant at this point.
+	        this.prerelease.length = 0;
+	        this.inc('patch', identifier);
+	        this.inc('pre', identifier);
+	        break
+	      // If the input is a non-prerelease version, this acts the same as
+	      // prepatch.
+	      case 'prerelease':
+	        if (this.prerelease.length === 0) {
+	          this.inc('patch', identifier);
+	        }
+	        this.inc('pre', identifier);
+	        break
+
+	      case 'major':
+	        // If this is a pre-major version, bump up to the same major version.
+	        // Otherwise increment major.
+	        // 1.0.0-5 bumps to 1.0.0
+	        // 1.1.0 bumps to 2.0.0
+	        if (
+	          this.minor !== 0 ||
+	          this.patch !== 0 ||
+	          this.prerelease.length === 0
+	        ) {
+	          this.major++;
+	        }
+	        this.minor = 0;
+	        this.patch = 0;
+	        this.prerelease = [];
+	        break
+	      case 'minor':
+	        // If this is a pre-minor version, bump up to the same minor version.
+	        // Otherwise increment minor.
+	        // 1.2.0-5 bumps to 1.2.0
+	        // 1.2.1 bumps to 1.3.0
+	        if (this.patch !== 0 || this.prerelease.length === 0) {
+	          this.minor++;
+	        }
+	        this.patch = 0;
+	        this.prerelease = [];
+	        break
+	      case 'patch':
+	        // If this is not a pre-release version, it will increment the patch.
+	        // If it is a pre-release it will bump up to the same patch version.
+	        // 1.2.0-5 patches to 1.2.0
+	        // 1.2.0 patches to 1.2.1
+	        if (this.prerelease.length === 0) {
+	          this.patch++;
+	        }
+	        this.prerelease = [];
+	        break
+	      // This probably shouldn't be used publicly.
+	      // 1.0.0 'pre' would become 1.0.0-0 which is the wrong direction.
+	      case 'pre':
+	        if (this.prerelease.length === 0) {
+	          this.prerelease = [0];
+	        } else {
+	          let i = this.prerelease.length;
+	          while (--i >= 0) {
+	            if (typeof this.prerelease[i] === 'number') {
+	              this.prerelease[i]++;
+	              i = -2;
+	            }
+	          }
+	          if (i === -1) {
+	            // didn't increment anything
+	            this.prerelease.push(0);
+	          }
+	        }
+	        if (identifier) {
+	          // 1.2.0-beta.1 bumps to 1.2.0-beta.2,
+	          // 1.2.0-beta.fooblz or 1.2.0-beta bumps to 1.2.0-beta.0
+	          if (this.prerelease[0] === identifier) {
+	            if (isNaN(this.prerelease[1])) {
+	              this.prerelease = [identifier, 0];
+	            }
+	          } else {
+	            this.prerelease = [identifier, 0];
+	          }
+	        }
+	        break
+
+	      default:
+	        throw new Error(`invalid increment argument: ${release}`)
+	    }
+	    this.format();
+	    this.raw = this.version;
+	    return this
+	  }
+	}
+
+	var semver$6 = SemVer$3;
+
+	const {MAX_LENGTH: MAX_LENGTH$b} = constants$4;
+	const { re: re$g, t: t$i } = re_1$3;
+
+
+	const parse$8 = (version, options) => {
+	  if (!options || typeof options !== 'object') {
+	    options = {
+	      loose: !!options,
+	      includePrerelease: false
+	    };
+	  }
+
+	  if (version instanceof semver$6) {
+	    return version
+	  }
+
+	  if (typeof version !== 'string') {
+	    return null
+	  }
+
+	  if (version.length > MAX_LENGTH$b) {
+	    return null
+	  }
+
+	  const r = options.loose ? re$g[t$i.LOOSE] : re$g[t$i.FULL];
+	  if (!r.test(version)) {
+	    return null
+	  }
+
+	  try {
+	    return new semver$6(version, options)
+	  } catch (er) {
+	    return null
+	  }
+	};
+
+	var parse_1$5 = parse$8;
+
+	const valid$6 = (version, options) => {
+	  const v = parse_1$5(version, options);
+	  return v ? v.version : null
+	};
+	var valid_1$3 = valid$6;
+
+	const clean$3 = (version, options) => {
+	  const s = parse_1$5(version.trim().replace(/^[=v]+/, ''), options);
+	  return s ? s.version : null
+	};
+	var clean_1$3 = clean$3;
+
+	const inc$3 = (version, release, options, identifier) => {
+	  if (typeof (options) === 'string') {
+	    identifier = options;
+	    options = undefined;
+	  }
+
+	  try {
+	    return new semver$6(version, options).inc(release, identifier).version
+	  } catch (er) {
+	    return null
+	  }
+	};
+	var inc_1$3 = inc$3;
+
+	const compare$4 = (a, b, loose) =>
+	  new semver$6(a, loose).compare(new semver$6(b, loose));
+
+	var compare_1$3 = compare$4;
+
+	const eq$3 = (a, b, loose) => compare_1$3(a, b, loose) === 0;
+	var eq_1$3 = eq$3;
+
+	const diff$3 = (version1, version2) => {
+	  if (eq_1$3(version1, version2)) {
+	    return null
+	  } else {
+	    const v1 = parse_1$5(version1);
+	    const v2 = parse_1$5(version2);
+	    const hasPre = v1.prerelease.length || v2.prerelease.length;
+	    const prefix = hasPre ? 'pre' : '';
+	    const defaultResult = hasPre ? 'prerelease' : '';
+	    for (const key in v1) {
+	      if (key === 'major' || key === 'minor' || key === 'patch') {
+	        if (v1[key] !== v2[key]) {
+	          return prefix + key
+	        }
+	      }
+	    }
+	    return defaultResult // may be undefined
+	  }
+	};
+	var diff_1$3 = diff$3;
+
+	const major$3 = (a, loose) => new semver$6(a, loose).major;
+	var major_1$3 = major$3;
+
+	const minor$3 = (a, loose) => new semver$6(a, loose).minor;
+	var minor_1$3 = minor$3;
+
+	const patch$3 = (a, loose) => new semver$6(a, loose).patch;
+	var patch_1$3 = patch$3;
+
+	const prerelease$3 = (version, options) => {
+	  const parsed = parse_1$5(version, options);
+	  return (parsed && parsed.prerelease.length) ? parsed.prerelease : null
+	};
+	var prerelease_1$3 = prerelease$3;
+
+	const rcompare$3 = (a, b, loose) => compare_1$3(b, a, loose);
+	var rcompare_1$3 = rcompare$3;
+
+	const compareLoose$3 = (a, b) => compare_1$3(a, b, true);
+	var compareLoose_1$3 = compareLoose$3;
+
+	const compareBuild$3 = (a, b, loose) => {
+	  const versionA = new semver$6(a, loose);
+	  const versionB = new semver$6(b, loose);
+	  return versionA.compare(versionB) || versionA.compareBuild(versionB)
+	};
+	var compareBuild_1$3 = compareBuild$3;
+
+	const sort$3 = (list, loose) => list.sort((a, b) => compareBuild_1$3(a, b, loose));
+	var sort_1$3 = sort$3;
+
+	const rsort$3 = (list, loose) => list.sort((a, b) => compareBuild_1$3(b, a, loose));
+	var rsort_1$3 = rsort$3;
+
+	const gt$3 = (a, b, loose) => compare_1$3(a, b, loose) > 0;
+	var gt_1$3 = gt$3;
+
+	const lt$3 = (a, b, loose) => compare_1$3(a, b, loose) < 0;
+	var lt_1$3 = lt$3;
+
+	const neq$3 = (a, b, loose) => compare_1$3(a, b, loose) !== 0;
+	var neq_1$3 = neq$3;
+
+	const gte$3 = (a, b, loose) => compare_1$3(a, b, loose) >= 0;
+	var gte_1$3 = gte$3;
+
+	const lte$3 = (a, b, loose) => compare_1$3(a, b, loose) <= 0;
+	var lte_1$3 = lte$3;
+
+	const cmp$3 = (a, op, b, loose) => {
+	  switch (op) {
+	    case '===':
+	      if (typeof a === 'object')
+	        a = a.version;
+	      if (typeof b === 'object')
+	        b = b.version;
+	      return a === b
+
+	    case '!==':
+	      if (typeof a === 'object')
+	        a = a.version;
+	      if (typeof b === 'object')
+	        b = b.version;
+	      return a !== b
+
+	    case '':
+	    case '=':
+	    case '==':
+	      return eq_1$3(a, b, loose)
+
+	    case '!=':
+	      return neq_1$3(a, b, loose)
+
+	    case '>':
+	      return gt_1$3(a, b, loose)
+
+	    case '>=':
+	      return gte_1$3(a, b, loose)
+
+	    case '<':
+	      return lt_1$3(a, b, loose)
+
+	    case '<=':
+	      return lte_1$3(a, b, loose)
+
+	    default:
+	      throw new TypeError(`Invalid operator: ${op}`)
+	  }
+	};
+	var cmp_1$3 = cmp$3;
+
+	const {re: re$h, t: t$j} = re_1$3;
+
+	const coerce$3 = (version, options) => {
+	  if (version instanceof semver$6) {
+	    return version
+	  }
+
+	  if (typeof version === 'number') {
+	    version = String(version);
+	  }
+
+	  if (typeof version !== 'string') {
+	    return null
+	  }
+
+	  options = options || {};
+
+	  let match = null;
+	  if (!options.rtl) {
+	    match = version.match(re$h[t$j.COERCE]);
+	  } else {
+	    // Find the right-most coercible string that does not share
+	    // a terminus with a more left-ward coercible string.
+	    // Eg, '1.2.3.4' wants to coerce '2.3.4', not '3.4' or '4'
+	    //
+	    // Walk through the string checking with a /g regexp
+	    // Manually set the index so as to pick up overlapping matches.
+	    // Stop when we get a match that ends at the string end, since no
+	    // coercible string can be more right-ward without the same terminus.
+	    let next;
+	    while ((next = re$h[t$j.COERCERTL].exec(version)) &&
+	        (!match || match.index + match[0].length !== version.length)
+	    ) {
+	      if (!match ||
+	            next.index + next[0].length !== match.index + match[0].length) {
+	        match = next;
+	      }
+	      re$h[t$j.COERCERTL].lastIndex = next.index + next[1].length + next[2].length;
+	    }
+	    // leave it in a clean state
+	    re$h[t$j.COERCERTL].lastIndex = -1;
+	  }
+
+	  if (match === null)
+	    return null
+
+	  return parse_1$5(`${match[2]}.${match[3] || '0'}.${match[4] || '0'}`, options)
+	};
+	var coerce_1$3 = coerce$3;
+
+	// hoisted class for cyclic dependency
+	class Range$3 {
+	  constructor (range, options) {
+	    if (!options || typeof options !== 'object') {
+	      options = {
+	        loose: !!options,
+	        includePrerelease: false
+	      };
+	    }
+
+	    if (range instanceof Range$3) {
+	      if (
+	        range.loose === !!options.loose &&
+	        range.includePrerelease === !!options.includePrerelease
+	      ) {
+	        return range
+	      } else {
+	        return new Range$3(range.raw, options)
+	      }
+	    }
+
+	    if (range instanceof comparator$3) {
+	      // just put it in the set and return
+	      this.raw = range.value;
+	      this.set = [[range]];
+	      this.format();
+	      return this
+	    }
+
+	    this.options = options;
+	    this.loose = !!options.loose;
+	    this.includePrerelease = !!options.includePrerelease;
+
+	    // First, split based on boolean or ||
+	    this.raw = range;
+	    this.set = range
+	      .split(/\s*\|\|\s*/)
+	      // map the range to a 2d array of comparators
+	      .map(range => this.parseRange(range.trim()))
+	      // throw out any comparator lists that are empty
+	      // this generally means that it was not a valid range, which is allowed
+	      // in loose mode, but will still throw if the WHOLE range is invalid.
+	      .filter(c => c.length);
+
+	    if (!this.set.length) {
+	      throw new TypeError(`Invalid SemVer Range: ${range}`)
+	    }
+
+	    this.format();
+	  }
+
+	  format () {
+	    this.range = this.set
+	      .map((comps) => {
+	        return comps.join(' ').trim()
+	      })
+	      .join('||')
+	      .trim();
+	    return this.range
+	  }
+
+	  toString () {
+	    return this.range
+	  }
+
+	  parseRange (range) {
+	    const loose = this.options.loose;
+	    range = range.trim();
+	    // `1.2.3 - 1.2.4` => `>=1.2.3 <=1.2.4`
+	    const hr = loose ? re$i[t$k.HYPHENRANGELOOSE] : re$i[t$k.HYPHENRANGE];
+	    range = range.replace(hr, hyphenReplace$3(this.options.includePrerelease));
+	    debug_1$3('hyphen replace', range);
+	    // `> 1.2.3 < 1.2.5` => `>1.2.3 <1.2.5`
+	    range = range.replace(re$i[t$k.COMPARATORTRIM], comparatorTrimReplace$3);
+	    debug_1$3('comparator trim', range, re$i[t$k.COMPARATORTRIM]);
+
+	    // `~ 1.2.3` => `~1.2.3`
+	    range = range.replace(re$i[t$k.TILDETRIM], tildeTrimReplace$3);
+
+	    // `^ 1.2.3` => `^1.2.3`
+	    range = range.replace(re$i[t$k.CARETTRIM], caretTrimReplace$3);
+
+	    // normalize spaces
+	    range = range.split(/\s+/).join(' ');
+
+	    // At this point, the range is completely trimmed and
+	    // ready to be split into comparators.
+
+	    const compRe = loose ? re$i[t$k.COMPARATORLOOSE] : re$i[t$k.COMPARATOR];
+	    return range
+	      .split(' ')
+	      .map(comp => parseComparator$3(comp, this.options))
+	      .join(' ')
+	      .split(/\s+/)
+	      .map(comp => replaceGTE0$3(comp, this.options))
+	      // in loose mode, throw out any that are not valid comparators
+	      .filter(this.options.loose ? comp => !!comp.match(compRe) : () => true)
+	      .map(comp => new comparator$3(comp, this.options))
+	  }
+
+	  intersects (range, options) {
+	    if (!(range instanceof Range$3)) {
+	      throw new TypeError('a Range is required')
+	    }
+
+	    return this.set.some((thisComparators) => {
+	      return (
+	        isSatisfiable$3(thisComparators, options) &&
+	        range.set.some((rangeComparators) => {
+	          return (
+	            isSatisfiable$3(rangeComparators, options) &&
+	            thisComparators.every((thisComparator) => {
+	              return rangeComparators.every((rangeComparator) => {
+	                return thisComparator.intersects(rangeComparator, options)
+	              })
+	            })
+	          )
+	        })
+	      )
+	    })
+	  }
+
+	  // if ANY of the sets match ALL of its comparators, then pass
+	  test (version) {
+	    if (!version) {
+	      return false
+	    }
+
+	    if (typeof version === 'string') {
+	      try {
+	        version = new semver$6(version, this.options);
+	      } catch (er) {
+	        return false
+	      }
+	    }
+
+	    for (let i = 0; i < this.set.length; i++) {
+	      if (testSet$3(this.set[i], version, this.options)) {
+	        return true
+	      }
+	    }
+	    return false
+	  }
+	}
+	var range$4 = Range$3;
+
+
+
+
+	const {
+	  re: re$i,
+	  t: t$k,
+	  comparatorTrimReplace: comparatorTrimReplace$3,
+	  tildeTrimReplace: tildeTrimReplace$3,
+	  caretTrimReplace: caretTrimReplace$3
+	} = re_1$3;
+
+	// take a set of comparators and determine whether there
+	// exists a version which can satisfy it
+	const isSatisfiable$3 = (comparators, options) => {
+	  let result = true;
+	  const remainingComparators = comparators.slice();
+	  let testComparator = remainingComparators.pop();
+
+	  while (result && remainingComparators.length) {
+	    result = remainingComparators.every((otherComparator) => {
+	      return testComparator.intersects(otherComparator, options)
+	    });
+
+	    testComparator = remainingComparators.pop();
+	  }
+
+	  return result
+	};
+
+	// comprised of xranges, tildes, stars, and gtlt's at this point.
+	// already replaced the hyphen ranges
+	// turn into a set of JUST comparators.
+	const parseComparator$3 = (comp, options) => {
+	  debug_1$3('comp', comp, options);
+	  comp = replaceCarets$3(comp, options);
+	  debug_1$3('caret', comp);
+	  comp = replaceTildes$3(comp, options);
+	  debug_1$3('tildes', comp);
+	  comp = replaceXRanges$3(comp, options);
+	  debug_1$3('xrange', comp);
+	  comp = replaceStars$3(comp, options);
+	  debug_1$3('stars', comp);
+	  return comp
+	};
+
+	const isX$3 = id => !id || id.toLowerCase() === 'x' || id === '*';
+
+	// ~, ~> --> * (any, kinda silly)
+	// ~2, ~2.x, ~2.x.x, ~>2, ~>2.x ~>2.x.x --> >=2.0.0 <3.0.0-0
+	// ~2.0, ~2.0.x, ~>2.0, ~>2.0.x --> >=2.0.0 <2.1.0-0
+	// ~1.2, ~1.2.x, ~>1.2, ~>1.2.x --> >=1.2.0 <1.3.0-0
+	// ~1.2.3, ~>1.2.3 --> >=1.2.3 <1.3.0-0
+	// ~1.2.0, ~>1.2.0 --> >=1.2.0 <1.3.0-0
+	const replaceTildes$3 = (comp, options) =>
+	  comp.trim().split(/\s+/).map((comp) => {
+	    return replaceTilde$3(comp, options)
+	  }).join(' ');
+
+	const replaceTilde$3 = (comp, options) => {
+	  const r = options.loose ? re$i[t$k.TILDELOOSE] : re$i[t$k.TILDE];
+	  return comp.replace(r, (_, M, m, p, pr) => {
+	    debug_1$3('tilde', comp, _, M, m, p, pr);
+	    let ret;
+
+	    if (isX$3(M)) {
+	      ret = '';
+	    } else if (isX$3(m)) {
+	      ret = `>=${M}.0.0 <${+M + 1}.0.0-0`;
+	    } else if (isX$3(p)) {
+	      // ~1.2 == >=1.2.0 <1.3.0-0
+	      ret = `>=${M}.${m}.0 <${M}.${+m + 1}.0-0`;
+	    } else if (pr) {
+	      debug_1$3('replaceTilde pr', pr);
+	      ret = `>=${M}.${m}.${p}-${pr
+      } <${M}.${+m + 1}.0-0`;
+	    } else {
+	      // ~1.2.3 == >=1.2.3 <1.3.0-0
+	      ret = `>=${M}.${m}.${p
+      } <${M}.${+m + 1}.0-0`;
+	    }
+
+	    debug_1$3('tilde return', ret);
+	    return ret
+	  })
+	};
+
+	// ^ --> * (any, kinda silly)
+	// ^2, ^2.x, ^2.x.x --> >=2.0.0 <3.0.0-0
+	// ^2.0, ^2.0.x --> >=2.0.0 <3.0.0-0
+	// ^1.2, ^1.2.x --> >=1.2.0 <2.0.0-0
+	// ^1.2.3 --> >=1.2.3 <2.0.0-0
+	// ^1.2.0 --> >=1.2.0 <2.0.0-0
+	const replaceCarets$3 = (comp, options) =>
+	  comp.trim().split(/\s+/).map((comp) => {
+	    return replaceCaret$3(comp, options)
+	  }).join(' ');
+
+	const replaceCaret$3 = (comp, options) => {
+	  debug_1$3('caret', comp, options);
+	  const r = options.loose ? re$i[t$k.CARETLOOSE] : re$i[t$k.CARET];
+	  const z = options.includePrerelease ? '-0' : '';
+	  return comp.replace(r, (_, M, m, p, pr) => {
+	    debug_1$3('caret', comp, _, M, m, p, pr);
+	    let ret;
+
+	    if (isX$3(M)) {
+	      ret = '';
+	    } else if (isX$3(m)) {
+	      ret = `>=${M}.0.0${z} <${+M + 1}.0.0-0`;
+	    } else if (isX$3(p)) {
+	      if (M === '0') {
+	        ret = `>=${M}.${m}.0${z} <${M}.${+m + 1}.0-0`;
+	      } else {
+	        ret = `>=${M}.${m}.0${z} <${+M + 1}.0.0-0`;
+	      }
+	    } else if (pr) {
+	      debug_1$3('replaceCaret pr', pr);
+	      if (M === '0') {
+	        if (m === '0') {
+	          ret = `>=${M}.${m}.${p}-${pr
+          } <${M}.${m}.${+p + 1}-0`;
+	        } else {
+	          ret = `>=${M}.${m}.${p}-${pr
+          } <${M}.${+m + 1}.0-0`;
+	        }
+	      } else {
+	        ret = `>=${M}.${m}.${p}-${pr
+        } <${+M + 1}.0.0-0`;
+	      }
+	    } else {
+	      debug_1$3('no pr');
+	      if (M === '0') {
+	        if (m === '0') {
+	          ret = `>=${M}.${m}.${p
+          }${z} <${M}.${m}.${+p + 1}-0`;
+	        } else {
+	          ret = `>=${M}.${m}.${p
+          }${z} <${M}.${+m + 1}.0-0`;
+	        }
+	      } else {
+	        ret = `>=${M}.${m}.${p
+        } <${+M + 1}.0.0-0`;
+	      }
+	    }
+
+	    debug_1$3('caret return', ret);
+	    return ret
+	  })
+	};
+
+	const replaceXRanges$3 = (comp, options) => {
+	  debug_1$3('replaceXRanges', comp, options);
+	  return comp.split(/\s+/).map((comp) => {
+	    return replaceXRange$3(comp, options)
+	  }).join(' ')
+	};
+
+	const replaceXRange$3 = (comp, options) => {
+	  comp = comp.trim();
+	  const r = options.loose ? re$i[t$k.XRANGELOOSE] : re$i[t$k.XRANGE];
+	  return comp.replace(r, (ret, gtlt, M, m, p, pr) => {
+	    debug_1$3('xRange', comp, ret, gtlt, M, m, p, pr);
+	    const xM = isX$3(M);
+	    const xm = xM || isX$3(m);
+	    const xp = xm || isX$3(p);
+	    const anyX = xp;
+
+	    if (gtlt === '=' && anyX) {
+	      gtlt = '';
+	    }
+
+	    // if we're including prereleases in the match, then we need
+	    // to fix this to -0, the lowest possible prerelease value
+	    pr = options.includePrerelease ? '-0' : '';
+
+	    if (xM) {
+	      if (gtlt === '>' || gtlt === '<') {
+	        // nothing is allowed
+	        ret = '<0.0.0-0';
+	      } else {
+	        // nothing is forbidden
+	        ret = '*';
+	      }
+	    } else if (gtlt && anyX) {
+	      // we know patch is an x, because we have any x at all.
+	      // replace X with 0
+	      if (xm) {
+	        m = 0;
+	      }
+	      p = 0;
+
+	      if (gtlt === '>') {
+	        // >1 => >=2.0.0
+	        // >1.2 => >=1.3.0
+	        gtlt = '>=';
+	        if (xm) {
+	          M = +M + 1;
+	          m = 0;
+	          p = 0;
+	        } else {
+	          m = +m + 1;
+	          p = 0;
+	        }
+	      } else if (gtlt === '<=') {
+	        // <=0.7.x is actually <0.8.0, since any 0.7.x should
+	        // pass.  Similarly, <=7.x is actually <8.0.0, etc.
+	        gtlt = '<';
+	        if (xm) {
+	          M = +M + 1;
+	        } else {
+	          m = +m + 1;
+	        }
+	      }
+
+	      if (gtlt === '<')
+	        pr = '-0';
+
+	      ret = `${gtlt + M}.${m}.${p}${pr}`;
+	    } else if (xm) {
+	      ret = `>=${M}.0.0${pr} <${+M + 1}.0.0-0`;
+	    } else if (xp) {
+	      ret = `>=${M}.${m}.0${pr
+      } <${M}.${+m + 1}.0-0`;
+	    }
+
+	    debug_1$3('xRange return', ret);
+
+	    return ret
+	  })
+	};
+
+	// Because * is AND-ed with everything else in the comparator,
+	// and '' means "any version", just remove the *s entirely.
+	const replaceStars$3 = (comp, options) => {
+	  debug_1$3('replaceStars', comp, options);
+	  // Looseness is ignored here.  star is always as loose as it gets!
+	  return comp.trim().replace(re$i[t$k.STAR], '')
+	};
+
+	const replaceGTE0$3 = (comp, options) => {
+	  debug_1$3('replaceGTE0', comp, options);
+	  return comp.trim()
+	    .replace(re$i[options.includePrerelease ? t$k.GTE0PRE : t$k.GTE0], '')
+	};
+
+	// This function is passed to string.replace(re[t.HYPHENRANGE])
+	// M, m, patch, prerelease, build
+	// 1.2 - 3.4.5 => >=1.2.0 <=3.4.5
+	// 1.2.3 - 3.4 => >=1.2.0 <3.5.0-0 Any 3.4.x will do
+	// 1.2 - 3.4 => >=1.2.0 <3.5.0-0
+	const hyphenReplace$3 = incPr => ($0,
+	  from, fM, fm, fp, fpr, fb,
+	  to, tM, tm, tp, tpr, tb) => {
+	  if (isX$3(fM)) {
+	    from = '';
+	  } else if (isX$3(fm)) {
+	    from = `>=${fM}.0.0${incPr ? '-0' : ''}`;
+	  } else if (isX$3(fp)) {
+	    from = `>=${fM}.${fm}.0${incPr ? '-0' : ''}`;
+	  } else if (fpr) {
+	    from = `>=${from}`;
+	  } else {
+	    from = `>=${from}${incPr ? '-0' : ''}`;
+	  }
+
+	  if (isX$3(tM)) {
+	    to = '';
+	  } else if (isX$3(tm)) {
+	    to = `<${+tM + 1}.0.0-0`;
+	  } else if (isX$3(tp)) {
+	    to = `<${tM}.${+tm + 1}.0-0`;
+	  } else if (tpr) {
+	    to = `<=${tM}.${tm}.${tp}-${tpr}`;
+	  } else if (incPr) {
+	    to = `<${tM}.${tm}.${+tp + 1}-0`;
+	  } else {
+	    to = `<=${to}`;
+	  }
+
+	  return (`${from} ${to}`).trim()
+	};
+
+	const testSet$3 = (set, version, options) => {
+	  for (let i = 0; i < set.length; i++) {
+	    if (!set[i].test(version)) {
+	      return false
+	    }
+	  }
+
+	  if (version.prerelease.length && !options.includePrerelease) {
+	    // Find the set of versions that are allowed to have prereleases
+	    // For example, ^1.2.3-pr.1 desugars to >=1.2.3-pr.1 <2.0.0
+	    // That should allow `1.2.3-pr.2` to pass.
+	    // However, `1.2.4-alpha.notready` should NOT be allowed,
+	    // even though it's within the range set by the comparators.
+	    for (let i = 0; i < set.length; i++) {
+	      debug_1$3(set[i].semver);
+	      if (set[i].semver === comparator$3.ANY) {
+	        continue
+	      }
+
+	      if (set[i].semver.prerelease.length > 0) {
+	        const allowed = set[i].semver;
+	        if (allowed.major === version.major &&
+	            allowed.minor === version.minor &&
+	            allowed.patch === version.patch) {
+	          return true
+	        }
+	      }
+	    }
+
+	    // Version has a -pre, but it's not one of the ones we like.
+	    return false
+	  }
+
+	  return true
+	};
+
+	const ANY$9 = Symbol('SemVer ANY');
+	// hoisted class for cyclic dependency
+	class Comparator$3 {
+	  static get ANY () {
+	    return ANY$9
+	  }
+	  constructor (comp, options) {
+	    if (!options || typeof options !== 'object') {
+	      options = {
+	        loose: !!options,
+	        includePrerelease: false
+	      };
+	    }
+
+	    if (comp instanceof Comparator$3) {
+	      if (comp.loose === !!options.loose) {
+	        return comp
+	      } else {
+	        comp = comp.value;
+	      }
+	    }
+
+	    debug_1$3('comparator', comp, options);
+	    this.options = options;
+	    this.loose = !!options.loose;
+	    this.parse(comp);
+
+	    if (this.semver === ANY$9) {
+	      this.value = '';
+	    } else {
+	      this.value = this.operator + this.semver.version;
+	    }
+
+	    debug_1$3('comp', this);
+	  }
+
+	  parse (comp) {
+	    const r = this.options.loose ? re$j[t$l.COMPARATORLOOSE] : re$j[t$l.COMPARATOR];
+	    const m = comp.match(r);
+
+	    if (!m) {
+	      throw new TypeError(`Invalid comparator: ${comp}`)
+	    }
+
+	    this.operator = m[1] !== undefined ? m[1] : '';
+	    if (this.operator === '=') {
+	      this.operator = '';
+	    }
+
+	    // if it literally is just '>' or '' then allow anything.
+	    if (!m[2]) {
+	      this.semver = ANY$9;
+	    } else {
+	      this.semver = new semver$6(m[2], this.options.loose);
+	    }
+	  }
+
+	  toString () {
+	    return this.value
+	  }
+
+	  test (version) {
+	    debug_1$3('Comparator.test', version, this.options.loose);
+
+	    if (this.semver === ANY$9 || version === ANY$9) {
+	      return true
+	    }
+
+	    if (typeof version === 'string') {
+	      try {
+	        version = new semver$6(version, this.options);
+	      } catch (er) {
+	        return false
+	      }
+	    }
+
+	    return cmp_1$3(version, this.operator, this.semver, this.options)
+	  }
+
+	  intersects (comp, options) {
+	    if (!(comp instanceof Comparator$3)) {
+	      throw new TypeError('a Comparator is required')
+	    }
+
+	    if (!options || typeof options !== 'object') {
+	      options = {
+	        loose: !!options,
+	        includePrerelease: false
+	      };
+	    }
+
+	    if (this.operator === '') {
+	      if (this.value === '') {
+	        return true
+	      }
+	      return new range$4(comp.value, options).test(this.value)
+	    } else if (comp.operator === '') {
+	      if (comp.value === '') {
+	        return true
+	      }
+	      return new range$4(this.value, options).test(comp.semver)
+	    }
+
+	    const sameDirectionIncreasing =
+	      (this.operator === '>=' || this.operator === '>') &&
+	      (comp.operator === '>=' || comp.operator === '>');
+	    const sameDirectionDecreasing =
+	      (this.operator === '<=' || this.operator === '<') &&
+	      (comp.operator === '<=' || comp.operator === '<');
+	    const sameSemVer = this.semver.version === comp.semver.version;
+	    const differentDirectionsInclusive =
+	      (this.operator === '>=' || this.operator === '<=') &&
+	      (comp.operator === '>=' || comp.operator === '<=');
+	    const oppositeDirectionsLessThan =
+	      cmp_1$3(this.semver, '<', comp.semver, options) &&
+	      (this.operator === '>=' || this.operator === '>') &&
+	        (comp.operator === '<=' || comp.operator === '<');
+	    const oppositeDirectionsGreaterThan =
+	      cmp_1$3(this.semver, '>', comp.semver, options) &&
+	      (this.operator === '<=' || this.operator === '<') &&
+	        (comp.operator === '>=' || comp.operator === '>');
+
+	    return (
+	      sameDirectionIncreasing ||
+	      sameDirectionDecreasing ||
+	      (sameSemVer && differentDirectionsInclusive) ||
+	      oppositeDirectionsLessThan ||
+	      oppositeDirectionsGreaterThan
+	    )
+	  }
+	}
+
+	var comparator$3 = Comparator$3;
+
+	const {re: re$j, t: t$l} = re_1$3;
+
+	const satisfies$3 = (version, range, options) => {
+	  try {
+	    range = new range$4(range, options);
+	  } catch (er) {
+	    return false
+	  }
+	  return range.test(version)
+	};
+	var satisfies_1$3 = satisfies$3;
+
+	// Mostly just for testing and legacy API reasons
+	const toComparators$3 = (range, options) =>
+	  new range$4(range, options).set
+	    .map(comp => comp.map(c => c.value).join(' ').trim().split(' '));
+
+	var toComparators_1$3 = toComparators$3;
+
+	const maxSatisfying$3 = (versions, range, options) => {
+	  let max = null;
+	  let maxSV = null;
+	  let rangeObj = null;
+	  try {
+	    rangeObj = new range$4(range, options);
+	  } catch (er) {
+	    return null
+	  }
+	  versions.forEach((v) => {
+	    if (rangeObj.test(v)) {
+	      // satisfies(v, range, options)
+	      if (!max || maxSV.compare(v) === -1) {
+	        // compare(max, v, true)
+	        max = v;
+	        maxSV = new semver$6(max, options);
+	      }
+	    }
+	  });
+	  return max
+	};
+	var maxSatisfying_1$3 = maxSatisfying$3;
+
+	const minSatisfying$3 = (versions, range, options) => {
+	  let min = null;
+	  let minSV = null;
+	  let rangeObj = null;
+	  try {
+	    rangeObj = new range$4(range, options);
+	  } catch (er) {
+	    return null
+	  }
+	  versions.forEach((v) => {
+	    if (rangeObj.test(v)) {
+	      // satisfies(v, range, options)
+	      if (!min || minSV.compare(v) === 1) {
+	        // compare(min, v, true)
+	        min = v;
+	        minSV = new semver$6(min, options);
+	      }
+	    }
+	  });
+	  return min
+	};
+	var minSatisfying_1$3 = minSatisfying$3;
+
+	const minVersion$3 = (range, loose) => {
+	  range = new range$4(range, loose);
+
+	  let minver = new semver$6('0.0.0');
+	  if (range.test(minver)) {
+	    return minver
+	  }
+
+	  minver = new semver$6('0.0.0-0');
+	  if (range.test(minver)) {
+	    return minver
+	  }
+
+	  minver = null;
+	  for (let i = 0; i < range.set.length; ++i) {
+	    const comparators = range.set[i];
+
+	    comparators.forEach((comparator) => {
+	      // Clone to avoid manipulating the comparator's semver object.
+	      const compver = new semver$6(comparator.semver.version);
+	      switch (comparator.operator) {
+	        case '>':
+	          if (compver.prerelease.length === 0) {
+	            compver.patch++;
+	          } else {
+	            compver.prerelease.push(0);
+	          }
+	          compver.raw = compver.format();
+	          /* fallthrough */
+	        case '':
+	        case '>=':
+	          if (!minver || gt_1$3(minver, compver)) {
+	            minver = compver;
+	          }
+	          break
+	        case '<':
+	        case '<=':
+	          /* Ignore maximum versions */
+	          break
+	        /* istanbul ignore next */
+	        default:
+	          throw new Error(`Unexpected operation: ${comparator.operator}`)
+	      }
+	    });
+	  }
+
+	  if (minver && range.test(minver)) {
+	    return minver
+	  }
+
+	  return null
+	};
+	var minVersion_1$3 = minVersion$3;
+
+	const validRange$3 = (range, options) => {
+	  try {
+	    // Return '*' instead of '' so that truthiness works.
+	    // This will throw if it's invalid anyway
+	    return new range$4(range, options).range || '*'
+	  } catch (er) {
+	    return null
+	  }
+	};
+	var valid$7 = validRange$3;
+
+	const {ANY: ANY$a} = comparator$3;
+
+
+
+
+
+
+
+	const outside$3 = (version, range, hilo, options) => {
+	  version = new semver$6(version, options);
+	  range = new range$4(range, options);
+
+	  let gtfn, ltefn, ltfn, comp, ecomp;
+	  switch (hilo) {
+	    case '>':
+	      gtfn = gt_1$3;
+	      ltefn = lte_1$3;
+	      ltfn = lt_1$3;
+	      comp = '>';
+	      ecomp = '>=';
+	      break
+	    case '<':
+	      gtfn = lt_1$3;
+	      ltefn = gte_1$3;
+	      ltfn = gt_1$3;
+	      comp = '<';
+	      ecomp = '<=';
+	      break
+	    default:
+	      throw new TypeError('Must provide a hilo val of "<" or ">"')
+	  }
+
+	  // If it satisifes the range it is not outside
+	  if (satisfies_1$3(version, range, options)) {
+	    return false
+	  }
+
+	  // From now on, variable terms are as if we're in "gtr" mode.
+	  // but note that everything is flipped for the "ltr" function.
+
+	  for (let i = 0; i < range.set.length; ++i) {
+	    const comparators = range.set[i];
+
+	    let high = null;
+	    let low = null;
+
+	    comparators.forEach((comparator) => {
+	      if (comparator.semver === ANY$a) {
+	        comparator = new comparator$3('>=0.0.0');
+	      }
+	      high = high || comparator;
+	      low = low || comparator;
+	      if (gtfn(comparator.semver, high.semver, options)) {
+	        high = comparator;
+	      } else if (ltfn(comparator.semver, low.semver, options)) {
+	        low = comparator;
+	      }
+	    });
+
+	    // If the edge version comparator has a operator then our version
+	    // isn't outside it
+	    if (high.operator === comp || high.operator === ecomp) {
+	      return false
+	    }
+
+	    // If the lowest version comparator has an operator and our version
+	    // is less than it then it isn't higher than the range
+	    if ((!low.operator || low.operator === comp) &&
+	        ltefn(version, low.semver)) {
+	      return false
+	    } else if (low.operator === ecomp && ltfn(version, low.semver)) {
+	      return false
+	    }
+	  }
+	  return true
+	};
+
+	var outside_1$3 = outside$3;
+
+	// Determine if version is greater than all the versions possible in the range.
+
+	const gtr$3 = (version, range, options) => outside_1$3(version, range, '>', options);
+	var gtr_1$3 = gtr$3;
+
+	// Determine if version is less than all the versions possible in the range
+	const ltr$3 = (version, range, options) => outside_1$3(version, range, '<', options);
+	var ltr_1$3 = ltr$3;
+
+	const intersects$3 = (r1, r2, options) => {
+	  r1 = new range$4(r1, options);
+	  r2 = new range$4(r2, options);
+	  return r1.intersects(r2)
+	};
+	var intersects_1$3 = intersects$3;
+
+	// given a set of versions and a range, create a "simplified" range
+	// that includes the same versions that the original range does
+	// If the original range is shorter than the simplified one, return that.
+
+
+	var simplify$3 = (versions, range, options) => {
+	  const set = [];
+	  let min = null;
+	  let prev = null;
+	  const v = versions.sort((a, b) => compare_1$3(a, b, options));
+	  for (const version of v) {
+	    const included = satisfies_1$3(version, range, options);
+	    if (included) {
+	      prev = version;
+	      if (!min)
+	        min = version;
+	    } else {
+	      if (prev) {
+	        set.push([min, prev]);
+	      }
+	      prev = null;
+	      min = null;
+	    }
+	  }
+	  if (min)
+	    set.push([min, null]);
+
+	  const ranges = [];
+	  for (const [min, max] of set) {
+	    if (min === max)
+	      ranges.push(min);
+	    else if (!max && min === v[0])
+	      ranges.push('*');
+	    else if (!max)
+	      ranges.push(`>=${min}`);
+	    else if (min === v[0])
+	      ranges.push(`<=${max}`);
+	    else
+	      ranges.push(`${min} - ${max}`);
+	  }
+	  const simplified = ranges.join(' || ');
+	  const original = typeof range.raw === 'string' ? range.raw : String(range);
+	  return simplified.length < original.length ? simplified : range
+	};
+
+	const { ANY: ANY$b } = comparator$3;
+
+
+
+	// Complex range `r1 || r2 || ...` is a subset of `R1 || R2 || ...` iff:
+	// - Every simple range `r1, r2, ...` is a subset of some `R1, R2, ...`
+	//
+	// Simple range `c1 c2 ...` is a subset of simple range `C1 C2 ...` iff:
+	// - If c is only the ANY comparator
+	//   - If C is only the ANY comparator, return true
+	//   - Else return false
+	// - Let EQ be the set of = comparators in c
+	// - If EQ is more than one, return true (null set)
+	// - Let GT be the highest > or >= comparator in c
+	// - Let LT be the lowest < or <= comparator in c
+	// - If GT and LT, and GT.semver > LT.semver, return true (null set)
+	// - If EQ
+	//   - If GT, and EQ does not satisfy GT, return true (null set)
+	//   - If LT, and EQ does not satisfy LT, return true (null set)
+	//   - If EQ satisfies every C, return true
+	//   - Else return false
+	// - If GT
+	//   - If GT is lower than any > or >= comp in C, return false
+	//   - If GT is >=, and GT.semver does not satisfy every C, return false
+	// - If LT
+	//   - If LT.semver is greater than that of any > comp in C, return false
+	//   - If LT is <=, and LT.semver does not satisfy every C, return false
+	// - If any C is a = range, and GT or LT are set, return false
+	// - Else return true
+
+	const subset$3 = (sub, dom, options) => {
+	  sub = new range$4(sub, options);
+	  dom = new range$4(dom, options);
+	  let sawNonNull = false;
+
+	  OUTER: for (const simpleSub of sub.set) {
+	    for (const simpleDom of dom.set) {
+	      const isSub = simpleSubset$3(simpleSub, simpleDom, options);
+	      sawNonNull = sawNonNull || isSub !== null;
+	      if (isSub)
+	        continue OUTER
+	    }
+	    // the null set is a subset of everything, but null simple ranges in
+	    // a complex range should be ignored.  so if we saw a non-null range,
+	    // then we know this isn't a subset, but if EVERY simple range was null,
+	    // then it is a subset.
+	    if (sawNonNull)
+	      return false
+	  }
+	  return true
+	};
+
+	const simpleSubset$3 = (sub, dom, options) => {
+	  if (sub.length === 1 && sub[0].semver === ANY$b)
+	    return dom.length === 1 && dom[0].semver === ANY$b
+
+	  const eqSet = new Set();
+	  let gt, lt;
+	  for (const c of sub) {
+	    if (c.operator === '>' || c.operator === '>=')
+	      gt = higherGT$3(gt, c, options);
+	    else if (c.operator === '<' || c.operator === '<=')
+	      lt = lowerLT$3(lt, c, options);
+	    else
+	      eqSet.add(c.semver);
+	  }
+
+	  if (eqSet.size > 1)
+	    return null
+
+	  let gtltComp;
+	  if (gt && lt) {
+	    gtltComp = compare_1$3(gt.semver, lt.semver, options);
+	    if (gtltComp > 0)
+	      return null
+	    else if (gtltComp === 0 && (gt.operator !== '>=' || lt.operator !== '<='))
+	      return null
+	  }
+
+	  // will iterate one or zero times
+	  for (const eq of eqSet) {
+	    if (gt && !satisfies_1$3(eq, String(gt), options))
+	      return null
+
+	    if (lt && !satisfies_1$3(eq, String(lt), options))
+	      return null
+
+	    for (const c of dom) {
+	      if (!satisfies_1$3(eq, String(c), options))
+	        return false
+	    }
+	    return true
+	  }
+
+	  let higher, lower;
+	  let hasDomLT, hasDomGT;
+	  for (const c of dom) {
+	    hasDomGT = hasDomGT || c.operator === '>' || c.operator === '>=';
+	    hasDomLT = hasDomLT || c.operator === '<' || c.operator === '<=';
+	    if (gt) {
+	      if (c.operator === '>' || c.operator === '>=') {
+	        higher = higherGT$3(gt, c, options);
+	        if (higher === c)
+	          return false
+	      } else if (gt.operator === '>=' && !satisfies_1$3(gt.semver, String(c), options))
+	        return false
+	    }
+	    if (lt) {
+	      if (c.operator === '<' || c.operator === '<=') {
+	        lower = lowerLT$3(lt, c, options);
+	        if (lower === c)
+	          return false
+	      } else if (lt.operator === '<=' && !satisfies_1$3(lt.semver, String(c), options))
+	        return false
+	    }
+	    if (!c.operator && (lt || gt) && gtltComp !== 0)
+	      return false
+	  }
+
+	  // if there was a < or >, and nothing in the dom, then must be false
+	  // UNLESS it was limited by another range in the other direction.
+	  // Eg, >1.0.0 <1.0.1 is still a subset of <2.0.0
+	  if (gt && hasDomLT && !lt && gtltComp !== 0)
+	    return false
+
+	  if (lt && hasDomGT && !gt && gtltComp !== 0)
+	    return false
+
+	  return true
+	};
+
+	// >=1.2.3 is lower than >1.2.3
+	const higherGT$3 = (a, b, options) => {
+	  if (!a)
+	    return b
+	  const comp = compare_1$3(a.semver, b.semver, options);
+	  return comp > 0 ? a
+	    : comp < 0 ? b
+	    : b.operator === '>' && a.operator === '>=' ? b
+	    : a
+	};
+
+	// <=1.2.3 is higher than <1.2.3
+	const lowerLT$3 = (a, b, options) => {
+	  if (!a)
+	    return b
+	  const comp = compare_1$3(a.semver, b.semver, options);
+	  return comp < 0 ? a
+	    : comp > 0 ? b
+	    : b.operator === '<' && a.operator === '<=' ? b
+	    : a
+	};
+
+	var subset_1$3 = subset$3;
+
+	// just pre-load all the stuff that index.js lazily exports
+
+	var semver$7 = {
+	  re: re_1$3.re,
+	  src: re_1$3.src,
+	  tokens: re_1$3.t,
+	  SEMVER_SPEC_VERSION: constants$4.SEMVER_SPEC_VERSION,
+	  SemVer: semver$6,
+	  compareIdentifiers: identifiers$3.compareIdentifiers,
+	  rcompareIdentifiers: identifiers$3.rcompareIdentifiers,
+	  parse: parse_1$5,
+	  valid: valid_1$3,
+	  clean: clean_1$3,
+	  inc: inc_1$3,
+	  diff: diff_1$3,
+	  major: major_1$3,
+	  minor: minor_1$3,
+	  patch: patch_1$3,
+	  prerelease: prerelease_1$3,
+	  compare: compare_1$3,
+	  rcompare: rcompare_1$3,
+	  compareLoose: compareLoose_1$3,
+	  compareBuild: compareBuild_1$3,
+	  sort: sort_1$3,
+	  rsort: rsort_1$3,
+	  gt: gt_1$3,
+	  lt: lt_1$3,
+	  eq: eq_1$3,
+	  neq: neq_1$3,
+	  gte: gte_1$3,
+	  lte: lte_1$3,
+	  cmp: cmp_1$3,
+	  coerce: coerce_1$3,
+	  Comparator: comparator$3,
+	  Range: range$4,
+	  satisfies: satisfies_1$3,
+	  toComparators: toComparators_1$3,
+	  maxSatisfying: maxSatisfying_1$3,
+	  minSatisfying: minSatisfying_1$3,
+	  minVersion: minVersion_1$3,
+	  validRange: valid$7,
+	  outside: outside_1$3,
+	  gtr: gtr_1$3,
+	  ltr: ltr_1$3,
+	  intersects: intersects_1$3,
+	  simplifyRange: simplify$3,
+	  subset: subset_1$3,
+	};
+
+	var BaseAbstractPlugin_1$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.BaseAbstractPlugin = void 0;
+	/** This class represent the base to patch plugin. */
+	class BaseAbstractPlugin {
+	    constructor(_tracerName, _tracerVersion) {
+	        this._tracerName = _tracerName;
+	        this._tracerVersion = _tracerVersion;
+	    }
+	    disable() {
+	        this.unpatch();
+	    }
+	}
+	exports.BaseAbstractPlugin = BaseAbstractPlugin;
+
+	});
+
+	unwrapExports(BaseAbstractPlugin_1$3);
+	var BaseAbstractPlugin_2$3 = BaseAbstractPlugin_1$3.BaseAbstractPlugin;
+
+	var BasePlugin_1$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.BasePlugin = void 0;
+
+
+
+	/** This class represent the base to patch plugin. */
+	class BasePlugin extends BaseAbstractPlugin_1$3.BaseAbstractPlugin {
+	    enable(moduleExports, tracerProvider, logger, config) {
+	        this._moduleExports = moduleExports;
+	        this._tracer = tracerProvider.getTracer(this._tracerName, this._tracerVersion);
+	        this._logger = logger;
+	        this._internalFilesExports = this._loadInternalFilesExports();
+	        if (config)
+	            this._config = config;
+	        return this.patch();
+	    }
+	    disable() {
+	        this.unpatch();
+	    }
+	    /**
+	     * @TODO: To avoid circular dependencies, internal file loading functionality currently
+	     * lives in BasePlugin. It is not meant to work in the browser and so this logic
+	     * should eventually be moved somewhere else where it makes more sense.
+	     * https://github.com/open-telemetry/opentelemetry-js/issues/285
+	     */
+	    _loadInternalFilesExports() {
+	        if (!this._internalFilesList)
+	            return {};
+	        if (!this.version || !this.moduleName || !this._basedir) {
+	            // log here because internalFilesList was provided, so internal file loading
+	            // was expected to be working
+	            this._logger.debug('loadInternalFiles failed because one of the required fields was missing: moduleName=%s, version=%s, basedir=%s', this.moduleName, this.version, this._basedir);
+	            return {};
+	        }
+	        const extraModules = {};
+	        this._logger.debug('loadInternalFiles %o', this._internalFilesList);
+	        Object.keys(this._internalFilesList).forEach(versionRange => {
+	            this._loadInternalModule(versionRange, extraModules);
+	        });
+	        if (Object.keys(extraModules).length === 0) {
+	            this._logger.debug('No internal files could be loaded for %s@%s', this.moduleName, this.version);
+	        }
+	        return extraModules;
+	    }
+	    _loadInternalModule(versionRange, outExtraModules) {
+	        if (semver$7.satisfies(this.version, versionRange)) {
+	            if (Object.keys(outExtraModules).length > 0) {
+	                this._logger.warn('Plugin for %s@%s, has overlap version range (%s) for internal files: %o', this.moduleName, this.version, versionRange, this._internalFilesList);
+	            }
+	            this._requireInternalFiles(this._internalFilesList[versionRange], this._basedir, outExtraModules);
+	        }
+	    }
+	    _requireInternalFiles(extraModulesList, basedir, outExtraModules) {
+	        if (!extraModulesList)
+	            return;
+	        Object.keys(extraModulesList).forEach(moduleName => {
+	            try {
+	                this._logger.debug('loading File %s', extraModulesList[moduleName]);
+	                outExtraModules[moduleName] = commonjsRequire(path.join(basedir, extraModulesList[moduleName]));
+	            }
+	            catch (e) {
+	                this._logger.error('Could not load internal file %s of module %s. Error: %s', path.join(basedir, extraModulesList[moduleName]), this.moduleName, e.message);
+	            }
+	        });
+	    }
+	}
+	exports.BasePlugin = BasePlugin;
+
+	});
+
+	unwrapExports(BasePlugin_1$3);
+	var BasePlugin_2$3 = BasePlugin_1$3.BasePlugin;
+
+	var environment$6 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.parseEnvironment = exports.DEFAULT_ENVIRONMENT = void 0;
+
+	const ENVIRONMENT_NUMBERS = [
+	    'OTEL_SAMPLING_PROBABILITY',
+	];
+	/**
+	 * Default environment variables
+	 */
+	exports.DEFAULT_ENVIRONMENT = {
+	    OTEL_NO_PATCH_MODULES: '',
+	    OTEL_LOG_LEVEL: types$c.LogLevel.INFO,
+	    OTEL_SAMPLING_PROBABILITY: 1,
+	};
+	/**
+	 * Parses a variable as number with number validation
+	 * @param name
+	 * @param environment
+	 * @param values
+	 * @param min
+	 * @param max
+	 */
+	function parseNumber(name, environment, values, min = -Infinity, max = Infinity) {
+	    if (typeof values[name] !== 'undefined') {
+	        const value = Number(values[name]);
+	        if (!isNaN(value) && value >= min && value <= max) {
+	            environment[name] = value;
+	        }
+	    }
+	}
+	/**
+	 * Environmentally sets log level if valid log level string is provided
+	 * @param key
+	 * @param environment
+	 * @param values
+	 */
+	function setLogLevelFromEnv(key, environment, values) {
+	    const value = values[key];
+	    switch (typeof value === 'string' ? value.toUpperCase() : value) {
+	        case 'DEBUG':
+	            environment[key] = types$c.LogLevel.DEBUG;
+	            break;
+	        case 'INFO':
+	            environment[key] = types$c.LogLevel.INFO;
+	            break;
+	        case 'WARN':
+	            environment[key] = types$c.LogLevel.WARN;
+	            break;
+	        case 'ERROR':
+	            environment[key] = types$c.LogLevel.ERROR;
+	            break;
+	    }
+	}
+	/**
+	 * Parses environment values
+	 * @param values
+	 */
+	function parseEnvironment(values) {
+	    const environment = {};
+	    for (const env in exports.DEFAULT_ENVIRONMENT) {
+	        const key = env;
+	        switch (key) {
+	            case 'OTEL_SAMPLING_PROBABILITY':
+	                parseNumber(key, environment, values, 0, 1);
+	                break;
+	            case 'OTEL_LOG_LEVEL':
+	                setLogLevelFromEnv(key, environment, values);
+	                break;
+	            default:
+	                if (ENVIRONMENT_NUMBERS.indexOf(key) >= 0) {
+	                    parseNumber(key, environment, values);
+	                }
+	                else {
+	                    if (typeof values[key] !== 'undefined') {
+	                        environment[key] = values[key];
+	                    }
+	                }
+	        }
+	    }
+	    return environment;
+	}
+	exports.parseEnvironment = parseEnvironment;
+
+	});
+
+	unwrapExports(environment$6);
+	var environment_1$3 = environment$6.parseEnvironment;
+	var environment_2$6 = environment$6.DEFAULT_ENVIRONMENT;
+
+	var environment$7 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.getEnv = void 0;
+
+	/**
+	 * Gets the environment variables
+	 */
+	function getEnv() {
+	    const processEnv = environment$6.parseEnvironment(process.env);
+	    return Object.assign({}, environment$6.DEFAULT_ENVIRONMENT, processEnv);
+	}
+	exports.getEnv = getEnv;
+
+	});
+
+	unwrapExports(environment$7);
+	var environment_2$7 = environment$7.getEnv;
+
+	var hexToBase64_1$3 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.hexToBase64 = void 0;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	function hexToBase64(hexStr) {
+	    const hexStrLen = hexStr.length;
+	    let hexAsciiCharsStr = '';
+	    for (let i = 0; i < hexStrLen; i += 2) {
+	        const hexPair = hexStr.substring(i, i + 2);
+	        const hexVal = parseInt(hexPair, 16);
+	        hexAsciiCharsStr += String.fromCharCode(hexVal);
+	    }
+	    return Buffer.from(hexAsciiCharsStr, 'ascii').toString('base64');
+	}
+	exports.hexToBase64 = hexToBase64;
+
+	});
+
+	unwrapExports(hexToBase64_1$3);
+	var hexToBase64_2$3 = hexToBase64_1$3.hexToBase64;
+
+	var RandomIdGenerator_1$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.RandomIdGenerator = void 0;
+
+	const SPAN_ID_BYTES = 8;
+	const TRACE_ID_BYTES = 16;
+	class RandomIdGenerator {
+	    /**
+	     * Returns a random 16-byte trace ID formatted/encoded as a 32 lowercase hex
+	     * characters corresponding to 128 bits.
+	     */
+	    generateTraceId() {
+	        return crypto$1.randomBytes(TRACE_ID_BYTES).toString('hex');
+	    }
+	    /**
+	     * Returns a random 8-byte span ID formatted/encoded as a 16 lowercase hex
+	     * characters corresponding to 64 bits.
+	     */
+	    generateSpanId() {
+	        return crypto$1.randomBytes(SPAN_ID_BYTES).toString('hex');
+	    }
+	}
+	exports.RandomIdGenerator = RandomIdGenerator;
+
+	});
+
+	unwrapExports(RandomIdGenerator_1$3);
+	var RandomIdGenerator_2$3 = RandomIdGenerator_1$3.RandomIdGenerator;
+
+	var performance$4 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.otperformance = void 0;
+
+	exports.otperformance = perf_hooks.performance;
+
+	});
+
+	unwrapExports(performance$4);
+	var performance_1$3 = performance$4.otperformance;
+
+	var version$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.VERSION = void 0;
+	// this is autogenerated file, see scripts/version-update.js
+	exports.VERSION = '0.10.2';
+
+	});
+
+	unwrapExports(version$3);
+	var version_1$3 = version$3.VERSION;
+
+	var sdkInfo$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.SDK_INFO = void 0;
+
+	/** Constants describing the SDK in use */
+	exports.SDK_INFO = {
+	    NAME: 'opentelemetry',
+	    RUNTIME: 'node',
+	    LANGUAGE: 'nodejs',
+	    VERSION: version$3.VERSION,
+	};
+
+	});
+
+	unwrapExports(sdkInfo$3);
+	var sdkInfo_1$3 = sdkInfo$3.SDK_INFO;
+
+	var timerUtil$3 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.unrefTimer = void 0;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	function unrefTimer(timer) {
+	    timer.unref();
+	}
+	exports.unrefTimer = unrefTimer;
+
+	});
+
+	unwrapExports(timerUtil$3);
+	var timerUtil_1$3 = timerUtil$3.unrefTimer;
+
+	var node$7 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+	}) : (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    o[k2] = m[k];
+	}));
+	var __exportStar = (commonjsGlobal && commonjsGlobal.__exportStar) || function(m, exports) {
+	    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	__exportStar(BasePlugin_1$3, exports);
+	__exportStar(environment$7, exports);
+	__exportStar(hexToBase64_1$3, exports);
+	__exportStar(RandomIdGenerator_1$3, exports);
+	__exportStar(performance$4, exports);
+	__exportStar(sdkInfo$3, exports);
+	__exportStar(timerUtil$3, exports);
+
+	});
+
+	unwrapExports(node$7);
+
+	var platform$6 = createCommonjsModule(function (module, exports) {
+	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+	}) : (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    o[k2] = m[k];
+	}));
+	var __exportStar = (commonjsGlobal && commonjsGlobal.__exportStar) || function(m, exports) {
+	    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	__exportStar(node$7, exports);
+
+	});
+
+	unwrapExports(platform$6);
+
+	var ConsoleLogger_1$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ConsoleLogger = void 0;
+
+
+	class ConsoleLogger {
+	    constructor(level = platform$6.getEnv().OTEL_LOG_LEVEL) {
+	        if (level >= types$c.LogLevel.DEBUG) {
+	            this.debug = (...args) => {
+	                console.debug(...args);
+	            };
+	        }
+	        if (level >= types$c.LogLevel.INFO) {
+	            this.info = (...args) => {
+	                console.info(...args);
+	            };
+	        }
+	        if (level >= types$c.LogLevel.WARN) {
+	            this.warn = (...args) => {
+	                console.warn(...args);
+	            };
+	        }
+	        if (level >= types$c.LogLevel.ERROR) {
+	            this.error = (...args) => {
+	                console.error(...args);
+	            };
+	        }
+	    }
+	    debug(message, ...args) { }
+	    error(message, ...args) { }
+	    warn(message, ...args) { }
+	    info(message, ...args) { }
+	}
+	exports.ConsoleLogger = ConsoleLogger;
+
+	});
+
+	unwrapExports(ConsoleLogger_1$3);
+	var ConsoleLogger_2$3 = ConsoleLogger_1$3.ConsoleLogger;
+
+	var NoopLogger_1$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.NoopLogger = void 0;
+	/** No-op implementation of Logger */
+	class NoopLogger {
+	    // By default does nothing
+	    debug(message, ...args) { }
+	    // By default does nothing
+	    error(message, ...args) { }
+	    // By default does nothing
+	    warn(message, ...args) { }
+	    // By default does nothing
+	    info(message, ...args) { }
+	}
+	exports.NoopLogger = NoopLogger;
+
+	});
+
+	unwrapExports(NoopLogger_1$3);
+	var NoopLogger_2$3 = NoopLogger_1$3.NoopLogger;
+
+	var time$4 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.isTimeInput = exports.isTimeInputHrTime = exports.hrTimeToMicroseconds = exports.hrTimeToMilliseconds = exports.hrTimeToNanoseconds = exports.hrTimeToTimeStamp = exports.hrTimeDuration = exports.timeInputToHrTime = exports.hrTime = void 0;
+
+	const NANOSECOND_DIGITS = 9;
+	const SECOND_TO_NANOSECONDS = Math.pow(10, NANOSECOND_DIGITS);
+	/**
+	 * Converts a number to HrTime
+	 * @param epochMillis
+	 */
+	function numberToHrtime(epochMillis) {
+	    const epochSeconds = epochMillis / 1000;
+	    // Decimals only.
+	    const seconds = Math.trunc(epochSeconds);
+	    // Round sub-nanosecond accuracy to nanosecond.
+	    const nanos = Number((epochSeconds - seconds).toFixed(NANOSECOND_DIGITS)) *
+	        SECOND_TO_NANOSECONDS;
+	    return [seconds, nanos];
+	}
+	function getTimeOrigin() {
+	    let timeOrigin = platform$6.otperformance.timeOrigin;
+	    if (typeof timeOrigin !== 'number') {
+	        const perf = platform$6.otperformance;
+	        timeOrigin = perf.timing && perf.timing.fetchStart;
+	    }
+	    return timeOrigin;
+	}
+	/**
+	 * Returns an hrtime calculated via performance component.
+	 * @param performanceNow
+	 */
+	function hrTime(performanceNow) {
+	    const timeOrigin = numberToHrtime(getTimeOrigin());
+	    const now = numberToHrtime(typeof performanceNow === 'number' ? performanceNow : platform$6.otperformance.now());
+	    let seconds = timeOrigin[0] + now[0];
+	    let nanos = timeOrigin[1] + now[1];
+	    // Nanoseconds
+	    if (nanos > SECOND_TO_NANOSECONDS) {
+	        nanos -= SECOND_TO_NANOSECONDS;
+	        seconds += 1;
+	    }
+	    return [seconds, nanos];
+	}
+	exports.hrTime = hrTime;
+	/**
+	 *
+	 * Converts a TimeInput to an HrTime, defaults to _hrtime().
+	 * @param time
+	 */
+	function timeInputToHrTime(time) {
+	    // process.hrtime
+	    if (isTimeInputHrTime(time)) {
+	        return time;
+	    }
+	    else if (typeof time === 'number') {
+	        // Must be a performance.now() if it's smaller than process start time.
+	        if (time < getTimeOrigin()) {
+	            return hrTime(time);
+	        }
+	        else {
+	            // epoch milliseconds or performance.timeOrigin
+	            return numberToHrtime(time);
+	        }
+	    }
+	    else if (time instanceof Date) {
+	        return [time.getTime(), 0];
+	    }
+	    else {
+	        throw TypeError('Invalid input type');
+	    }
+	}
+	exports.timeInputToHrTime = timeInputToHrTime;
+	/**
+	 * Returns a duration of two hrTime.
+	 * @param startTime
+	 * @param endTime
+	 */
+	function hrTimeDuration(startTime, endTime) {
+	    let seconds = endTime[0] - startTime[0];
+	    let nanos = endTime[1] - startTime[1];
+	    // overflow
+	    if (nanos < 0) {
+	        seconds -= 1;
+	        // negate
+	        nanos += SECOND_TO_NANOSECONDS;
+	    }
+	    return [seconds, nanos];
+	}
+	exports.hrTimeDuration = hrTimeDuration;
+	/**
+	 * Convert hrTime to timestamp, for example "2019-05-14T17:00:00.000123456Z"
+	 * @param hrTime
+	 */
+	function hrTimeToTimeStamp(hrTime) {
+	    const precision = NANOSECOND_DIGITS;
+	    const tmp = `${'0'.repeat(precision)}${hrTime[1]}Z`;
+	    const nanoString = tmp.substr(tmp.length - precision - 1);
+	    const date = new Date(hrTime[0] * 1000).toISOString();
+	    return date.replace('000Z', nanoString);
+	}
+	exports.hrTimeToTimeStamp = hrTimeToTimeStamp;
+	/**
+	 * Convert hrTime to nanoseconds.
+	 * @param hrTime
+	 */
+	function hrTimeToNanoseconds(hrTime) {
+	    return hrTime[0] * SECOND_TO_NANOSECONDS + hrTime[1];
+	}
+	exports.hrTimeToNanoseconds = hrTimeToNanoseconds;
+	/**
+	 * Convert hrTime to milliseconds.
+	 * @param hrTime
+	 */
+	function hrTimeToMilliseconds(hrTime) {
+	    return Math.round(hrTime[0] * 1e3 + hrTime[1] / 1e6);
+	}
+	exports.hrTimeToMilliseconds = hrTimeToMilliseconds;
+	/**
+	 * Convert hrTime to microseconds.
+	 * @param hrTime
+	 */
+	function hrTimeToMicroseconds(hrTime) {
+	    return Math.round(hrTime[0] * 1e6 + hrTime[1] / 1e3);
+	}
+	exports.hrTimeToMicroseconds = hrTimeToMicroseconds;
+	/**
+	 * check if time is HrTime
+	 * @param value
+	 */
+	function isTimeInputHrTime(value) {
+	    return (Array.isArray(value) &&
+	        value.length === 2 &&
+	        typeof value[0] === 'number' &&
+	        typeof value[1] === 'number');
+	}
+	exports.isTimeInputHrTime = isTimeInputHrTime;
+	/**
+	 * check if input value is a correct types.TimeInput
+	 * @param value
+	 */
+	function isTimeInput(value) {
+	    return (isTimeInputHrTime(value) ||
+	        typeof value === 'number' ||
+	        value instanceof Date);
+	}
+	exports.isTimeInput = isTimeInput;
+
+	});
+
+	unwrapExports(time$4);
+	var time_1$4 = time$4.isTimeInput;
+	var time_2$3 = time$4.isTimeInputHrTime;
+	var time_3$3 = time$4.hrTimeToMicroseconds;
+	var time_4$3 = time$4.hrTimeToMilliseconds;
+	var time_5$3 = time$4.hrTimeToNanoseconds;
+	var time_6$3 = time$4.hrTimeToTimeStamp;
+	var time_7$3 = time$4.hrTimeDuration;
+	var time_8$3 = time$4.timeInputToHrTime;
+	var time_9$3 = time$4.hrTime;
+
+	var ExportResult_1$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ExportResult = void 0;
+	var ExportResult;
+	(function (ExportResult) {
+	    ExportResult[ExportResult["SUCCESS"] = 0] = "SUCCESS";
+	    ExportResult[ExportResult["FAILED_NOT_RETRYABLE"] = 1] = "FAILED_NOT_RETRYABLE";
+	    ExportResult[ExportResult["FAILED_RETRYABLE"] = 2] = "FAILED_RETRYABLE";
+	})(ExportResult = exports.ExportResult || (exports.ExportResult = {}));
+
+	});
+
+	unwrapExports(ExportResult_1$3);
+	var ExportResult_2$3 = ExportResult_1$3.ExportResult;
+
+	var context$7 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.getParentSpanContext = exports.setExtractedSpanContext = exports.getExtractedSpanContext = exports.setActiveSpan = exports.getActiveSpan = exports.ACTIVE_SPAN_KEY = void 0;
+
+	/**
+	 * Active span key
+	 */
+	exports.ACTIVE_SPAN_KEY = src$3.Context.createKey('OpenTelemetry Context Key ACTIVE_SPAN');
+	const EXTRACTED_SPAN_CONTEXT_KEY = src$3.Context.createKey('OpenTelemetry Context Key EXTRACTED_SPAN_CONTEXT');
+	/**
+	 * Return the active span if one exists
+	 *
+	 * @param context context to get span from
+	 */
+	function getActiveSpan(context) {
+	    return context.getValue(exports.ACTIVE_SPAN_KEY) || undefined;
+	}
+	exports.getActiveSpan = getActiveSpan;
+	/**
+	 * Set the active span on a context
+	 *
+	 * @param context context to use as parent
+	 * @param span span to set active
+	 */
+	function setActiveSpan(context, span) {
+	    return context.setValue(exports.ACTIVE_SPAN_KEY, span);
+	}
+	exports.setActiveSpan = setActiveSpan;
+	/**
+	 * Get the extracted span context from a context
+	 *
+	 * @param context context to get span context from
+	 */
+	function getExtractedSpanContext(context) {
+	    return (context.getValue(EXTRACTED_SPAN_CONTEXT_KEY) || undefined);
+	}
+	exports.getExtractedSpanContext = getExtractedSpanContext;
+	/**
+	 * Set the extracted span context on a context
+	 *
+	 * @param context context to set span context on
+	 * @param spanContext span context to set
+	 */
+	function setExtractedSpanContext(context, spanContext) {
+	    return context.setValue(EXTRACTED_SPAN_CONTEXT_KEY, spanContext);
+	}
+	exports.setExtractedSpanContext = setExtractedSpanContext;
+	/**
+	 * Get the span context of the parent span if it exists,
+	 * or the extracted span context if there is no active
+	 * span.
+	 *
+	 * @param context context to get values from
+	 */
+	function getParentSpanContext(context) {
+	    var _a;
+	    return ((_a = getActiveSpan(context)) === null || _a === void 0 ? void 0 : _a.context()) || getExtractedSpanContext(context);
+	}
+	exports.getParentSpanContext = getParentSpanContext;
+
+	});
+
+	unwrapExports(context$7);
+	var context_1$7 = context$7.getParentSpanContext;
+	var context_2$3 = context$7.setExtractedSpanContext;
+	var context_3$3 = context$7.getExtractedSpanContext;
+	var context_4$3 = context$7.setActiveSpan;
+	var context_5$3 = context$7.getActiveSpan;
+	var context_6$3 = context$7.ACTIVE_SPAN_KEY;
+
+	var B3Propagator_1$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.B3Propagator = exports.X_B3_SAMPLED = exports.X_B3_SPAN_ID = exports.X_B3_TRACE_ID = void 0;
+
+
+	exports.X_B3_TRACE_ID = 'x-b3-traceid';
+	exports.X_B3_SPAN_ID = 'x-b3-spanid';
+	exports.X_B3_SAMPLED = 'x-b3-sampled';
+	const VALID_TRACEID_REGEX = /^([0-9a-f]{16}){1,2}$/i;
+	const VALID_SPANID_REGEX = /^[0-9a-f]{16}$/i;
+	const INVALID_ID_REGEX = /^0+$/i;
+	function isValidTraceId(traceId) {
+	    return VALID_TRACEID_REGEX.test(traceId) && !INVALID_ID_REGEX.test(traceId);
+	}
+	function isValidSpanId(spanId) {
+	    return VALID_SPANID_REGEX.test(spanId) && !INVALID_ID_REGEX.test(spanId);
+	}
+	/**
+	 * Propagator for the B3 HTTP header format.
+	 * Based on: https://github.com/openzipkin/b3-propagation
+	 */
+	class B3Propagator {
+	    inject(context, carrier, setter) {
+	        const spanContext = context$7.getParentSpanContext(context);
+	        if (!spanContext)
+	            return;
+	        if (isValidTraceId(spanContext.traceId) &&
+	            isValidSpanId(spanContext.spanId)) {
+	            setter(carrier, exports.X_B3_TRACE_ID, spanContext.traceId);
+	            setter(carrier, exports.X_B3_SPAN_ID, spanContext.spanId);
+	            // We set the header only if there is an existing sampling decision.
+	            // Otherwise we will omit it => Absent.
+	            if (spanContext.traceFlags !== undefined) {
+	                setter(carrier, exports.X_B3_SAMPLED, (src$4.TraceFlags.SAMPLED & spanContext.traceFlags) === src$4.TraceFlags.SAMPLED
+	                    ? '1'
+	                    : '0');
+	            }
+	        }
+	    }
+	    extract(context, carrier, getter) {
+	        const traceIdHeader = getter(carrier, exports.X_B3_TRACE_ID);
+	        const spanIdHeader = getter(carrier, exports.X_B3_SPAN_ID);
+	        const sampledHeader = getter(carrier, exports.X_B3_SAMPLED);
+	        const traceIdHeaderValue = Array.isArray(traceIdHeader)
+	            ? traceIdHeader[0]
+	            : traceIdHeader;
+	        const spanId = Array.isArray(spanIdHeader) ? spanIdHeader[0] : spanIdHeader;
+	        const options = Array.isArray(sampledHeader)
+	            ? sampledHeader[0]
+	            : sampledHeader;
+	        if (typeof traceIdHeaderValue !== 'string' || typeof spanId !== 'string') {
+	            return context;
+	        }
+	        const traceId = traceIdHeaderValue.padStart(32, '0');
+	        if (isValidTraceId(traceId) && isValidSpanId(spanId)) {
+	            return context$7.setExtractedSpanContext(context, {
+	                traceId,
+	                spanId,
+	                isRemote: true,
+	                traceFlags: isNaN(Number(options)) ? src$4.TraceFlags.NONE : Number(options),
+	            });
+	        }
+	        return context;
+	    }
+	}
+	exports.B3Propagator = B3Propagator;
+
+	});
+
+	unwrapExports(B3Propagator_1$3);
+	var B3Propagator_2$3 = B3Propagator_1$3.B3Propagator;
+	var B3Propagator_3$3 = B3Propagator_1$3.X_B3_SAMPLED;
+	var B3Propagator_4$3 = B3Propagator_1$3.X_B3_SPAN_ID;
+	var B3Propagator_5$3 = B3Propagator_1$3.X_B3_TRACE_ID;
+
+	var composite$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.CompositePropagator = void 0;
+
+	/** Combines multiple propagators into a single propagator. */
+	class CompositePropagator {
+	    /**
+	     * Construct a composite propagator from a list of propagators.
+	     *
+	     * @param [config] Configuration object for composite propagator
+	     */
+	    constructor(config = {}) {
+	        var _a, _b;
+	        this._propagators = (_a = config.propagators) !== null && _a !== void 0 ? _a : [];
+	        this._logger = (_b = config.logger) !== null && _b !== void 0 ? _b : new NoopLogger_1$3.NoopLogger();
+	    }
+	    /**
+	     * Run each of the configured propagators with the given context and carrier.
+	     * Propagators are run in the order they are configured, so if multiple
+	     * propagators write the same carrier key, the propagator later in the list
+	     * will "win".
+	     *
+	     * @param context Context to inject
+	     * @param carrier Carrier into which context will be injected
+	     */
+	    inject(context, carrier, setter) {
+	        for (const propagator of this._propagators) {
+	            try {
+	                propagator.inject(context, carrier, setter);
+	            }
+	            catch (err) {
+	                this._logger.warn(`Failed to inject with ${propagator.constructor.name}. Err: ${err.message}`);
+	            }
+	        }
+	    }
+	    /**
+	     * Run each of the configured propagators with the given context and carrier.
+	     * Propagators are run in the order they are configured, so if multiple
+	     * propagators write the same context key, the propagator later in the list
+	     * will "win".
+	     *
+	     * @param context Context to add values to
+	     * @param carrier Carrier from which to extract context
+	     */
+	    extract(context, carrier, getter) {
+	        return this._propagators.reduce((ctx, propagator) => {
+	            try {
+	                return propagator.extract(ctx, carrier, getter);
+	            }
+	            catch (err) {
+	                this._logger.warn(`Failed to inject with ${propagator.constructor.name}. Err: ${err.message}`);
+	            }
+	            return ctx;
+	        }, context);
+	    }
+	}
+	exports.CompositePropagator = CompositePropagator;
+
+	});
+
+	unwrapExports(composite$3);
+	var composite_1$3 = composite$3.CompositePropagator;
+
+	var validators$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.validateValue = exports.validateKey = void 0;
+	const VALID_KEY_CHAR_RANGE = '[_0-9a-z-*/]';
+	const VALID_KEY = `[a-z]${VALID_KEY_CHAR_RANGE}{0,255}`;
+	const VALID_VENDOR_KEY = `[a-z0-9]${VALID_KEY_CHAR_RANGE}{0,240}@[a-z]${VALID_KEY_CHAR_RANGE}{0,13}`;
+	const VALID_KEY_REGEX = new RegExp(`^(?:${VALID_KEY}|${VALID_VENDOR_KEY})$`);
+	const VALID_VALUE_BASE_REGEX = /^[ -~]{0,255}[!-~]$/;
+	const INVALID_VALUE_COMMA_EQUAL_REGEX = /,|=/;
+	/**
+	 * Key is opaque string up to 256 characters printable. It MUST begin with a
+	 * lowercase letter, and can only contain lowercase letters a-z, digits 0-9,
+	 * underscores _, dashes -, asterisks *, and forward slashes /.
+	 * For multi-tenant vendor scenarios, an at sign (@) can be used to prefix the
+	 * vendor name. Vendors SHOULD set the tenant ID at the beginning of the key.
+	 * see https://www.w3.org/TR/trace-context/#key
+	 */
+	function validateKey(key) {
+	    return VALID_KEY_REGEX.test(key);
+	}
+	exports.validateKey = validateKey;
+	/**
+	 * Value is opaque string up to 256 characters printable ASCII RFC0020
+	 * characters (i.e., the range 0x20 to 0x7E) except comma , and =.
+	 */
+	function validateValue(value) {
+	    return (VALID_VALUE_BASE_REGEX.test(value) &&
+	        !INVALID_VALUE_COMMA_EQUAL_REGEX.test(value));
+	}
+	exports.validateValue = validateValue;
+
+	});
+
+	unwrapExports(validators$3);
+	var validators_1$3 = validators$3.validateValue;
+	var validators_2$3 = validators$3.validateKey;
+
+	var TraceState_1$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.TraceState = void 0;
+
+	const MAX_TRACE_STATE_ITEMS = 32;
+	const MAX_TRACE_STATE_LEN = 512;
+	const LIST_MEMBERS_SEPARATOR = ',';
+	const LIST_MEMBER_KEY_VALUE_SPLITTER = '=';
+	/**
+	 * TraceState must be a class and not a simple object type because of the spec
+	 * requirement (https://www.w3.org/TR/trace-context/#tracestate-field).
+	 *
+	 * Here is the list of allowed mutations:
+	 * - New key-value pair should be added into the beginning of the list
+	 * - The value of any key can be updated. Modified keys MUST be moved to the
+	 * beginning of the list.
+	 */
+	class TraceState {
+	    constructor(rawTraceState) {
+	        this._internalState = new Map();
+	        if (rawTraceState)
+	            this._parse(rawTraceState);
+	    }
+	    set(key, value) {
+	        // TODO: Benchmark the different approaches(map vs list) and
+	        // use the faster one.
+	        if (this._internalState.has(key))
+	            this._internalState.delete(key);
+	        this._internalState.set(key, value);
+	    }
+	    unset(key) {
+	        this._internalState.delete(key);
+	    }
+	    get(key) {
+	        return this._internalState.get(key);
+	    }
+	    serialize() {
+	        return this._keys()
+	            .reduce((agg, key) => {
+	            agg.push(key + LIST_MEMBER_KEY_VALUE_SPLITTER + this.get(key));
+	            return agg;
+	        }, [])
+	            .join(LIST_MEMBERS_SEPARATOR);
+	    }
+	    _parse(rawTraceState) {
+	        if (rawTraceState.length > MAX_TRACE_STATE_LEN)
+	            return;
+	        this._internalState = rawTraceState
+	            .split(LIST_MEMBERS_SEPARATOR)
+	            .reverse() // Store in reverse so new keys (.set(...)) will be placed at the beginning
+	            .reduce((agg, part) => {
+	            const i = part.indexOf(LIST_MEMBER_KEY_VALUE_SPLITTER);
+	            if (i !== -1) {
+	                const key = part.slice(0, i);
+	                const value = part.slice(i + 1, part.length);
+	                if (validators$3.validateKey(key) && validators$3.validateValue(value)) {
+	                    agg.set(key, value);
+	                }
+	            }
+	            return agg;
+	        }, new Map());
+	        // Because of the reverse() requirement, trunc must be done after map is created
+	        if (this._internalState.size > MAX_TRACE_STATE_ITEMS) {
+	            this._internalState = new Map(Array.from(this._internalState.entries())
+	                .reverse() // Use reverse same as original tracestate parse chain
+	                .slice(0, MAX_TRACE_STATE_ITEMS));
+	        }
+	    }
+	    _keys() {
+	        return Array.from(this._internalState.keys()).reverse();
+	    }
+	}
+	exports.TraceState = TraceState;
+
+	});
+
+	unwrapExports(TraceState_1$3);
+	var TraceState_2$3 = TraceState_1$3.TraceState;
+
+	var HttpTraceContext_1$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.HttpTraceContext = exports.parseTraceParent = exports.TRACE_STATE_HEADER = exports.TRACE_PARENT_HEADER = void 0;
+
+
+
+	exports.TRACE_PARENT_HEADER = 'traceparent';
+	exports.TRACE_STATE_HEADER = 'tracestate';
+	const VALID_TRACE_PARENT_REGEX = /^(?!ff)[\da-f]{2}-([\da-f]{32})-([\da-f]{16})-([\da-f]{2})(-|$)/;
+	const VERSION = '00';
+	/**
+	 * Parses information from the [traceparent] span tag and converts it into {@link SpanContext}
+	 * @param traceParent - A meta property that comes from server.
+	 *     It should be dynamically generated server side to have the server's request trace Id,
+	 *     a parent span Id that was set on the server's request span,
+	 *     and the trace flags to indicate the server's sampling decision
+	 *     (01 = sampled, 00 = not sampled).
+	 *     for example: '{version}-{traceId}-{spanId}-{sampleDecision}'
+	 *     For more information see {@link https://www.w3.org/TR/trace-context/}
+	 */
+	function parseTraceParent(traceParent) {
+	    const match = traceParent.match(VALID_TRACE_PARENT_REGEX);
+	    if (!match ||
+	        match[1] === '00000000000000000000000000000000' ||
+	        match[2] === '0000000000000000') {
+	        return null;
+	    }
+	    return {
+	        traceId: match[1],
+	        spanId: match[2],
+	        traceFlags: parseInt(match[3], 16),
+	    };
+	}
+	exports.parseTraceParent = parseTraceParent;
+	/**
+	 * Propagates {@link SpanContext} through Trace Context format propagation.
+	 *
+	 * Based on the Trace Context specification:
+	 * https://www.w3.org/TR/trace-context/
+	 */
+	class HttpTraceContext {
+	    inject(context, carrier, setter) {
+	        const spanContext = context$7.getParentSpanContext(context);
+	        if (!spanContext)
+	            return;
+	        const traceParent = `${VERSION}-${spanContext.traceId}-${spanContext.spanId}-0${Number(spanContext.traceFlags || src$4.TraceFlags.NONE).toString(16)}`;
+	        setter(carrier, exports.TRACE_PARENT_HEADER, traceParent);
+	        if (spanContext.traceState) {
+	            setter(carrier, exports.TRACE_STATE_HEADER, spanContext.traceState.serialize());
+	        }
+	    }
+	    extract(context, carrier, getter) {
+	        const traceParentHeader = getter(carrier, exports.TRACE_PARENT_HEADER);
+	        if (!traceParentHeader)
+	            return context;
+	        const traceParent = Array.isArray(traceParentHeader)
+	            ? traceParentHeader[0]
+	            : traceParentHeader;
+	        if (typeof traceParent !== 'string')
+	            return context;
+	        const spanContext = parseTraceParent(traceParent);
+	        if (!spanContext)
+	            return context;
+	        spanContext.isRemote = true;
+	        const traceStateHeader = getter(carrier, exports.TRACE_STATE_HEADER);
+	        if (traceStateHeader) {
+	            // If more than one `tracestate` header is found, we merge them into a
+	            // single header.
+	            const state = Array.isArray(traceStateHeader)
+	                ? traceStateHeader.join(',')
+	                : traceStateHeader;
+	            spanContext.traceState = new TraceState_1$3.TraceState(typeof state === 'string' ? state : undefined);
+	        }
+	        return context$7.setExtractedSpanContext(context, spanContext);
+	    }
+	}
+	exports.HttpTraceContext = HttpTraceContext;
+
+	});
+
+	unwrapExports(HttpTraceContext_1$3);
+	var HttpTraceContext_2$3 = HttpTraceContext_1$3.HttpTraceContext;
+	var HttpTraceContext_3$3 = HttpTraceContext_1$3.parseTraceParent;
+	var HttpTraceContext_4$3 = HttpTraceContext_1$3.TRACE_STATE_HEADER;
+	var HttpTraceContext_5$3 = HttpTraceContext_1$3.TRACE_PARENT_HEADER;
+
+	var types$d = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(types$d);
+
+	var correlationContext$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.setCorrelationContext = exports.getCorrelationContext = void 0;
+
+	const CORRELATION_CONTEXT = src$3.Context.createKey('OpenTelemetry Distributed Contexts Key');
+	/**
+	 * @param {Context} Context that manage all context values
+	 * @returns {CorrelationContext} Extracted correlation context from the context
+	 */
+	function getCorrelationContext(context) {
+	    return (context.getValue(CORRELATION_CONTEXT) || undefined);
+	}
+	exports.getCorrelationContext = getCorrelationContext;
+	/**
+	 * @param {Context} Context that manage all context values
+	 * @param {CorrelationContext} correlation context that will be set in the actual context
+	 */
+	function setCorrelationContext(context, correlationContext) {
+	    return context.setValue(CORRELATION_CONTEXT, correlationContext);
+	}
+	exports.setCorrelationContext = setCorrelationContext;
+
+	});
+
+	unwrapExports(correlationContext$3);
+	var correlationContext_1$3 = correlationContext$3.setCorrelationContext;
+	var correlationContext_2$3 = correlationContext$3.getCorrelationContext;
+
+	var HttpCorrelationContext_1$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.HttpCorrelationContext = exports.MAX_TOTAL_LENGTH = exports.MAX_PER_NAME_VALUE_PAIRS = exports.MAX_NAME_VALUE_PAIRS = exports.CORRELATION_CONTEXT_HEADER = void 0;
+
+	const KEY_PAIR_SEPARATOR = '=';
+	const PROPERTIES_SEPARATOR = ';';
+	const ITEMS_SEPARATOR = ',';
+	// Name of the http header used to propagate the correlation context
+	exports.CORRELATION_CONTEXT_HEADER = 'otcorrelations';
+	// Maximum number of name-value pairs allowed by w3c spec
+	exports.MAX_NAME_VALUE_PAIRS = 180;
+	// Maximum number of bytes per a single name-value pair allowed by w3c spec
+	exports.MAX_PER_NAME_VALUE_PAIRS = 4096;
+	// Maximum total length of all name-value pairs allowed by w3c spec
+	exports.MAX_TOTAL_LENGTH = 8192;
+	/**
+	 * Propagates {@link CorrelationContext} through Context format propagation.
+	 *
+	 * Based on the Correlation Context specification:
+	 * https://w3c.github.io/correlation-context/
+	 */
+	class HttpCorrelationContext {
+	    inject(context, carrier, setter) {
+	        const correlationContext = correlationContext$3.getCorrelationContext(context);
+	        if (!correlationContext)
+	            return;
+	        const keyPairs = this._getKeyPairs(correlationContext)
+	            .filter((pair) => {
+	            return pair.length <= exports.MAX_PER_NAME_VALUE_PAIRS;
+	        })
+	            .slice(0, exports.MAX_NAME_VALUE_PAIRS);
+	        const headerValue = this._serializeKeyPairs(keyPairs);
+	        if (headerValue.length > 0) {
+	            setter(carrier, exports.CORRELATION_CONTEXT_HEADER, headerValue);
+	        }
+	    }
+	    _serializeKeyPairs(keyPairs) {
+	        return keyPairs.reduce((hValue, current) => {
+	            const value = `${hValue}${hValue != '' ? ITEMS_SEPARATOR : ''}${current}`;
+	            return value.length > exports.MAX_TOTAL_LENGTH ? hValue : value;
+	        }, '');
+	    }
+	    _getKeyPairs(correlationContext) {
+	        return Object.keys(correlationContext).map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(correlationContext[key].value)}`);
+	    }
+	    extract(context, carrier, getter) {
+	        const headerValue = getter(carrier, exports.CORRELATION_CONTEXT_HEADER);
+	        if (!headerValue)
+	            return context;
+	        const correlationContext = {};
+	        if (headerValue.length == 0) {
+	            return context;
+	        }
+	        const pairs = headerValue.split(ITEMS_SEPARATOR);
+	        if (pairs.length == 1)
+	            return context;
+	        pairs.forEach(entry => {
+	            const keyPair = this._parsePairKeyValue(entry);
+	            if (keyPair) {
+	                correlationContext[keyPair.key] = { value: keyPair.value };
+	            }
+	        });
+	        return correlationContext$3.setCorrelationContext(context, correlationContext);
+	    }
+	    _parsePairKeyValue(entry) {
+	        const valueProps = entry.split(PROPERTIES_SEPARATOR);
+	        if (valueProps.length <= 0)
+	            return;
+	        const keyPairPart = valueProps.shift();
+	        if (!keyPairPart)
+	            return;
+	        const keyPair = keyPairPart.split(KEY_PAIR_SEPARATOR);
+	        if (keyPair.length <= 1)
+	            return;
+	        const key = decodeURIComponent(keyPair[0].trim());
+	        let value = decodeURIComponent(keyPair[1].trim());
+	        if (valueProps.length > 0) {
+	            value =
+	                value + PROPERTIES_SEPARATOR + valueProps.join(PROPERTIES_SEPARATOR);
+	        }
+	        return { key, value };
+	    }
+	}
+	exports.HttpCorrelationContext = HttpCorrelationContext;
+
+	});
+
+	unwrapExports(HttpCorrelationContext_1$3);
+	var HttpCorrelationContext_2$3 = HttpCorrelationContext_1$3.HttpCorrelationContext;
+	var HttpCorrelationContext_3$3 = HttpCorrelationContext_1$3.MAX_TOTAL_LENGTH;
+	var HttpCorrelationContext_4$3 = HttpCorrelationContext_1$3.MAX_PER_NAME_VALUE_PAIRS;
+	var HttpCorrelationContext_5$3 = HttpCorrelationContext_1$3.MAX_NAME_VALUE_PAIRS;
+	var HttpCorrelationContext_6$3 = HttpCorrelationContext_1$3.CORRELATION_CONTEXT_HEADER;
+
+	var spancontextUtils$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.isValid = exports.INVALID_SPAN_CONTEXT = exports.INVALID_TRACEID = exports.INVALID_SPANID = void 0;
+
+	exports.INVALID_SPANID = '0';
+	exports.INVALID_TRACEID = '0';
+	exports.INVALID_SPAN_CONTEXT = {
+	    traceId: exports.INVALID_TRACEID,
+	    spanId: exports.INVALID_SPANID,
+	    traceFlags: src$4.TraceFlags.NONE,
+	};
+	/**
+	 * Returns true if this {@link SpanContext} is valid.
+	 * @return true if this {@link SpanContext} is valid.
+	 */
+	function isValid(spanContext) {
+	    return (spanContext.traceId !== exports.INVALID_TRACEID &&
+	        spanContext.spanId !== exports.INVALID_SPANID);
+	}
+	exports.isValid = isValid;
+
+	});
+
+	unwrapExports(spancontextUtils$3);
+	var spancontextUtils_1$3 = spancontextUtils$3.isValid;
+	var spancontextUtils_2$3 = spancontextUtils$3.INVALID_SPAN_CONTEXT;
+	var spancontextUtils_3$3 = spancontextUtils$3.INVALID_TRACEID;
+	var spancontextUtils_4$3 = spancontextUtils$3.INVALID_SPANID;
+
+	var NoRecordingSpan_1$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.NoRecordingSpan = void 0;
+
+
+	/**
+	 * The NoRecordingSpan extends the {@link NoopSpan}, making all operations no-op
+	 * except context propagation.
+	 */
+	class NoRecordingSpan extends src$4.NoopSpan {
+	    constructor(spanContext) {
+	        super(spanContext);
+	        this._context = spanContext || spancontextUtils$3.INVALID_SPAN_CONTEXT;
+	    }
+	    // Returns a SpanContext.
+	    context() {
+	        return this._context;
+	    }
+	}
+	exports.NoRecordingSpan = NoRecordingSpan;
+
+	});
+
+	unwrapExports(NoRecordingSpan_1$3);
+	var NoRecordingSpan_2$3 = NoRecordingSpan_1$3.NoRecordingSpan;
+
+	var AlwaysOffSampler_1$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.AlwaysOffSampler = void 0;
+
+	/** Sampler that samples no traces. */
+	class AlwaysOffSampler {
+	    shouldSample() {
+	        return {
+	            decision: src$4.SamplingDecision.NOT_RECORD,
+	        };
+	    }
+	    toString() {
+	        return `AlwaysOffSampler`;
+	    }
+	}
+	exports.AlwaysOffSampler = AlwaysOffSampler;
+
+	});
+
+	unwrapExports(AlwaysOffSampler_1$3);
+	var AlwaysOffSampler_2$3 = AlwaysOffSampler_1$3.AlwaysOffSampler;
+
+	var AlwaysOnSampler_1$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.AlwaysOnSampler = void 0;
+
+	/** Sampler that samples all traces. */
+	class AlwaysOnSampler {
+	    shouldSample() {
+	        return {
+	            decision: src$4.SamplingDecision.RECORD_AND_SAMPLED,
+	        };
+	    }
+	    toString() {
+	        return `AlwaysOnSampler`;
+	    }
+	}
+	exports.AlwaysOnSampler = AlwaysOnSampler;
+
+	});
+
+	unwrapExports(AlwaysOnSampler_1$3);
+	var AlwaysOnSampler_2$3 = AlwaysOnSampler_1$3.AlwaysOnSampler;
+
+	var ParentOrElseSampler_1$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ParentOrElseSampler = void 0;
+
+	/**
+	 * A composite sampler that either respects the parent span's sampling decision
+	 * or delegates to `delegateSampler` for root spans.
+	 */
+	class ParentOrElseSampler {
+	    constructor(_delegateSampler) {
+	        this._delegateSampler = _delegateSampler;
+	    }
+	    shouldSample(parentContext, traceId, spanName, spanKind, attributes, links) {
+	        // Respect the parent sampling decision if there is one
+	        if (parentContext) {
+	            return {
+	                decision: (src$4.TraceFlags.SAMPLED & parentContext.traceFlags) === src$4.TraceFlags.SAMPLED
+	                    ? src$4.SamplingDecision.RECORD_AND_SAMPLED
+	                    : src$4.SamplingDecision.NOT_RECORD,
+	            };
+	        }
+	        return this._delegateSampler.shouldSample(parentContext, traceId, spanName, spanKind, attributes, links);
+	    }
+	    toString() {
+	        return `ParentOrElse{${this._delegateSampler.toString()}}`;
+	    }
+	}
+	exports.ParentOrElseSampler = ParentOrElseSampler;
+
+	});
+
+	unwrapExports(ParentOrElseSampler_1$3);
+	var ParentOrElseSampler_2$3 = ParentOrElseSampler_1$3.ParentOrElseSampler;
+
+	var ProbabilitySampler_1$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.ProbabilitySampler = void 0;
+
+	/** Sampler that samples a given fraction of traces. */
+	class ProbabilitySampler {
+	    constructor(_probability = 0) {
+	        this._probability = _probability;
+	        this._probability = this._normalize(_probability);
+	    }
+	    shouldSample(parentContext) {
+	        // Respect the parent sampling decision if there is one.
+	        // TODO(#1284): add an option to ignore parent regarding to spec.
+	        if (parentContext) {
+	            return {
+	                decision: (src$4.TraceFlags.SAMPLED & parentContext.traceFlags) === src$4.TraceFlags.SAMPLED
+	                    ? src$4.SamplingDecision.RECORD_AND_SAMPLED
+	                    : src$4.SamplingDecision.NOT_RECORD,
+	            };
+	        }
+	        return {
+	            decision: Math.random() < this._probability
+	                ? src$4.SamplingDecision.RECORD_AND_SAMPLED
+	                : src$4.SamplingDecision.NOT_RECORD,
+	        };
+	    }
+	    toString() {
+	        return `ProbabilitySampler{${this._probability}}`;
+	    }
+	    _normalize(probability) {
+	        if (typeof probability !== 'number' || isNaN(probability))
+	            return 0;
+	        return probability >= 1 ? 1 : probability <= 0 ? 0 : probability;
+	    }
+	}
+	exports.ProbabilitySampler = ProbabilitySampler;
+
+	});
+
+	unwrapExports(ProbabilitySampler_1$3);
+	var ProbabilitySampler_2$3 = ProbabilitySampler_1$3.ProbabilitySampler;
+
+	var IdGenerator$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+
+	});
+
+	unwrapExports(IdGenerator$3);
+
+	var url$3 = createCommonjsModule(function (module, exports) {
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.isUrlIgnored = exports.urlMatches = void 0;
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	function urlMatches(url, urlToMatch) {
+	    if (typeof urlToMatch === 'string') {
+	        return url === urlToMatch;
+	    }
+	    else {
+	        return !!url.match(urlToMatch);
+	    }
+	}
+	exports.urlMatches = urlMatches;
+	/**
+	 * Check if {@param url} should be ignored when comparing against {@param ignoredUrls}
+	 * @param url
+	 * @param ignoredUrls
+	 */
+	function isUrlIgnored(url, ignoredUrls) {
+	    if (!ignoredUrls) {
+	        return false;
+	    }
+	    for (const ignoreUrl of ignoredUrls) {
+	        if (urlMatches(url, ignoreUrl)) {
+	            return true;
+	        }
+	    }
+	    return false;
+	}
+	exports.isUrlIgnored = isUrlIgnored;
+
+	});
+
+	unwrapExports(url$3);
+	var url_1$3 = url$3.isUrlIgnored;
+	var url_2$3 = url$3.urlMatches;
+
+	var wrap$3 = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	Object.defineProperty(exports, "__esModule", { value: true });
+	exports.isWrapped = void 0;
+	/**
+	 * Checks if certain function has been already wrapped
+	 * @param func
+	 */
+	function isWrapped(func) {
+	    return (typeof func === 'function' &&
+	        typeof func.__original === 'function' &&
+	        typeof func.__unwrap === 'function' &&
+	        func.__wrapped === true);
+	}
+	exports.isWrapped = isWrapped;
+
+	});
+
+	unwrapExports(wrap$3);
+	var wrap_1$3 = wrap$3.isWrapped;
+
+	var src$d = createCommonjsModule(function (module, exports) {
+	/*
+	 * Copyright The OpenTelemetry Authors
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      https://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+	 */
+	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+	}) : (function(o, m, k, k2) {
+	    if (k2 === undefined) k2 = k;
+	    o[k2] = m[k];
+	}));
+	var __exportStar = (commonjsGlobal && commonjsGlobal.__exportStar) || function(m, exports) {
+	    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+	};
+	Object.defineProperty(exports, "__esModule", { value: true });
+	__exportStar(ConsoleLogger_1$3, exports);
+	__exportStar(NoopLogger_1$3, exports);
+	__exportStar(time$4, exports);
+	__exportStar(types$c, exports);
+	__exportStar(ExportResult_1$3, exports);
+	__exportStar(version$3, exports);
+	__exportStar(context$7, exports);
+	__exportStar(B3Propagator_1$3, exports);
+	__exportStar(composite$3, exports);
+	__exportStar(HttpTraceContext_1$3, exports);
+	__exportStar(types$d, exports);
+	__exportStar(correlationContext$3, exports);
+	__exportStar(HttpCorrelationContext_1$3, exports);
+	__exportStar(platform$6, exports);
+	__exportStar(NoRecordingSpan_1$3, exports);
+	__exportStar(AlwaysOffSampler_1$3, exports);
+	__exportStar(AlwaysOnSampler_1$3, exports);
+	__exportStar(ParentOrElseSampler_1$3, exports);
+	__exportStar(ProbabilitySampler_1$3, exports);
+	__exportStar(spancontextUtils$3, exports);
+	__exportStar(TraceState_1$3, exports);
+	__exportStar(IdGenerator$3, exports);
+	__exportStar(url$3, exports);
+	__exportStar(wrap$3, exports);
+
+	});
+
+	unwrapExports(src$d);
 
 	var general = createCommonjsModule(function (module, exports) {
 	/*
@@ -26435,7 +40210,7 @@
 	unwrapExports(database);
 	var database_1 = database.DatabaseAttribute;
 
-	var trace$2 = createCommonjsModule(function (module, exports) {
+	var trace$3 = createCommonjsModule(function (module, exports) {
 	/*
 	 * Copyright The OpenTelemetry Authors
 	 *
@@ -26469,9 +40244,9 @@
 
 	});
 
-	unwrapExports(trace$2);
+	unwrapExports(trace$3);
 
-	var src$9 = createCommonjsModule(function (module, exports) {
+	var src$e = createCommonjsModule(function (module, exports) {
 	/*
 	 * Copyright The OpenTelemetry Authors
 	 *
@@ -26498,11 +40273,11 @@
 	    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
 	};
 	Object.defineProperty(exports, "__esModule", { value: true });
-	__exportStar(trace$2, exports);
+	__exportStar(trace$3, exports);
 
 	});
 
-	unwrapExports(src$9);
+	unwrapExports(src$e);
 
 	var utils$2 = createCommonjsModule(function (module, exports) {
 	/*
@@ -26571,7 +40346,7 @@
 	    addSpanNetworkEvent(span, PerformanceTimingNames_1.PerformanceTimingNames.RESPONSE_START, resource);
 	    addSpanNetworkEvent(span, PerformanceTimingNames_1.PerformanceTimingNames.RESPONSE_END, resource);
 	    if (resource[PerformanceTimingNames_1.PerformanceTimingNames.ENCODED_BODY_SIZE]) {
-	        span.setAttribute(src$9.HttpAttribute.HTTP_RESPONSE_CONTENT_LENGTH, resource[PerformanceTimingNames_1.PerformanceTimingNames.ENCODED_BODY_SIZE]);
+	        span.setAttribute(src$e.HttpAttribute.HTTP_RESPONSE_CONTENT_LENGTH, resource[PerformanceTimingNames_1.PerformanceTimingNames.ENCODED_BODY_SIZE]);
 	    }
 	}
 	exports.addSpanNetworkEvents = addSpanNetworkEvents;
@@ -26646,15 +40421,15 @@
 	 * @param spanEndTimeHR
 	 */
 	function findMainRequest(resources, corsPreFlightRequestEndTime, spanEndTimeHR) {
-	    const spanEndTime = src$2.hrTimeToNanoseconds(spanEndTimeHR);
-	    const minTime = src$2.hrTimeToNanoseconds(src$2.timeInputToHrTime(corsPreFlightRequestEndTime));
+	    const spanEndTime = src$d.hrTimeToNanoseconds(spanEndTimeHR);
+	    const minTime = src$d.hrTimeToNanoseconds(src$d.timeInputToHrTime(corsPreFlightRequestEndTime));
 	    let mainRequest = resources[1];
 	    let bestGap;
 	    const length = resources.length;
 	    for (let i = 1; i < length; i++) {
 	        const resource = resources[i];
-	        const resourceStartTime = src$2.hrTimeToNanoseconds(src$2.timeInputToHrTime(resource[PerformanceTimingNames_1.PerformanceTimingNames.FETCH_START]));
-	        const resourceEndTime = src$2.hrTimeToNanoseconds(src$2.timeInputToHrTime(resource[PerformanceTimingNames_1.PerformanceTimingNames.RESPONSE_END]));
+	        const resourceStartTime = src$d.hrTimeToNanoseconds(src$d.timeInputToHrTime(resource[PerformanceTimingNames_1.PerformanceTimingNames.FETCH_START]));
+	        const resourceEndTime = src$d.hrTimeToNanoseconds(src$d.timeInputToHrTime(resource[PerformanceTimingNames_1.PerformanceTimingNames.RESPONSE_END]));
 	        const currentGap = spanEndTime - resourceEndTime;
 	        if (resourceStartTime >= minTime && (!bestGap || currentGap < bestGap)) {
 	            bestGap = currentGap;
@@ -26673,11 +40448,11 @@
 	 * @param ignoredResources
 	 */
 	function filterResourcesForSpan(spanUrl, startTimeHR, endTimeHR, resources, ignoredResources, initiatorType) {
-	    const startTime = src$2.hrTimeToNanoseconds(startTimeHR);
-	    const endTime = src$2.hrTimeToNanoseconds(endTimeHR);
+	    const startTime = src$d.hrTimeToNanoseconds(startTimeHR);
+	    const endTime = src$d.hrTimeToNanoseconds(endTimeHR);
 	    let filteredResources = resources.filter(resource => {
-	        const resourceStartTime = src$2.hrTimeToNanoseconds(src$2.timeInputToHrTime(resource[PerformanceTimingNames_1.PerformanceTimingNames.FETCH_START]));
-	        const resourceEndTime = src$2.hrTimeToNanoseconds(src$2.timeInputToHrTime(resource[PerformanceTimingNames_1.PerformanceTimingNames.RESPONSE_END]));
+	        const resourceStartTime = src$d.hrTimeToNanoseconds(src$d.timeInputToHrTime(resource[PerformanceTimingNames_1.PerformanceTimingNames.FETCH_START]));
+	        const resourceEndTime = src$d.hrTimeToNanoseconds(src$d.timeInputToHrTime(resource[PerformanceTimingNames_1.PerformanceTimingNames.RESPONSE_END]));
 	        return (resource.initiatorType.toLowerCase() ===
 	            (initiatorType || 'xmlhttprequest') &&
 	            resource.name === spanUrl &&
@@ -26796,7 +40571,7 @@
 	        return true;
 	    }
 	    else {
-	        return propagateTraceHeaderUrls.some(propagateTraceHeaderUrl => src$2.urlMatches(spanUrl, propagateTraceHeaderUrl));
+	        return propagateTraceHeaderUrls.some(propagateTraceHeaderUrl => src$d.urlMatches(spanUrl, propagateTraceHeaderUrl));
 	    }
 	}
 	exports.shouldPropagateTraceHeaders = shouldPropagateTraceHeaders;
@@ -26813,7 +40588,7 @@
 	var utils_7 = utils$2.addSpanNetworkEvent;
 	var utils_8 = utils$2.hasKey;
 
-	var src$a = createCommonjsModule(function (module, exports) {
+	var src$f = createCommonjsModule(function (module, exports) {
 	/*
 	 * Copyright The OpenTelemetry Authors
 	 *
@@ -26843,23 +40618,23 @@
 	__exportStar(WebTracerProvider_1, exports);
 	__exportStar(StackContextManager_1, exports);
 	__exportStar(PerformanceTimingNames_1, exports);
-	__exportStar(types$6, exports);
+	__exportStar(types$b, exports);
 	__exportStar(utils$2, exports);
 
 	});
 
-	unwrapExports(src$a);
+	unwrapExports(src$f);
 
 	var webTracer = createCommonjsModule(function (module, exports) {
 	Object.defineProperty(exports, "__esModule", { value: true });
 
 
 	function create(delegator, logary) {
-	    const provider = new src$a.WebTracerProvider({
+	    const provider = new src$f.WebTracerProvider({
 	        logger: logary.getLogger('Logary', 'webTracer'),
 	        plugins: [],
 	    });
-	    provider.addSpanProcessor(new src$8.SimpleSpanProcessor(delegator));
+	    provider.addSpanProcessor(new src$c.SimpleSpanProcessor(delegator));
 	    provider.register();
 	    return { provider };
 	}
@@ -26869,7 +40644,7 @@
 
 	unwrapExports(webTracer);
 
-	var tracer$1 = createCommonjsModule(function (module, exports) {
+	var tracer$2 = createCommonjsModule(function (module, exports) {
 	Object.defineProperty(exports, "__esModule", { value: true });
 
 	function create(logary) {
@@ -26885,7 +40660,7 @@
 
 	});
 
-	unwrapExports(tracer$1);
+	unwrapExports(tracer$2);
 
 	var dist$2 = createCommonjsModule(function (module, exports) {
 	var __createBinding = (commonjsGlobal && commonjsGlobal.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -26918,7 +40693,7 @@
 	        this.features = features$1.features;
 	        if (typeof window === 'undefined')
 	            throw new Error('BrowserPlugin created, but window === "undefined"');
-	        const factory = tracer$1;
+	        const factory = tracer$2;
 	        const m = factory.default(logary);
 	        this.tracer = new rootViewTracer_1.default(m.tracer, this);
 	        this._pageViewSpan = this.newPageViewSpan();
@@ -26957,11 +40732,16 @@
 	var browser$1 = unwrapExports(dist$2);
 	var dist_1$1 = dist$2.name;
 
-	var version$1 = "6.0.0-beta.4";
+	var version$4 = "6.0.0-beta.6";
+	var name = "@logary/browser";
 	var browser$2 = "dist/logary.umd.js";
+	var gitHead = "f5c2c05245b0f522b72ef61b4c44c6e28b5e8f8f";
 	var pkg = {
-		version: version$1,
-		browser: browser$2
+		version: version$4,
+		name: name,
+		browser: browser$2,
+		gitHead: gitHead,
+		"private": true
 	};
 
 	function getConfig(init) {
