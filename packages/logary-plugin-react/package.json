@@ -1,7 +1,7 @@
 {
   "name": "@logary/plugin-react",
   "license": "GPL3 / commercial",
-  "version": "6.0.0-beta.5",
+  "version": "6.0.0-beta.6",
   "main": "dist/index",
   "types": "dist/index",
   "files": [
@@ -24,7 +24,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "logary": "6.0.0-beta.5"
+    "logary": "6.0.0-beta.6"
   },
   "devDependencies": {
     "@types/react": "^16.9.48",

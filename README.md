@@ -39,4 +39,7 @@ and `yarn lerna run build` if you change the packages while testing an example.
 
 ## Publishing
 
+Calling `make` on its own ensures all packages are fresh and link/compile properly.
+
+    make
     yarn run lerna publish

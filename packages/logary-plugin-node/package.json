@@ -31,7 +31,7 @@
     "@opentelemetry/plugin-https": "^0.10.2",
     "cookie": "^0.4.0",
     "d64": "^1.0.0",
-    "logary": "6.0.0-beta.5",
+    "logary": "6.0.0-beta.6",
     "set-cookie-parser": "^2.4.3",
     "uuid": "^8.3.0"
   },
