@@ -6,7 +6,7 @@ test:
 	yarn run test
 
 clean:
-	(cd packages/browser && rm -rf dist)
+	(cd packages/logary-browser && rm -rf dist)
 	(cd packages/logary && rm -rf dist node_modules)
 	(cd packages/logary-plugin-browser && rm -rf dist node_modules)
 	(cd packages/logary-plugin-nextjs && rm -rf dist node_modules)

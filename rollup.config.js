@@ -2,18 +2,18 @@ import resolve from 'rollup-plugin-node-resolve'
 import commonjs from 'rollup-plugin-commonjs'
 import typescript from 'rollup-plugin-typescript'
 import rollupGitVersion from 'rollup-plugin-git-version'
-import pkg from './packages/browser/package.json'
+import pkg from './packages/logary-browser/package.json'
 
 export default {
 
-  input: 'packages/browser/main.ts',
+  input: 'packages/logary-browser/main.ts',
   output: {
     name: 'logary',
     file: pkg.browser,
     format: 'umd'
   },
 
-  entry: 'packages/browser/main.js',
+  entry: 'packages/logary-browser/main.js',
   dest: 'dist/index.js',
   plugins: [
     resolve(),   // so Rollup can find `ms`

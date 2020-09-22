@@ -6,7 +6,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@logary/plugin-browser": "6.0.0-beta.5",
+    "@logary/plugin-browser": "6.0.0-beta.6",
     "@logary/plugin-nextjs": "6.0.0-beta.5",
     "@logary/plugin-node": "6.0.0-beta.5",
     "@logary/plugin-react": "6.0.0-beta.5",
