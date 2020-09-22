@@ -40,7 +40,7 @@
     "install-peers": "install-peers -f"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.10.2",
+    "@opentelemetry/api": "^0.11.0",
     "@opentelemetry/core": "^0.11.0",
     "@opentelemetry/tracing": "^0.10.2",
     "jssha": "^3.1.0",
