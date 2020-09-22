@@ -6,12 +6,12 @@ const newLogary = (stub: StubTarget = new StubTarget()) => {
   return new Logary({
     serviceName: 'ABC',
     minLevel: LogLevel.debug,
-    targets: [stub]
+    targets: [stub],
+    appId: 'LA-1234567'
   })
 }
 
 describe('Message', () => {
-
   const withLogger = (fn: (target: StubTarget, logger: Logger) => void) => {
     const target = new StubTarget()
     const logary = newLogary(target)
@@ -63,7 +63,10 @@ describe('Message', () => {
       expect(first.monetaryValue!.amount).toBeCloseTo(20)
       expect(first.monetaryValue!.currency).toBe('SEK')
       expect(first.fields.cssSelector).toBe('[data-track=purchase-button]')
-      expect(first.context).toEqual({ userId: '123' })
+      expect(first.context).toEqual({
+        appId: 'LA-1234567',
+        userId: '123'
+      })
     })
   })
 
@@ -86,7 +89,19 @@ describe('Message', () => {
       expect(m.fields.cssSelector).toBe('[data-track=delete-button]')
       expect(m.fields.product).toBeDefined()
       expect((m.fields.product as Record<string, any>).id).toBe('321')
-      expect(m.context).toEqual({})
+      expect(m.context).toEqual({
+        appId: 'LA-1234567'
+      })
+    })
+  })
+
+  test('attaches appId', () => {
+    withLogger((target, logger) => {
+      logger.event('Worlds')
+
+      const m = target.messages[0] as EventMessage
+      expect(m.context).toHaveProperty('appId')
+      expect(m.context.appId).toBe('LA-1234567')
     })
   })
 

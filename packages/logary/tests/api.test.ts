@@ -7,7 +7,8 @@ const newLogary = (stub: StubTarget = new StubTarget()) => {
   return new Logary({
     serviceName: 'ABC',
     minLevel: LogLevel.debug,
-    targets: [stub]
+    targets: [stub],
+    appId: 'LA-1234567'
   })
 }
 

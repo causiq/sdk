@@ -25,15 +25,14 @@ function ensureSpanId<T extends Message>(parentSpanId: null | undefined | string
 
 function ensureUserId<T extends Message>(m: T): T {
   if (typeof window === 'undefined') return m
-  if (typeof m.context['userId'] !== 'undefined') return m
+  if (m.context['userId'] != null) return m
   return { ...m, context: { ...m.context, userId: getUserId() } }
 }
 
 function ensureAppId<T extends Message>(appId: string | null | undefined, m: T): T {
-  if (typeof window === 'undefined') return m
   if (appId == null) return m
-  if (typeof m.context['appId'] !== 'undefined') return m
-  return { ...m, context: { ...m.context, appId: getUserId() } }
+  if (m.context['appId'] != null) return m
+  return { ...m, context: { ...m.context, appId } }
 }
 
 function ensureName<T extends Message>(name: string[], m: T): T {
