@@ -1,28 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
-    <meta name="theme-color" content="#000000" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <title>Example app</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <meta name="theme-color" content="#000000" />
+  <title>Example Logary Analytics app</title>
+</head>
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-  </body>
+<body>
+
+  <h1>Example Logary app</h1>
+
+  <fieldset>
+    <legend>Buttons for users in an e-commerce site</legend>
+    <button onClick={handlePurchase}>
+      Make purchase
+    </button>
+    <button onClick={crashingHandler}>
+      Crashes
+    </button>
+    <button data-track='Make alt. purchase'>
+      Make alt. purchase
+    </button>
+  </fieldset>
+
+  <fieldset>
+    <legend>
+      An example form
+    </legend>
+    <form>
+      <label htmlFor='email'>
+        E-mail:
+      </label>
+      <input id='email' type='email' />
+    </form>
+  </fieldset>
+
+  <fieldset>
+    <legend>Navigation events</legend>
+    <a href='/contact'>Contact us</a>
+  </fieldset>
+
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+</body>
 </html>

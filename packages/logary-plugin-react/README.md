@@ -14,6 +14,7 @@ In your `logary.ts`:
 import react from '@logary/plugin-react'
 const logary = getLogary({ ... }) // configure targets and Logary Analytics ID here
 react(logary)
+// more plugins here
 export default logary
 ```
 

@@ -9,6 +9,7 @@ In your `logary.ts`:
 import browser from '@logary/plugin-browser'
 const logary = getLogary({ ... }) // configure targets and Logary Analytics ID here
 browser(logary)
+// more plugins here
 export default logary
 ```
 

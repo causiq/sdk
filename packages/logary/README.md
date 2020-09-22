@@ -28,6 +28,7 @@ const instance = getLogary({
 browser(instance)
 nextjs(instance)
 react(instance)
+// more plugins here
 
 export default instance
 ```

@@ -12,5 +12,6 @@ In your `logary.ts`:
 import node from '@logary/plugin-node'
 const logary = getLogary({ ... }) // configure targets and Logary Analytics ID here
 node(logary)
+// more plugins here
 export default logary
 ```

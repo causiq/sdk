@@ -14,6 +14,7 @@ In your `logary.ts`:
 import nextjs from '@logary/plugin-nextjs'
 const logary = getLogary({ ... }) // configure targets and Logary Analytics ID here
 nextjs(logary)
+// more plugins here
 export default logary
 ```
 

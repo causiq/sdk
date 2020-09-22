@@ -2028,6 +2028,34 @@
     npmlog "^4.1.2"
     write-file-atomic "^2.3.0"
 
+"@logary/plugin-browser@6.0.0-beta.5":
+  version "6.0.0-beta.6"
+  dependencies:
+    "@opentelemetry/api" "^0.10.2"
+    "@opentelemetry/core" "^0.11.0"
+    "@opentelemetry/tracing" "^0.10.2"
+    "@opentelemetry/web" "^0.10.2"
+    logary "6.0.0-beta.5"
+    web-vitals "^0.2.4"
+
+"@logary/plugin-nextjs@6.0.0-beta.5":
+  version "6.0.0-beta.6"
+  dependencies:
+    "@logary/plugin-react" "6.0.0-beta.5"
+    logary "6.0.0-beta.5"
+
+"@logary/plugin-node@6.0.0-beta.5":
+  version "6.0.0-beta.6"
+  dependencies:
+    "@opentelemetry/node" "^0.10.2"
+    "@opentelemetry/plugin-http" "^0.10.2"
+    "@opentelemetry/plugin-https" "^0.10.2"
+    cookie "^0.4.0"
+    d64 "^1.0.0"
+    logary "6.0.0-beta.5"
+    set-cookie-parser "^2.4.3"
+    uuid "^8.3.0"
+
 "@mrmlnc/readdir-enhanced@^2.2.1":
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/@mrmlnc/readdir-enhanced/-/readdir-enhanced-2.2.1.tgz#524af240d1a360527b730475ecfa1344aa540dde"
@@ -7354,6 +7382,18 @@ lodash@^4.17.11, lodash@^4.17.12, lodash@^4.17.13, lodash@^4.17.14, lodash@^4.17
   version "4.17.20"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.20.tgz#b44a9b6297bcb698f1c51a3545a2b3b368d59c52"
   integrity sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==
+
+logary@6.0.0-beta.5:
+  version "6.0.0-beta.5"
+  resolved "https://registry.yarnpkg.com/logary/-/logary-6.0.0-beta.5.tgz#53d523b1ddd96473922acaf8beb8084ba23e5a58"
+  integrity sha512-G6nCWn7MJxLj9bXOJclHZA4og+og62IKitMZ/4Zbzr0feR3b/FW6nM1hAigF05FsXqByM6jNy72+Yx+FNXc/1Q==
+  dependencies:
+    "@opentelemetry/api" "^0.10.2"
+    "@opentelemetry/core" "^0.11.0"
+    "@opentelemetry/tracing" "^0.10.2"
+    jssha "^3.1.0"
+    node-abort-controller "^1.1.0"
+    rxjs "^6.3.3"
 
 loose-envify@^1.0.0, loose-envify@^1.1.0, loose-envify@^1.4.0:
   version "1.4.0"
