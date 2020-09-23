@@ -37,7 +37,7 @@
     "lerna": "^3.22.1",
     "rollup": "^2.28.1",
     "rollup-plugin-commonjs": "^10.1.0",
-    "rollup-plugin-node-resolve": "^4.0.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-typescript": "^1.0.0",
     "rollup-plugin-git-version": "^0.3.1",
     "tslib": "^1.9.3",
