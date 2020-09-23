@@ -1,4 +1,6 @@
-.PHONY: clean build publish release
+.PHONY: build_and_test clean build publish release
+
+build_and_test: clean build test
 
 release: clean build test publish
 
