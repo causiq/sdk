@@ -1,6 +1,7 @@
 import resolve from '@rollup/plugin-node-resolve'
-import commonjs from '@rollup/plugin-commonjs'
-import typescript from '@rollup/plugin-typescript'
+// import commonjs from '@rollup/plugin-commonjs'
+import typescript from 'rollup-plugin-typescript2'
+import json from '@rollup/plugin-json'
 import pkg from './packages/logary-browser/package.json'
 
 export default {
@@ -13,10 +14,6 @@ export default {
   },
 
   plugins: [
-    typescript({
-      typescript: require('typescript'),
-      outDir: './dist'
-    }),
     resolve({
       browser: true,
       preferBuiltins: true,
@@ -24,8 +21,16 @@ export default {
         moduleDirectory: ['node_modules'],
       },
     }),
-    commonjs({
-      include: 'node_modules/'
+    typescript({
+      typescript: require('typescript'),
+      tsconfig: "tsconfig.json",
+      outDir: './dist',
+      include: '**/*.{js,ts}',
     }),
+    // commonjs({
+    //   extensions: [ '.js', '.ts' ],
+    //   include: 'node_modules/'
+    // }),
+    json(),
   ]
 }

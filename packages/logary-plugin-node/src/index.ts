@@ -1,5 +1,4 @@
-import Logary from "logary"
-import {
+import Logary, {
   OpenTelemetryFeature,
   OpenTelemetryHasTracer,
   UniversalRendering,

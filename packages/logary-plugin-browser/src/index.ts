@@ -5,10 +5,13 @@ import { features } from './features'
 import { PageViewEventName } from "./events"
 import handlers from "./handlers"
 import TracerWithRootPageView from "./tracer/rootViewTracer"
+import createTracer from './tracer'
 
 export const name = 'plugins/browser'
 export * from './features'
 export * from './events'
+
+// TODO: custom ContextManager instead of overriding the tracer.getCurrentSpan()
 
 class BrowserPlugin implements HasTracer, PageViewSpanHolder {
   constructor(
@@ -16,8 +19,7 @@ class BrowserPlugin implements HasTracer, PageViewSpanHolder {
     private opts: BrowserPluginOptions = {}
   ) {
     if (typeof window === 'undefined') throw new Error('BrowserPlugin created, but window === "undefined"')
-    const factory = require('./tracer/index')
-    const m: TracerModule & HasTracer = factory.default(logary)
+    const m: TracerModule & HasTracer = createTracer(logary)
     this.tracer = new TracerWithRootPageView(m.tracer, this)
     this._pageViewSpan = this.newPageViewSpan()
   }
@@ -64,5 +66,5 @@ class BrowserPlugin implements HasTracer, PageViewSpanHolder {
 
 export default function browser(logary: Logary, opts: BrowserPluginOptions = {}) {
   if (typeof window === 'undefined') return
-  logary.register(new BrowserPlugin(logary, opts))
+  else logary.register(new BrowserPlugin(logary, opts))
 }

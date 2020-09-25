@@ -26,9 +26,9 @@
   },
   "gitHead": "61966453e49368ed4f718cc319d63b61e38ca1cb",
   "dependencies": {
-    "@opentelemetry/node": "^0.10.2",
-    "@opentelemetry/plugin-http": "^0.10.2",
-    "@opentelemetry/plugin-https": "^0.10.2",
+    "@opentelemetry/node": "^0.11.0",
+    "@opentelemetry/plugin-http": "^0.11.0",
+    "@opentelemetry/plugin-https": "^0.11.0",
     "cookie": "^0.4.0",
     "d64": "^1.0.0",
     "logary": "6.0.0-beta.7",

@@ -1,8 +1,8 @@
 import { ReadableSpan, SpanExporter } from "@opentelemetry/tracing"
+import { ExportResult } from "@opentelemetry/core"
 import Logary from '../impl'
 import { Logger } from '../logger'
-import { LogLevel, SpanMessage} from "../message"
-import { ExportResult } from "@opentelemetry/core"
+import { LogLevel, SpanMessage } from '../message'
 
 export default class LogaryExporter implements SpanExporter {
   constructor(logary: Logary) {

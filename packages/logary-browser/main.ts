@@ -1,6 +1,6 @@
-import Logary, { RuttaTarget, getLogary, LogLevel, Config } from '../logary'
-import { ValueOf } from "../logary/src"
-import browser from '../logary-plugin-browser/dist'
+import Logary, { RuttaTarget, getLogary, LogLevel, Config } from 'logary'
+import { ValueOf } from "logary/src"
+import browser from '@logary/plugin-browser'
 import pkg from './package.json'
 
 function getConfig(init: [keyof Config, ValueOf<Config>][]): Config {
@@ -30,22 +30,22 @@ function getConfig(init: [keyof Config, ValueOf<Config>][]): Config {
   }
 }
 
-export default function initLogary(): Logary {
+export function initLogary(): Logary {
   let instance: Logary
 
   // real instance exists, but we just loaded the browser script; reconfigure
   // @ts-ignore
-  if (_lgy != null && 'reconfigure' in _lgy) {
+  if (logary != null && 'reconfigure' in logary) {
     // @ts-ignore
-    _lgy.reconfigure()
+    logary.reconfigure()
     // @ts-ignore
-    instance = _lgy
+    instance = logary
   }
   // @ts-ignore
-  else if (_lgy != null) {
+  else if (logary != null) {
     // instance not existing, create it and configure it from the init value
     // @ts-ignore
-    instance = getLogary(getConfig(_lgy.i))
+    instance = getLogary(getConfig(logary.i))
   } else {
     // instance not existing and we don't have a config for it either
     // @ts-ignore
@@ -55,5 +55,9 @@ export default function initLogary(): Logary {
   browser(instance)
   
   // @ts-ignore
-  return window._lgy = instance
+  // return window.logary = instance // with rollup
+  return instance
 }
+
+
+export default initLogary()
