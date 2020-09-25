@@ -16,12 +16,13 @@ module.exports = {
     extensions: ['.tsx', '.ts', '.js'],
   },
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'packages', 'logary-browser', 'dist'),
     filename: 'logary.min.js',
     library: 'logary',
     libraryTarget: 'umd',
   },
-  externals: [
-    /^@opentelemetry\/.+$/,
-  ]
+  // Maybe we can optimise this so that logary -> @OT/{api,core,tracing} and each plugin e.g. -> @OT/{web}
+  // externals: [
+  //   /^@opentelemetry\/.+$/,
+  // ]
 }

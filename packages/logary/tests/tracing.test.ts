@@ -80,7 +80,7 @@ describe('Span', () => {
 
     const span = logary.getTracer().startSpan('work')
 
-    for (let index = 0; index < 100; index++) {
+    for (let index = 0; index < 1000; index++) {
       span.addEvent(`Event no ${index}`)
     }
 
