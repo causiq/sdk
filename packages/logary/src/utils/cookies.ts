@@ -3,12 +3,15 @@
 // Exposes identical API, as can be studied at
 // https://github.com/maticzav/nookies#nookies-cookie-cookie-cookie
 
-import * as http from 'http'
-import * as cookie from 'cookie'
-import * as setCookieParser from 'set-cookie-parser'
+import { OutgoingMessage, IncomingMessage } from 'http'
+import {
+  parse as parseCookie,
+  serialize as serializeCookie,
+  CookieParseOptions,
+  CookieSerializeOptions
+} from 'cookie'
+import { parse as parseSet } from 'set-cookie-parser'
 import { Cookie } from 'set-cookie-parser'
-
-const isBrowser = () => typeof window !== 'undefined'
 
 function hasSameProperties(a: any, b: any) {
   const aProps = Object.getOwnPropertyNames(a)
@@ -59,7 +62,7 @@ function areCookiesEqual(a: Cookie, b: Cookie) {
 function createCookie(
   name: string,
   value: string,
-  options: cookie.CookieSerializeOptions = {},
+  options: CookieSerializeOptions = {},
 ): Cookie {
   let sameSite = options.sameSite
   if (sameSite === true) {
@@ -86,17 +89,17 @@ function createCookie(
  */
 export function parseCookies(
   ctx?:
-    | { req: http.IncomingMessage }
+    | { req: IncomingMessage }
     | null
     | undefined,
-  options: cookie.CookieParseOptions = {},
+  options: CookieParseOptions = {},
 ): Record<string, string> {
   if (ctx && ctx.req && ctx.req.headers && ctx.req.headers.cookie) {
-    return cookie.parse(ctx.req.headers.cookie as string, options)
+    return parseCookie(ctx.req.headers.cookie as string, options)
   }
 
-  if (isBrowser()) {
-    return cookie.parse(document.cookie, options)
+  if (typeof window !== 'undefined') {
+    return parseCookie(document.cookie, options)
   }
 
   return {}
@@ -113,12 +116,12 @@ export function parseCookies(
  */
 export function setCookie(
   ctx:
-    | { res: http.OutgoingMessage }
+    | { res: OutgoingMessage }
     | null
     | undefined,
   name: string,
   value: string,
-  options: cookie.CookieSerializeOptions = {},
+  options: CookieSerializeOptions = {},
 ): void {
   if (ctx && ctx.res && ctx.res.getHeader && ctx.res.setHeader) {
     let cookies = ctx.res.getHeader('Set-Cookie') || []
@@ -126,31 +129,31 @@ export function setCookie(
     if (typeof cookies === 'string') cookies = [cookies]
     if (typeof cookies === 'number') cookies = []
 
-    const parsedCookies = setCookieParser.parse(cookies)
+    const parsedCookies = parseSet(cookies)
 
     const cookiesToSet: string[] = []
     parsedCookies.forEach((parsedCookie: Cookie) => {
       if (!areCookiesEqual(parsedCookie, createCookie(name, value, options))) {
         cookiesToSet.push(
-          cookie.serialize(parsedCookie.name, parsedCookie.value, {
-            ...(parsedCookie as cookie.CookieSerializeOptions),
+          serializeCookie(parsedCookie.name, parsedCookie.value, {
+            ...(parsedCookie as CookieSerializeOptions),
           }),
         )
       }
     })
 
-    cookiesToSet.push(cookie.serialize(name, value, options))
+    cookiesToSet.push(serializeCookie(name, value, options))
     if (!ctx.res.finished) {
       ctx.res.setHeader('Set-Cookie', cookiesToSet)
     }
   }
 
-  if (isBrowser()) {
+  if (typeof window !== 'undefined')  {
     if (options && options.httpOnly) {
       throw new Error('Can not set a httpOnly cookie in the browser.')
     }
 
-    document.cookie = cookie.serialize(name, value, options)
+    document.cookie = serializeCookie(name, value, options)
   }
 }
 
@@ -164,11 +167,11 @@ export function setCookie(
  */
 export function destroyCookie(
   ctx:
-    | { res: http.OutgoingMessage }
+    | { res: OutgoingMessage }
     | null
     | undefined,
   name: string,
-  options: cookie.CookieSerializeOptions = {},
+  options: CookieSerializeOptions = {},
 ): void {
   const opts = { ...(options || {}), maxAge: -1 }
 
@@ -178,13 +181,13 @@ export function destroyCookie(
     if (typeof cookies === 'string') cookies = [cookies]
     if (typeof cookies === 'number') cookies = []
 
-    cookies.push(cookie.serialize(name, '', opts))
+    cookies.push(serializeCookie(name, '', opts))
 
     ctx.res.setHeader('Set-Cookie', cookies)
   }
 
-  if (isBrowser()) {
-    document.cookie = cookie.serialize(name, '', opts)
+  if (typeof window !== 'undefined') {
+    document.cookie = serializeCookie(name, '', opts)
   }
 }
 

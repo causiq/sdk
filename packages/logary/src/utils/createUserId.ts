@@ -1,5 +1,5 @@
-import uuid from 'uuid'
+import { v4 } from 'uuid'
 
 export default function createUserId(): string {
-  return uuid.v4().replace(/-/ig, '')
+  return v4().replace(/-/ig, '')
 }

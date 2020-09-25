@@ -1,5 +1,4 @@
-import { setActiveSpan } from '@opentelemetry/core'
-import { Span, Tracer, SpanOptions, Context, context  } from "@opentelemetry/api"
+import { Span, Tracer } from "@opentelemetry/api"
 import Logary, { HasTracer, TracerModule, } from "logary"
 import { BrowserPluginOptions, PageViewSpanHolder } from './types'
 import { features } from './features'

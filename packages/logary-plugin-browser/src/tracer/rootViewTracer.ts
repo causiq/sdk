@@ -1,4 +1,3 @@
-import * as core from "@opentelemetry/core"
 import * as api from "@opentelemetry/api"
 import { PageViewSpanHolder } from "../types"
 

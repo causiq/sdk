@@ -1,24 +1,31 @@
-import resolve from 'rollup-plugin-node-resolve'
-import commonjs from 'rollup-plugin-commonjs'
-import typescript from 'rollup-plugin-typescript'
-import rollupGitVersion from 'rollup-plugin-git-version'
+import resolve from '@rollup/plugin-node-resolve'
+import commonjs from '@rollup/plugin-commonjs'
+import typescript from '@rollup/plugin-typescript'
 import pkg from './packages/logary-browser/package.json'
 
 export default {
-
   input: 'packages/logary-browser/main.ts',
+
   output: {
     name: 'logary',
     file: pkg.browser,
-    format: 'umd'
+    format: 'iife'
   },
 
-  entry: 'packages/logary-browser/main.js',
-  dest: 'dist/index.js',
   plugins: [
-    resolve(),   // so Rollup can find `ms`
-    commonjs(),  // so Rollup can convert `ms` to an ES module
-    typescript(), // so Rollup can convert TypeScript to JavaScript
-    rollupGitVersion()
+    typescript({
+      typescript: require('typescript'),
+      outDir: './dist'
+    }),
+    resolve({
+      browser: true,
+      preferBuiltins: true,
+      customResolveOptions: {
+        moduleDirectory: ['node_modules'],
+      },
+    }),
+    commonjs({
+      include: 'node_modules/'
+    }),
   ]
 }

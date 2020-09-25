@@ -1,10 +1,10 @@
-import * as http from 'http'
+import { IncomingMessage, OutgoingMessage } from 'http'
 import { parseCookies, setCookie } from "./cookies"
 import { CookieParseOptions, CookieSerializeOptions } from 'cookie'
 import createUserId from "./createUserId"
 import { CookieName } from "../config"
 
-type Context = Readonly<{ req: http.IncomingMessage, res: http.OutgoingMessage }>
+type Context = Readonly<{ req: IncomingMessage, res: OutgoingMessage }>
 
 export default function getUserId(
   ctx?: Context,

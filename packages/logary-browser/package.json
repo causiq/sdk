@@ -1,7 +1,7 @@
 {
   "version": "6.0.0-beta.7",
   "name": "@logary/browser",
-  "browser": "dist/logary.umd.js",
+  "browser": "dist/logary.min.js",
   "gitHead": "f5c2c05245b0f522b72ef61b4c44c6e28b5e8f8f",
   "private": true
 }
