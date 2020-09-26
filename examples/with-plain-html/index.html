@@ -6,11 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
   <meta name="theme-color" content="#000000" />
   <title>Example Logary Analytics app</title>
-  <script src="js/logary.min.js" async></script>
+
+  <!-- <script src="js/logary.min.js" async></script> -->
+  <script src="https://app.logary.tech/logary.min.js" async></script>
   <script>
-    console.log('Executing script, window.logary', window.logary)
     window.logary = window.logary||{i:[]};
     logary.i.push(['appId', 'LA-35710335']);
+    logary.i.push(['serviceName', 'with-plan-html']);
     logary.i.push(['js', Date.now()]);
   </script>
 </head>

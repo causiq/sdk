@@ -1,3 +1,4 @@
+import { LogaryWindow } from './LogaryWindow'
 import Logary, { RuttaTarget, getLogary, LogLevel, Config, EventMessage } from 'logary'
 import { ValueOf } from "logary/src"
 import browser from '@logary/plugin-browser'
@@ -45,42 +46,29 @@ function getConfig(init: [keyof Config | string, ValueOf<Config>][]): Res {
 }
 
 function initLogary(): Logary {
+  const w = window as LogaryWindow
   let instance: Logary
 
-  // @ts-ignore
-  console.log('init logary called, window.logary', logary, window.logary)
-
-  // @ts-ignore
-  const { config, jsExec } = getConfig(logary?.i || [])
+  const { config, jsExec } = getConfig(w.logary?.i || [])
 
   // real instance exists, but we just loaded the browser script; reconfigure
-  // @ts-ignore
-  if (logary != null && 'reconfigure' in logary) {
+  if (w.logary != null && 'reconfigure' in w.logary) {
     console.log('Logary already instantiated')
-    // @ts-ignore
-    logary.reconfigure()
-    // @ts-ignore
-    instance = logary
+    w.logary.reconfigure()
+    instance = w.logary
   }
-  // @ts-ignore
-  else if (logary != null) {
-    // console.log('Logary stub exists')
+  else if (w.logary != null) {
     // instance does not exist, create it and configure it from the init value
-    // @ts-ignore
     instance = getLogary(config)
   } else {
-    // instance not existing and we don't have a config for it either
-    // @ts-ignore
+    // instance not existing and we don't have a config ("i" array) for it either, non-async script ref?
     instance = getLogary(config)
-    console.log('else case')
   }
 
   browser(instance)
 
   instance.getLogger('Logary', 'browser').log(LogLevel.info, jsExec)
   
-  // @ts-ignore
-  // return window.logary = instance // with rollup
   return instance
 }
 

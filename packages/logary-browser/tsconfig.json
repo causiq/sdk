@@ -2,10 +2,10 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "declaration": true,
+    "declaration": true
   },
   "include": [
-    "main.ts"
+    "logary.ts"
   ],
   "exclude": [
     "package.json"

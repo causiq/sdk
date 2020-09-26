@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-  entry: './packages/logary-browser/main.ts',
+  entry: './packages/logary-browser/logary.ts',
   module: {
     rules: [
       {
@@ -16,8 +16,8 @@ module.exports = {
     extensions: ['.tsx', '.ts', '.js'],
   },
   output: {
-    // path: path.resolve(__dirname, 'packages', 'logary-browser', 'dist'),
-    path: path.resolve(__dirname, 'examples', 'with-plain-html', 'js'),
+    path: path.resolve(__dirname, 'packages', 'logary-browser', 'dist'),
+    // path: path.resolve(__dirname, 'examples', 'with-plain-html', 'js'),
     filename: 'logary.min.js',
     library: 'logary',
     libraryTarget: 'umd',

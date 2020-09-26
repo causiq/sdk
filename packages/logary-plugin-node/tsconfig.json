@@ -5,6 +5,7 @@
     "declaration": true,
   },
   "include": [
-    "src/**/*", "../logary/src/utils/cookies.ts"
+    "src/**/*",
+    "../logary/src/utils/cookies.ts"
   ]
 }
