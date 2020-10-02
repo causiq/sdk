@@ -21,6 +21,7 @@ module.exports = {
     filename: 'logary.min.js',
     library: 'logary',
     libraryTarget: 'umd',
+    libraryExport: 'default',
   }
   // Maybe we can optimise this so that logary -> @OT/{api,core,tracing} and each plugin e.g. -> @OT/{web}
   // externals: [
