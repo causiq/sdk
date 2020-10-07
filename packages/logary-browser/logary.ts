@@ -53,7 +53,7 @@ function initLogary(): Logary {
 
   // real instance exists, but we just loaded the browser script; reconfigure
   if (w.logary != null && 'reconfigure' in w.logary) {
-    console.log('Logary already instantiated')
+    //console.log('Logary already instantiated')
     w.logary.reconfigure()
     instance = w.logary
   }
