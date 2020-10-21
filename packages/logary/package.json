@@ -45,7 +45,9 @@
     "@opentelemetry/tracing": "^0.11.0",
     "jssha": "^3.1.0",
     "node-abort-controller": "^1.1.0",
-    "rxjs": "^6.3.3"
+    "rxjs": "^6.3.3",
+    "set-cookie-parser": "^2.4.3",
+    "cookie": "^0.4.0"
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",
