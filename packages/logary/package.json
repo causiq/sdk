@@ -4,10 +4,11 @@
   "description": "Unified behavioural analytics; logging, metrics, tracing.",
   "author": "Henrik Feldt",
   "license": "GPL-3.0 / commercial",
-  "main": "dist/index",
-  "types": "dist/index",
+  "main": "./dist/cjs/index",
+  "module": "./dist/index",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
+    ".": "./dist/cjs/index.js",
     "./targets/*": "./dist/targets/*"
   },
   "homepage": "https://logary.tech",
@@ -32,7 +33,7 @@
   ],
   "browserslist": "> 0.5%, not dead",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json",
     "test": "jest",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "eslint --ext .ts src",

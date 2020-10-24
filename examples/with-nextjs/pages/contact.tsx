@@ -1,6 +1,6 @@
-import Layout from "../components/Layout";
-import Link from "next/link";
-import { withLogary } from "@logary/plugin-nextjs";
+import Layout from "../components/Layout"
+import Link from "next/link"
+import { withLogary } from "@logary/plugin-nextjs"
 import logary from '../lib/logary'
 
 function ContactPage() {
@@ -16,7 +16,6 @@ function ContactPage() {
       <label htmlFor='name'>Your e-mail</label>
       <input id='email' type='email' />
     </fieldset>
-
 
     <fieldset>
       <legend>Navigation events</legend>

@@ -15,7 +15,7 @@ function Button({ children, ...rest }) {
 
 function IndexPage() {
   const { event } = useLogger('IndexPage')
-  
+
   const handlePurchase = useCallback(() =>
     event('Product purchased', {
       amount: 20, currency: 'EUR'
@@ -48,27 +48,27 @@ function IndexPage() {
         <Button data-track='Make alt. purchase'>
           Make alt. purchase
         </Button>
-        </fieldset>
+      </fieldset>
 
-        <fieldset>
-          <legend>
-            An example form
-          </legend>
-          <form>
-            <label htmlFor='email'>
-              E-mail:
-            </label>
-            <input id='email' type='email' />
-          </form>
-        </fieldset>
+      <fieldset>
+        <legend>
+          An example form
+        </legend>
+        <form>
+          <label htmlFor='email'>
+            E-mail:
+          </label>
+          <input id='email' type='email' />
+        </form>
+      </fieldset>
 
-        <fieldset>
-          <legend>Navigation events</legend>
+      <fieldset>
+        <legend>Navigation events</legend>
 
-          <Link href='/contact'>
-            <a>Contact us</a>
-          </Link>
-        </fieldset>
+        <Link href='/contact'>
+          <a>Contact us</a>
+        </Link>
+      </fieldset>
     </Layout>
   )
 }
