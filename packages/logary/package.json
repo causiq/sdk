@@ -7,6 +7,11 @@
   "main": "dist/index",
   "types": "dist/index",
   "homepage": "https://logary.tech",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.js",
+    "./targets/*": "./dist/targets/*"
+  },
   "files": [
     "dist/**/*",
     "package.json",
