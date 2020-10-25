@@ -1,6 +1,6 @@
 import { RuttaTarget, getLogary, LogLevel, ConsoleTarget } from 'logary'
-// import nextjs from '@logary/plugin-nextjs'
-// import react from '@logary/plugin-react'
+import nextjs from '@logary/plugin-nextjs'
+import react from '@logary/plugin-react'
 
 const instance = getLogary({
   minLevel: LogLevel.debug,
@@ -21,13 +21,13 @@ const instance = getLogary({
   debug: false
 })
 
-// // A workaround for following issue:
-// // https://github.com/open-telemetry/opentelemetry-js/issues/1575
-// if (typeof document !== "undefined") {
-//   const browser = require('@logary/plugin-browser').default
-//   browser(instance)
-// }
-// nextjs(instance)
-// react(instance)
+// A workaround for following issue:
+// https://github.com/open-telemetry/opentelemetry-js/issues/1575
+if (typeof document !== "undefined") {
+  const browser = require('@logary/plugin-browser').default
+  browser(instance)
+}
+nextjs(instance)
+react(instance)
 
 export default instance

@@ -23,6 +23,11 @@
   "bugs": {
     "url": "https://github.com/logary/logary-js/issues"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn test && yarn lint"
+    }
+  },
   "devDependencies": {
     "@opentelemetry/node": "^0.11.0",
     "@opentelemetry/plugin-document-load": "^0.10.0",

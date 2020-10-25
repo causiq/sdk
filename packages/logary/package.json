@@ -5,8 +5,7 @@
   "author": "Henrik Feldt",
   "license": "GPL-3.0 / commercial",
   "main": "dist/index",
-  "types": "dist/index.d.ts",
-  "type": "module",
+  "types": "dist/index",
   "homepage": "https://logary.tech",
   "files": [
     "dist/**/*",
@@ -29,7 +28,7 @@
   ],
   "browserslist": "> 0.5%, not dead",
   "scripts": {
-    "build": "tsc && mv dist/index.js dist/index.mjs && tsc -m commonjs",
+    "build": "tsc",
     "test": "jest",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "eslint --ext .ts src",

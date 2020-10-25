@@ -1,6 +1,6 @@
 import Layout from "../components/Layout"
 import Link from "next/link"
-// import { withLogary } from "@logary/plugin-nextjs"
+import { withLogary } from "@logary/plugin-nextjs"
 import logary from '../lib/logary'
 
 function ContactPage() {
@@ -28,4 +28,4 @@ function ContactPage() {
   </Layout>
 }
 
-export default ContactPage
+export default withLogary(ContactPage, { logary })
