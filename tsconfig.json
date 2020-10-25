@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es2015",
-    "module": "commonjs",
+    "target": "ES2017",
+    "module": "es2015",
     "strict": true,
     "noImplicitReturns": true,
     "sourceMap": true,
@@ -9,12 +9,10 @@
     "esModuleInterop": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
-    "emitDeclarationOnly": true
+    "allowSyntheticDefaultImports": true
   },
   "lib": [
     "es2015",
-    "es2017.object",
     "dom"
   ],
   "exclude": [

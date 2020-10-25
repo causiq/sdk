@@ -1,4 +1,4 @@
-import { setCookie } from "logary/dist/esm/utils/cookies";
+import { setCookie } from "logary/dist/utils/cookies";
 import { CookieName } from "logary";
 import { NextApiRequest, NextApiResponse } from "next";
 
