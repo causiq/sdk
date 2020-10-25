@@ -2,15 +2,8 @@
   "name": "@logary/plugin-node",
   "license": "GPL3 / commercial",
   "version": "6.0.0-beta.8",
-  "main": "./dist/cjs/index.js",
+  "main": "./dist/index.js",
   "module": "./dist/esm/index.js",
-  "exports": {
-    "module": {
-      "default": "./dist/esm/index.js"
-    },
-    "import": "./dist/esm/index.js",
-    "default": "./dist/cjs/index.js"
-  },
   "files": [
     "dist/**/*",
     "package.json",
@@ -29,7 +22,7 @@
     "key performance metrics"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig-esm.json"
+    "build": "tsc && tsc -m es6 --outDir dist/esm"
   },
   "gitHead": "61966453e49368ed4f718cc319d63b61e38ca1cb",
   "dependencies": {

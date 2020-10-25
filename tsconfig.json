@@ -9,10 +9,12 @@
     "esModuleInterop": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "emitDeclarationOnly": true
   },
   "lib": [
     "es2015",
+    "es2017.object",
     "dom"
   ],
   "exclude": [
