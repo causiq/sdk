@@ -2,9 +2,15 @@
   "name": "@logary/plugin-nextjs",
   "license": "GPL3 / commercial",
   "version": "6.0.0-beta.8",
-  "main": "./dist/cjs/index",
-  "module": "./dist/index",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "exports": {
+    "module": {
+      "default": "./dist/esm/index.js"
+    },
+    "import": "./dist/esm/index.js",
+    "default": "./dist/cjs/index.js"
+  },
   "files": [
     "dist/**/*",
     "package.json",
@@ -24,7 +30,7 @@
     "key performance metrics"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json"
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig-esm.json"
   },
   "dependencies": {
     "@logary/plugin-react": "6.0.0-beta.8",

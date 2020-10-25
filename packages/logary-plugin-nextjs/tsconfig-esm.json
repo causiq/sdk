@@ -1,8 +1,9 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "outDir": "./dist/cjs",
+    "module": "es2015",
+    "outDir": "./dist/esm",
+    "jsx": "react",
     "declaration": true,
   },
   "include": [
