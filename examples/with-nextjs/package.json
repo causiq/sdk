@@ -3,7 +3,7 @@
   "version": "6.0.0-beta.8",
   "description": "A sample that demonstrates how to use Logary",
   "private": true,
-  "main": "index",
+  "main": "index.js",
   "license": "MIT",
   "dependencies": {
     "@logary/plugin-browser": "6.0.0-beta.8",
