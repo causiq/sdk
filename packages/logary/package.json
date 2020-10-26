@@ -5,9 +5,10 @@
   "author": "Henrik Feldt",
   "license": "GPL-3.0 / commercial",
   "main": "dist/index",
-  "types": "dist/index",
+  "types": "dist/index.d.ts",
+  "module": "dist/index.mjs",
+  "type": "module",
   "homepage": "https://logary.tech",
-  "sideEffects": false,
   "exports": {
     ".": "./dist/index.js",
     "./targets/*": "./dist/targets/*"
@@ -33,7 +34,7 @@
   ],
   "browserslist": "> 0.5%, not dead",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && mv dist/index.js dist/index.mjs && tsc -m commonjs",
     "test": "jest",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "eslint --ext .ts src",
