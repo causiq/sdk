@@ -4,6 +4,7 @@
   "version": "6.0.0-beta.8",
   "main": "dist/index",
   "types": "dist/index",
+  "module": "dist/esm/index",
   "files": [
     "dist/**/*",
     "package.json",
@@ -22,7 +23,7 @@
     "key performance metrics"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc && tsc -m es2015 --outDir dist/esm"
   },
   "gitHead": "61966453e49368ed4f718cc319d63b61e38ca1cb",
   "dependencies": {
