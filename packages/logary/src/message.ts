@@ -3,7 +3,7 @@
 import template, { Templated } from './formatting/template'
 import { hexDigest } from './utils/hasher'
 import { Money } from "./money"
-import { SpanContext, Status, CanonicalCode, SpanKind, TimedEvent } from "@opentelemetry/api"
+import { SpanContext, Status, CanonicalCode, SpanKind, TimedEvent, Attributes } from "@opentelemetry/api"
 import { SpanData } from "./trace"
 import getTimestamp, { EpochNanoSeconds, hrTimeToEpochNanoSeconds } from "./utils/time"
 import { ReadableSpan } from "@opentelemetry/tracing"
@@ -66,8 +66,8 @@ export class SpanMessage implements LogaryMessage, SpanData {
     public kind: SpanKind = SpanKind.CLIENT,
     public status: Status = { code: CanonicalCode.OK },
     public events: EventMessage[] = [],
-    public attrs: Record<string, unknown> = {},
-    public context: Record<string, unknown> = {},
+    public attrs: Attributes = {},
+    public context: Attributes = {},
     started: EpochNanoSeconds | null = getTimestamp(),
     finished?: EpochNanoSeconds | null)
   {

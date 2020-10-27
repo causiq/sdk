@@ -10,13 +10,13 @@
     "@logary/plugin-nextjs": "6.0.0-beta.8",
     "@logary/plugin-node": "6.0.0-beta.8",
     "@logary/plugin-react": "6.0.0-beta.8",
-    "@opentelemetry/api": "^0.11.0",
+    "@opentelemetry/api": "^0.12.0",
     "@opentelemetry/core": "^0.12.0",
-    "@opentelemetry/node": "^0.11.0",
+    "@opentelemetry/node": "^0.12.0",
     "@opentelemetry/plugin-http": "^0.12.0",
     "@opentelemetry/plugin-https": "^0.12.0",
-    "@opentelemetry/tracing": "^0.11.0",
-    "@opentelemetry/web": "^0.11.0",
+    "@opentelemetry/tracing": "^0.12.0",
+    "@opentelemetry/web": "^0.12.0",
     "logary": "6.0.0-beta.8",
     "next": "^10.0.0",
     "node-abort-controller": "^1.1.0",
@@ -30,8 +30,8 @@
   },
   "devDependencies": {
     "@types/node": "^14.0.5",
-    "@types/react": "^16.9.47",
-    "@types/react-dom": "^16.9.8",
+    "@types/react": "^16.9.54",
+    "@types/react-dom": "^16.9.9",
     "typescript": "^4.0.2"
   }
 }

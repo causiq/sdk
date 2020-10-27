@@ -18,10 +18,10 @@
     "test": "jest"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.11.0",
+    "@opentelemetry/api": "^0.12.0",
     "@opentelemetry/core": "^0.12.0",
-    "@opentelemetry/tracing": "^0.11.0",
-    "@opentelemetry/web": "^0.11.0",
+    "@opentelemetry/tracing": "^0.12.0",
+    "@opentelemetry/web": "^0.12.0",
     "logary": "6.0.0-beta.8",
     "web-vitals": "^0.2.4"
   },
