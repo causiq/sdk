@@ -3,6 +3,7 @@ packages/*/dist/*
 yarn-error.log
 lerna-debug.log
 .DS_Store
+cypress/videos/
 .yarn/*
 !.yarn/cache
 .yarn/cache/logary*
