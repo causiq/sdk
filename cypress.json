@@ -1,3 +1,5 @@
 {
-  "pluginsFile": false
+  "pluginsFile": false,
+  "baseUrl": "http://localhost:3000",
+  "experimentalNetworkStubbing": true
 }
