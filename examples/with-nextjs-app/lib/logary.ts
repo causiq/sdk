@@ -2,7 +2,7 @@ import { ConsoleTarget, RuttaTarget, getLogary, LogLevel } from 'logary'
 import nextjs from '@logary/plugin-nextjs'
 import react from '@logary/plugin-react'
 
-console.log('NEXT_PUBLIC_LOGARY_ENDPOINT', process.env.NEXT_PUBLIC_LOGARY_ENDPOINT)
+// console.log('NEXT_PUBLIC_LOGARY_ENDPOINT', process.env.NEXT_PUBLIC_LOGARY_ENDPOINT)
 
 const instance = getLogary({
   minLevel: LogLevel.debug,
