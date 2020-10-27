@@ -23,7 +23,7 @@ const instance = getLogary({
 
 // A workaround for following issue:
 // https://github.com/open-telemetry/opentelemetry-js/issues/1575
-if (typeof document !== "undefined") {
+if (typeof window !== "undefined") {
   const browser = require('@logary/plugin-browser').default
   browser(instance)
 }
