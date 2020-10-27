@@ -1,5 +1,6 @@
 {
   "pluginsFile": false,
   "baseUrl": "http://localhost:3000",
-  "experimentalNetworkStubbing": true
+  "experimentalNetworkStubbing": true,
+  "projectId": "mh6dp5"
 }
