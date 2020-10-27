@@ -15,7 +15,7 @@ function Button({ children, ...rest }) {
 
 function IndexPage() {
   const { event } = useLogger('IndexPage')
-  
+
   const handlePurchase = useCallback(() =>
     event('Product purchased', {
       amount: 20, currency: 'EUR'

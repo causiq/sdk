@@ -4,6 +4,7 @@
   "version": "6.0.0-beta.8",
   "main": "dist/index",
   "types": "dist/index",
+  "module": "dist/esm/index",
   "files": [
     "dist/**/*",
     "package.json",
@@ -13,7 +14,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc -m es2015 --outDir dist/esm",
     "test": "jest"
   },
   "dependencies": {

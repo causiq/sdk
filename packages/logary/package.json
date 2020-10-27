@@ -6,6 +6,7 @@
   "license": "GPL-3.0 / commercial",
   "main": "dist/index",
   "types": "dist/index",
+  "module": "dist/esm/index",
   "exports": {
     ".": "./dist/index.js",
     "./targets/*": "./dist/targets/*"
@@ -32,7 +33,7 @@
   ],
   "browserslist": "> 0.5%, not dead",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc -m es2015 --outDir dist/esm",
     "test": "jest",
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
     "lint": "eslint --ext .ts src",
