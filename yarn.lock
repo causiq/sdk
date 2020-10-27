@@ -2394,6 +2394,14 @@
     "@opentelemetry/api" "^0.11.0"
     "@opentelemetry/core" "^0.11.0"
 
+"@opentelemetry/resources@^0.12.0":
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/resources/-/resources-0.12.0.tgz#5eb287c3032a2bebb2bb9f69b44bd160d2a7d591"
+  integrity sha512-8cYvIKB68cyupc7D6SWzkLtt13mbjgxMahL4JKCM6hWPyiGSJlPFEAey4XFXI5LLpPZRYTPHLVoLqI/xwCFZZA==
+  dependencies:
+    "@opentelemetry/api" "^0.12.0"
+    "@opentelemetry/core" "^0.12.0"
+
 "@opentelemetry/semantic-conventions@^0.11.0":
   version "0.11.0"
   resolved "https://registry.yarnpkg.com/@opentelemetry/semantic-conventions/-/semantic-conventions-0.11.0.tgz#9d2bb0d67620bb8c01c95174fbaaefc109189963"
@@ -2415,6 +2423,17 @@
     "@opentelemetry/resources" "^0.11.0"
     "@opentelemetry/semantic-conventions" "^0.11.0"
 
+"@opentelemetry/tracing@^0.12.0":
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/tracing/-/tracing-0.12.0.tgz#769927721d417bfac85eef50c2af068bedce8873"
+  integrity sha512-2TUGhTGkhgnxTciHCNAILPSeyXageJewRqfP9wOrx65sKd/jgvNYoY8nYf4EVWVMirDOxKDsmYgUkjdQrwb2dg==
+  dependencies:
+    "@opentelemetry/api" "^0.12.0"
+    "@opentelemetry/context-base" "^0.12.0"
+    "@opentelemetry/core" "^0.12.0"
+    "@opentelemetry/resources" "^0.12.0"
+    "@opentelemetry/semantic-conventions" "^0.12.0"
+
 "@opentelemetry/web@^0.11.0":
   version "0.11.0"
   resolved "https://registry.yarnpkg.com/@opentelemetry/web/-/web-0.11.0.tgz#2da0e2e05e826e85c564348bdf5b12abd2e189f1"
@@ -2425,6 +2444,17 @@
     "@opentelemetry/core" "^0.11.0"
     "@opentelemetry/semantic-conventions" "^0.11.0"
     "@opentelemetry/tracing" "^0.11.0"
+
+"@opentelemetry/web@^0.12.0":
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/web/-/web-0.12.0.tgz#0dfa4ed444f5cbb1772e9370e0d869e31e728937"
+  integrity sha512-dClftM0ZKLUHi/zsU0r43DC1fCfVTUgc9CC+J/kvvpW33SaruvjksFqhW2NdicivtxTN+OjwVUEJLBQUTL4UUA==
+  dependencies:
+    "@opentelemetry/api" "^0.12.0"
+    "@opentelemetry/context-base" "^0.12.0"
+    "@opentelemetry/core" "^0.12.0"
+    "@opentelemetry/semantic-conventions" "^0.12.0"
+    "@opentelemetry/tracing" "^0.12.0"
 
 "@sinonjs/commons@^1.7.0":
   version "1.8.1"
