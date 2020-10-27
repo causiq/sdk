@@ -10,10 +10,17 @@
   <script src="js/logary.min.js" async></script>
   <!-- <script src="https://app.logary.tech/logary.min.js" async></script> -->
   <script>
-    window.logary = window.logary||{i:[]};
+    window.logary = window.logary || { i: [] };
     logary.i.push(['appId', 'LA-35710335']);
     logary.i.push(['serviceName', 'with-plain-html']);
     logary.i.push(['js', Date.now()]);
+  </script>
+  <script>
+    function handlePurchase(e) {
+      if (!('getLogger' in logary)) return;
+      let logger = logary.getLogger('Cart checkout page');
+      logger.event('Purchase made', { amount: 20.3, currency: 'USD' });
+    }
   </script>
 </head>
 
@@ -25,7 +32,7 @@
     <button onClick={handlePurchase}>
       Make purchase
     </button>
-    <button onClick={crashingHandler}>
+    <button>
       Crashes
     </button>
     <button data-track='Make alt. purchase'>
@@ -52,4 +59,5 @@
 
   <noscript>You need to enable JavaScript to run this app.</noscript>
 </body>
+
 </html>
