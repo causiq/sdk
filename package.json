@@ -16,7 +16,7 @@
     "build:browser": "yarn build:browser:webpack && yarn build:browser:copy",
     "build:browser:watch": "webpack --config webpack.config.cjs --mode=production --watch",
     "build:samples:app": "cd examples/with-nextjs-app && yarn && yarn build",
-    "start:samples:app": "cd examples/with-nextjs-app && yarn && NODE_ENV=test yarn build && NODE_ENV=test yarn start",
+    "start:samples:app": "cd examples/with-nextjs-app && yarn && yarn build && NODE_ENV=test yarn start",
     "cypress:open": "cypress open",
     "cypress:run": "wait-on http://localhost:3000/ && cypress run",
     "cypress:run:record": "wait-on http://localhost:3000/ && cypress run --record",
