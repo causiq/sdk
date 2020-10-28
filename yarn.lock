@@ -2805,10 +2805,10 @@
     "@types/prop-types" "*"
     csstype "^3.0.2"
 
-"@types/set-cookie-parser@0.0.6":
-  version "0.0.6"
-  resolved "https://registry.yarnpkg.com/@types/set-cookie-parser/-/set-cookie-parser-0.0.6.tgz#b0d8516c2571e0ce7c52854c342b1589736686e4"
-  integrity sha512-XIN/TID3Q1lO4Y3f09QO+pxOTg5tiLfsK5jhDZ10Bg0JBYcgRpP/drHeBM2xjixxrdkMt7kePcNgn07m+V2eXA==
+"@types/set-cookie-parser@0.0.7":
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/@types/set-cookie-parser/-/set-cookie-parser-0.0.7.tgz#198b99443c46a4ac9445eadbae211827c82b335d"
+  integrity sha512-FRDB9Cuuoq1+kZS/rnLZbxmKzC3xQHOJvlB1j3MUyPVVJA35OZr/pNPPHtbtK8wnJr0SUfZCkssju0eCUIy4YQ==
   dependencies:
     "@types/node" "*"
 
@@ -11450,9 +11450,9 @@ webpack-sources@^2.1.0:
     source-map "^0.6.1"
 
 webpack@4.44.1, webpack@^4, webpack@^5.2.0, webpack@^5.2.1:
-  version "5.2.1"
-  resolved "https://registry.yarnpkg.com/webpack/-/webpack-5.2.1.tgz#488f90106eaa8d8000495a69728021c627a1bec3"
-  integrity sha512-PDvVaqWXqAewVEeYL7VAignU97Qyns+8YcbI4ok2TKbYMfbbidS7goQ8XmmGmjYF+nGS4TKMYUdjqXIf8OGTYg==
+  version "5.3.0"
+  resolved "https://registry.yarnpkg.com/webpack/-/webpack-5.3.0.tgz#cfa5d9d235fff41e71de0c7c1cd1fc58c7a6ff28"
+  integrity sha512-0LumZ36pDaWsh+PO3i6FpNQYVqNu5Rs/Jn5AoYQyHpUxIlzn5H7omwApiEzaIUeWDccExOpkNZGO6agCVSqXPg==
   dependencies:
     "@types/eslint-scope" "^3.7.0"
     "@types/estree" "^0.0.45"
