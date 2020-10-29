@@ -7,37 +7,6 @@ version: 2.1
 orbs:
   cypress: cypress-io/cypress@1
 
-jobs:
-  build:
-    docker:
-    # CircleCI maintains a library of pre-built images
-    # documented at https://circleci.com/docs/2.0/circleci-images/
-    - image: circleci/node:14
-
-    working_directory: ~/repo
-
-    steps:
-    - checkout
-
-    # Download and cache dependencies
-    - restore_cache:
-        keys:
-        - v1-dependencies-{{ checksum "yarn.lock" }}
-
-    - run: yarn install
-    - run: yarn lerna bootstrap
-    - run: yarn lerna link
-    - run: yarn lerna run build
-
-    - save_cache:
-        paths:
-        - node_modules
-        - ~/.cache
-        key: v1-dependencies-{{ checksum "yarn.lock" }}
-
-    # run tests!
-    - run: yarn test
-
 # $ brew install circleci
 # $ circleci config process .circleci/config.yml
 # workflows reference jobs, see https://github.com/cypress-io/circleci-orb/blob/master/docs/examples.md#using-node14
@@ -46,8 +15,6 @@ workflows:
   version: 2
   build:
     jobs:
-    - build
-
     # https://github.com/cypress-io/circleci-orb/blob/master/docs/examples.md#using-node14
     - cypress/install:
         executor: cypress/base-14
@@ -58,6 +25,10 @@ workflows:
         - run:
             name: Lerna Prepare and Link 🔗
             command: yarn run lerna:prepare
+
+        - run:
+            name: Jest unit tests ❓
+            command: yarn test
 
     - cypress/run:
         requires:
