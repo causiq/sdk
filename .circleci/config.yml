@@ -7,7 +7,7 @@ version: 2.1
 jobs:
   build:
     docker:
-    - image: cypress/base:14
+    - image: cypress/base:14.15.0
 
     environment:
       CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
@@ -32,12 +32,12 @@ jobs:
         name: Lerna prepare 🐲
         command: yarn lerna:prepare
 
-    - test/unit:
+    - run:
         name: Unit tests ❓
         command: yarn test
         no_output_timeout: 10m
 
-    - test/cypress:
+    - run:
         name: Cypress e2e tests 🧪
         command: yarn test:e2e:record
         no_output_timeout: 10m
