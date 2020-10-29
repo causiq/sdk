@@ -30,7 +30,9 @@ jobs:
     - save_cache:
         paths:
         - node_modules
+        - ~/.cache
         key: v1-dependencies-{{ checksum "yarn.lock" }}
 
     # run tests!
     - run: yarn test
+    - run: yarn cypress:run:record

@@ -19,7 +19,7 @@
     "start:samples:app": "cd examples/with-nextjs-app && yarn && yarn build && NODE_ENV=test yarn start",
     "cypress:open": "cypress open",
     "cypress:run": "wait-on http://localhost:3000/ && cypress run",
-    "cypress:run:record": "wait-on http://localhost:3000/ && cypress run --record",
+    "cypress:run:record": "wait-on http://localhost:3000/ && cypress run --record --key 1ce10e09-47c4-4511-9e5a-efd234268fa9",
     "cypress:run:nocoverage": "wait-on http://localhost:3000/ && cypress run --env coverage=false",
     "publish": "lerna run publish",
     "new-version": "lerna version --conventional-commits --yes",
