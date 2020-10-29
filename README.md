@@ -37,6 +37,19 @@ Open http://localhost:3000 in a browser.
 You may also want to run `yarn lerna bootstrap`, `yarn lerna link` if you reinstall packages, 
 and `yarn lerna run build` if you change the packages while testing an example.
 
+## Upgrading deps
+
+    yarn lerna exec -- "yarn upgrade --latest"
+
+Or if you get the "missing module in workspace":
+
+    yarn lerna exec -- "npx yarn@1.19.1 upgrade --latest"
+
+Then run the tests:
+
+    yarn test
+    yarn test:e2e
+
 ## Publishing
 
 Calling `make` on its own ensures all packages are fresh and link/compile properly.

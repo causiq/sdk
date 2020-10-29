@@ -1,36 +1,43 @@
-# JavaScript Node CircleCI 2.0 configuration file
+# JavaScript Node CircleCI 2.1 configuration file
 #
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 #
 version: 2.1
+
 jobs:
   build:
     docker:
-    # CircleCI maintains a library of pre-built images
-    # documented at https://circleci.com/docs/2.0/circleci-images/
-    - image: circleci/node:14
+    - image: cypress/base:14.15.0
 
-    working_directory: ~/repo
+    environment:
+      CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
 
     steps:
     - checkout
 
-    # Download and cache dependencies
     - restore_cache:
         keys:
-          - v1-dependencies-{{ checksum "yarn.lock" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+        - v1-dependencies-{{ checksum "yarn.lock" }}
 
-    - run: yarn install
-    - run: yarn lerna bootstrap
-    - run: yarn lerna link
-    - run: yarn lerna run build
+    - run: yarn install --frozen-lockfile
+    - run: yarn cypress verify
 
     - save_cache:
-        paths:
-        - node_modules
         key: v1-dependencies-{{ checksum "yarn.lock" }}
+        paths:
+        - ./node_modules
+        - ~/.cache
 
-    # run tests!
-    - run: yarn test
+    - run:
+        name: Lerna prepare 🐲
+        command: yarn lerna:prepare
+
+    - run:
+        name: Unit tests ❓
+        command: yarn test
+        no_output_timeout: 10m
+
+    - run:
+        name: Cypress e2e tests 🧪
+        command: yarn test:e2e:record
+        no_output_timeout: 10m

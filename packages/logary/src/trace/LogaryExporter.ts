@@ -19,6 +19,7 @@ export default class LogaryExporter implements SpanExporter {
     resultCallback(ExportResult.SUCCESS)
   }
 
-  shutdown(): void {
+  shutdown(): Promise<void> {
+    return new Promise<void>(resolve => resolve())
   }
 }
