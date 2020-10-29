@@ -21,18 +21,18 @@ workflows:
         cache-key: v1-dependencies-{{ checksum "yarn.lock" }}
         yarn: true
 
-        post-steps:
+    - cypress/run:
+        requires:
+        - cypress/install
+
+        pre-steps:
         - run:
             name: Lerna Prepare and Link 🔗
             command: yarn run lerna:prepare
-
         - run:
             name: Jest unit tests ❓
             command: yarn test
 
-    - cypress/run:
-        requires:
-        - cypress/install
         executor: cypress/base-14
         start: yarn start:samples:app
         wait-on: http://localhost:3000
