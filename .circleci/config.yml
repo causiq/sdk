@@ -52,6 +52,7 @@ workflows:
     - cypress/install:
         executor: cypress/base-14
         cache-key: v1-dependencies-{{ checksum "yarn.lock" }}
+        yarn: true
 
     - cypress/run:
         requires:
