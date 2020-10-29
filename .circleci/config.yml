@@ -56,7 +56,7 @@ workflows:
 
     - cypress/run:
         requires:
-        - build
+        - cypress/install
         executor: cypress/base-14
         start: yarn start:samples:app
         wait-on: http://localhost:3000
