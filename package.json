@@ -10,6 +10,7 @@
     "dev": "lerna bootstrap && lerna link && lerna run build --stream",
     "test": "lerna run test",
     "test:e2e": "yarn test && concurrently --success first \"yarn cypress:run\" \"yarn start:samples:app\"",
+    "test:e2e:record": "yarn test && concurrently --success first \"yarn cypress:run:record\" \"yarn start:samples:app\"",
     "build": "lerna run build",
     "build:browser:webpack": "webpack --config webpack.config.cjs --mode=production",
     "build:browser:copy": "cp packages/logary-browser/dist/* examples/with-plain-html/js/",
