@@ -1,42 +1,43 @@
-# JavaScript Node CircleCI 2.0 configuration file
+# JavaScript Node CircleCI 2.1 configuration file
 #
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 #
 version: 2.1
 
-orbs:
-  cypress: cypress-io/cypress@1
-
-# $ brew install circleci
-# $ circleci config process .circleci/config.yml
-# workflows reference jobs, see https://github.com/cypress-io/circleci-orb/blob/master/docs/examples.md#using-node14
-# https://docs.cypress.io/guides/guides/continuous-integration.html#CircleCI
-workflows:
-  version: 2
+jobs:
   build:
-    jobs:
-    # https://github.com/cypress-io/circleci-orb/blob/master/docs/examples.md#using-node14
-    - cypress/install:
-        executor: cypress/base-14
-        cache-key: v1-dependencies-{{ checksum "yarn.lock" }}
-        yarn: true
+    docker:
+    - image: cypress/base:14
 
-    - cypress/run:
-        requires:
-        - cypress/install
+    environment:
+      CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
 
-        pre-steps:
-        - run:
-            name: Lerna Prepare and Link 🔗
-            command: yarn run lerna:prepare
-        - run:
-            name: Jest unit tests ❓
-            command: yarn test
+    steps:
+    - checkout
 
-        executor: cypress/base-14
-        start: yarn start:samples:app
-        wait-on: http://localhost:3000
-        record: true
-        yarn: true
-        verify-command: yarn cypress verify
-        cache-key: v1-dependencies-{{ checksum "yarn.lock" }}
+    - restore_cache:
+        keys:
+        - v1-dependencies-{{ checksum "yarn.lock" }}
+
+    - run: yarn install --frozen-lockfile
+    - run: yarn cypress verify
+
+    - save_cache:
+        key: v1-dependencies-{{ checksum "yarn.lock" }}
+        paths:
+        - ./node_modules
+        - ~/.cache
+
+    - run:
+        name: Lerna prepare 🐲
+        command: yarn lerna:prepare
+
+    - test/unit:
+        name: Unit tests ❓
+        command: yarn test
+        no_output_timeout: 10m
+
+    - test/cypress:
+        name: Cypress e2e tests 🧪
+        command: yarn test:e2e:record
+        no_output_timeout: 10m
