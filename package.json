@@ -7,6 +7,7 @@
     "examples/*"
   ],
   "scripts": {
+    "lerna:prepare": "lerna bootstrap && lerna link",
     "dev": "lerna bootstrap && lerna link && lerna run build --stream",
     "test": "lerna run test",
     "test:e2e": "yarn test && concurrently --success first \"yarn cypress:run\" \"yarn start:samples:app\"",
