@@ -22,9 +22,7 @@ jobs:
     # Download and cache dependencies
     - restore_cache:
         keys:
-          - v1-dependencies-{{ checksum "yarn.lock" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+        - v1-dependencies-{{ checksum "yarn.lock" }}
 
     - run: yarn install
     - run: yarn lerna bootstrap
@@ -41,6 +39,8 @@ jobs:
     - run: yarn test
     - run: yarn test:e2e:record
 
+# $ brew install circleci
+# $ circleci config process .circleci/config.yml
 # workflows reference jobs, see https://github.com/cypress-io/circleci-orb/blob/master/docs/examples.md#using-node14
 # https://docs.cypress.io/guides/guides/continuous-integration.html#CircleCI
 workflows:
@@ -48,11 +48,19 @@ workflows:
   build:
     jobs:
     - build
+
     # https://github.com/cypress-io/circleci-orb/blob/master/docs/examples.md#using-node14
+    - cypress/install:
+        executor: cypress/base-14
+        cache-key: v1-dependencies-{{ checksum "yarn.lock" }}
+
     - cypress/run:
+        requires:
+        - build
         executor: cypress/base-14
         start: yarn start:samples:app
         wait-on: http://localhost:3000
         record: true
         yarn: true
         verify-command: yarn cypress verify
+        cache-key: v1-dependencies-{{ checksum "yarn.lock" }}
