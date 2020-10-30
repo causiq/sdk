@@ -33,6 +33,14 @@ export interface SetUserPropertyFunction {
   (userId: string, key: string, value: unknown): void;
 }
 
+export interface HistogramFunction {
+  (buckets: Record<string, any>, labels: Record<string, any>, sum: number): void;
+}
+
+export interface GaugeFunction {
+  (gauge: unknown, labels: Record<string, any>): void;
+}
+
 export interface Runnable {
   run(config: Config, runtimeInfo: RuntimeInfo): TeardownLogic
 }

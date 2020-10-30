@@ -13,6 +13,7 @@ const stub = new StubTarget()
 const instance = getLogary({
   minLevel: LogLevel.debug,
   serviceName: 'with-nextjs',
+  appId: 'LA-35710335',
   targets: [
     new ConsoleTarget(),
     new RuttaTarget({

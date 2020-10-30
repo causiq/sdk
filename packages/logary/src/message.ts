@@ -163,9 +163,55 @@ export class ForgetUserMessage implements LogaryMessage {
   level: LogLevel
 }
 
+export class HistogramMessage implements LogaryMessage {
+  constructor(
+    public buckets: Record<number, unknown>,
+    public labels: Record<string, unknown>,
+    public sum: number,
+    public name: string[] = [],
+    public fields: Record<string, unknown> = {},
+    public context: Record<string, unknown> = {},
+    public parentSpanId?: string | undefined,
+    timestamp?: EpochNanoSeconds | undefined,
+  ) {
+    this.name = name
+    this.level = LogLevel.info
+    this.timestamp = timestamp || getTimestamp()
+    this.id = hexDigest(this)
+  }
+  id: string
+  timestamp: EpochNanoSeconds
+  type: 'histogram' = 'histogram'
+  level: LogLevel
+}
+
+export class GaugeMessage implements LogaryMessage {
+  constructor(
+    public name: string[] = [],
+    public fields: Record<string, unknown> = {},
+    public context: Record<string, unknown> = {},
+    public labels: Record<string, unknown> = {},
+    public gauges: Record<string, unknown> = {},
+    public gauge: unknown,
+    public parentSpanId?: string | undefined,
+    timestamp?: EpochNanoSeconds | undefined,
+  ) {
+    this.name = name
+    this.level = LogLevel.info
+    this.timestamp = timestamp || getTimestamp()
+    this.id = hexDigest(this)
+  }
+  id: string
+  timestamp: EpochNanoSeconds
+  type: 'gauge' = 'gauge'
+  level: LogLevel
+}
+
 export type Message =
   | SpanMessage
   | EventMessage
   | SetUserPropertyMessage
   | IdentifyUserMessage
   | ForgetUserMessage
+  | HistogramMessage
+  | GaugeMessage

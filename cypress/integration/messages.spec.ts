@@ -44,4 +44,55 @@ context('logary-browser via async script', () => {
       expect(esx.length).to.be.greaterThan(0, "Has events in esx")
     })
   })
+
+  it('logs "identify" type messages', () => {
+    cy.get('#identify').click()
+
+    cy.window().then(w => {
+      // @ts-ignore
+      const es = w.stubTarget.messages.filter(m => m.type === 'identifyUser')
+      // @ts-ignore
+      console.log(w.stubTarget)
+
+      expect(es.length).to.be.greaterThan(0, "Has events")
+
+      const esx = es.filter(m => m.prevUserId === 'ABC123' && m.nextUserId === 'ABC321')
+
+      expect(esx.length).to.be.greaterThan(0, "Has events in esx")
+    })
+  })
+
+  it('logs "setUserProperty" type messages', () => {
+    cy.get('#setUserProperty').click()
+
+    cy.window().then(w => {
+      // @ts-ignore
+      const es = w.stubTarget.messages.filter(m => m.type === 'setUserProperty')
+      // @ts-ignore
+      console.log(w.stubTarget)
+
+      expect(es.length).to.be.greaterThan(0, "Has events")
+
+      const esx = es.filter(m => m.userId === 'ABC123')
+
+      expect(esx.length).to.be.greaterThan(0, "Has events in esx")
+    })
+  })
+
+  it('logs "forgetUser" type messages', () => {
+    cy.get('#forgetUser').click()
+
+    cy.window().then(w => {
+      // @ts-ignore
+      const es = w.stubTarget.messages.filter(m => m.type === 'forgetUser')
+      // @ts-ignore
+      console.log(w.stubTarget)
+
+      expect(es.length).to.be.greaterThan(0, "Has events")
+
+      const esx = es.filter(m => m.userId === 'ABC123')
+
+      expect(esx.length).to.be.greaterThan(0, "Has events in esx")
+    })
+  })
 })
