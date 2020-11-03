@@ -2,8 +2,8 @@ import LogaryPlugin, { PluginAPI } from "./plugin"
 import RuntimeInfo from './runtimeInfo'
 import { ensureMessageId, adaptLogFunction } from './utils'
 import { Config } from './config'
-import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction, ForgetUserFunction, HistogramFunction, ValueOf } from './types'
-import { ForgetUserMessage, HistogramMessage, LogLevel, Message, SetUserPropertyMessage } from './message'
+import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction, ForgetUserFunction, HistogramFunction, ValueOf, GaugeFunction } from './types'
+import { ForgetUserMessage, HistogramMessage, LogLevel, Message, SetUserPropertyMessage, GaugeMessage } from './message'
 import { Logger } from './logger'
 import { Runnable } from "./types"
 import { empty, Subject, Subscription } from 'rxjs'
@@ -208,6 +208,11 @@ export default class Logary implements RuntimeInfo, PluginAPI {
       histogram: HistogramFunction = (... args: unknown[]) => {
         this.log(LogLevel.info, new HistogramMessage(args[0] as Record<string, any>,
           args[1] as Record<string, any>, args[2] as number))
+      }
+
+      gauge: GaugeFunction = (... args: unknown[]) => {
+        this.log(LogLevel.info, new GaugeMessage(args[0] as Record<string, any>,
+          args[1] as Record<string, any>, args[2]))
       }
 
       // (opentelemetry/api).Tracer starts here

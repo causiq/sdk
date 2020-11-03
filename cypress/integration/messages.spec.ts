@@ -95,4 +95,21 @@ context('logary-browser via async script', () => {
       expect(esx.length).to.be.greaterThan(0, "Has events in esx")
     })
   })
+
+  it('logs "histogram" type messages', () => {
+    cy.get('#histogram').click()
+
+    cy.window().then(w => {
+      // @ts-ignore
+      const es = w.stubTarget.messages.filter(m => m.type === 'histogram')
+      // @ts-ignore
+      console.log(w.stubTarget)
+
+      expect(es.length).to.be.greaterThan(0, "Has events")
+
+      const esx = es.filter(m => m.sum === 1)
+
+      expect(esx.length).to.be.greaterThan(0, "Has events in esx")
+    })
+  })
 })

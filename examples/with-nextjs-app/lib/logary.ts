@@ -20,7 +20,7 @@ const instance = getLogary({
       endpoint:
         process.env.NEXT_PUBLIC_LOGARY_ENDPOINT
         || (env && env.includes('test') && '/api/logary')
-        || 'https://i.logary.tech'
+        || 'https://i.logary.test'
     }),
     ...(env === 'test' ? [ stub ] : [])
   ]

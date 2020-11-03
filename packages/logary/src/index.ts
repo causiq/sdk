@@ -3,7 +3,7 @@ import { Subscription } from 'rxjs'
 import { Config } from "./config"
 import Logary from './impl'
 import { Logger } from './logger'
-import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction, ForgetUserFunction } from './types'
+import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction, ForgetUserFunction, HistogramFunction, GaugeFunction } from './types'
 import { LogLevel } from './message'
 import ConsoleTarget from './targets/console'
 
@@ -82,3 +82,11 @@ export const forgetUser: ForgetUserFunction = (...args: unknown[]) =>
 export const setUserProperty: SetUserPropertyFunction = (...args: unknown[]) =>
   // @ts-ignore
   getLogger().setUserProperty(...args)
+
+export const Histogram: HistogramFunction = (...args: unknown[]) =>
+// @ts-ignore
+  getLogger().histogram(...args)
+
+export const Gauge: GaugeFunction = (...args: unknown[]) =>
+// @ts-ignore
+  getLogger().gauge(...args)

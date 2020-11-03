@@ -1,6 +1,6 @@
 import { LogLevel, Message } from './message'
 import { Logger as OTLogger, LogFunction, Tracer } from '@opentelemetry/api'
-import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction, ForgetUserFunction, HistogramFunction } from "./types"
+import { EventFunction, SetUserPropertyFunction, IdentifyUserFunction, ForgetUserFunction, HistogramFunction, GaugeFunction } from "./types"
 
 interface LoggerEx extends Readonly<OTLogger> {
   readonly verbose: LogFunction;
@@ -10,6 +10,7 @@ interface LoggerEx extends Readonly<OTLogger> {
   readonly identify: IdentifyUserFunction;
   readonly forgetUser: ForgetUserFunction;
   readonly histogram: HistogramFunction;
+  readonly gauge: GaugeFunction;
 }
 
 /**

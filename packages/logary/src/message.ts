@@ -128,7 +128,7 @@ export class SetUserPropertyMessage implements LogaryMessage {
 export class IdentifyUserMessage implements LogaryMessage {
   constructor(
     public prevUserId: string,
-    public nextUserId: string,
+    public newUserId: string,
     public level: LogLevel = LogLevel.info,
     public fields: Record<string, unknown> = {},
     public context: Record<string, unknown> = {},
@@ -187,12 +187,12 @@ export class HistogramMessage implements LogaryMessage {
 
 export class GaugeMessage implements LogaryMessage {
   constructor(
-    public name: string[] = [],
-    public fields: Record<string, unknown> = {},
-    public context: Record<string, unknown> = {},
     public labels: Record<string, unknown> = {},
     public gauges: Record<string, unknown> = {},
     public gauge: unknown,
+    public name: string[] = [],
+    public fields: Record<string, unknown> = {},
+    public context: Record<string, unknown> = {},
     public parentSpanId?: string | undefined,
     timestamp?: EpochNanoSeconds | undefined,
   ) {

@@ -12,7 +12,7 @@ function Button({ onClick, children, ...rest }) {
 
 function IndexPage() {
   const { event, identify, setUserProperty, forgetUser,
-    histogram } = useLogger('IndexPage')
+    histogram, gauge } = useLogger('IndexPage')
 
   const handlePurchase = useCallback(() => event('Foobar purchased', {
     amount: 20, currency: 'EUR'
@@ -29,6 +29,8 @@ function IndexPage() {
   const forgetUserHandler = useCallback(() => forgetUser('ABC123'), [])
 
   const histogramHandler = useCallback(() => histogram({}, {}, 1), [])
+
+  const gaugeHandler = useCallback(() => gauge({}, {}, {}), [])
 
   return (
     <Layout>
@@ -50,6 +52,9 @@ function IndexPage() {
       </Button>
       <Button id='histogram' onClick={histogramHandler}>
         Histogram
+      </Button>
+      <Button id='gauge' onClick={gaugeHandler}>
+        Gauge
       </Button>
     </Layout>
   )

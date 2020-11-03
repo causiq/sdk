@@ -23,7 +23,7 @@ export interface EventFunction {
 }
 
 export interface IdentifyUserFunction {
-  (prevUserId: string, nextUserId: string): void;
+  (prevUserId: string, newUserId: string): void;
   (userId: string): void;
 }
 
@@ -38,7 +38,7 @@ export interface HistogramFunction {
 }
 
 export interface GaugeFunction {
-  (gauge: unknown, labels: Record<string, any>): void;
+  (gauge: unknown, labels: Record<string, any>, gauges: Record<string, any>): void;
 }
 
 export interface Runnable {
