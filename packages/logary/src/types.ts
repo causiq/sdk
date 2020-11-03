@@ -23,7 +23,7 @@ export interface EventFunction {
 }
 
 export interface IdentifyUserFunction {
-  (prevUserId: string, nextUserId: string): void;
+  (prevUserId: string, newUserId: string): void;
   (userId: string): void;
 }
 
