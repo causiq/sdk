@@ -13,14 +13,13 @@ const stub = new StubTarget()
 const instance = getLogary({
   minLevel: LogLevel.debug,
   serviceName: 'with-nextjs',
-  appId: 'LA-35710335',
   targets: [
     new ConsoleTarget(),
     new RuttaTarget({
       endpoint:
         process.env.NEXT_PUBLIC_LOGARY_ENDPOINT
         || (env && env.includes('test') && '/api/logary')
-        || 'https://i.logary.test'
+        || 'https://i.logary.tech'
     }),
     ...(env === 'test' ? [ stub ] : [])
   ]
