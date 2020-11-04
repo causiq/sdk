@@ -11,7 +11,7 @@ function Button({ onClick, children, ...rest }) {
 }
 
 function IndexPage() {
-  const { event, identify, setUserProperty } = useLogger('IndexPage')
+  const { event, identify, setUserProperty, forgetUser } = useLogger('IndexPage')
 
   const handlePurchase = useCallback(() => event('Foobar purchased', {
     amount: 20, currency: 'EUR'
@@ -24,6 +24,8 @@ function IndexPage() {
   const identifyHandler = useCallback(() => identify('ABC123', 'ABC321'), [])
 
   const setUserPropertyHandler = useCallback(() => setUserProperty('ABC123', 'key', 'value'), [])
+
+  const forgetUserHandler = useCallback(() => forgetUser('ABC123'), [])
 
   return (
     <Layout>
@@ -39,6 +41,9 @@ function IndexPage() {
       </Button>
       <Button id='setUserProperty' onClick={setUserPropertyHandler}>
         Set user property
+      </Button>
+      <Button id='forgetUser' onClick={forgetUserHandler}>
+        Forget user
       </Button>
     </Layout>
   )

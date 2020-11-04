@@ -78,4 +78,21 @@ context('logary-browser via async script', () => {
       expect(esx.length).to.be.greaterThan(0, "Has events in esx")
     })
   })
+
+  it('logs "forgetUser" type messages', () => {
+    cy.get('#forgetUser').click()
+
+    cy.window().then(w => {
+      // @ts-ignore
+      const es = w.stubTarget.messages.filter(m => m.type === 'forgetUser')
+      // @ts-ignore
+      console.log(w.stubTarget)
+
+      expect(es.length).to.be.greaterThan(0, "Has events")
+
+      const esx = es.filter(m => m.userId === 'ABC123')
+
+      expect(esx.length).to.be.greaterThan(0, "Has events in esx")
+    })
+  })
 })
