@@ -21,9 +21,20 @@
         let logger = logary.getLogger('Cart checkout page');
         logger.event('Purchase made', { amount: 20.3, currency: 'USD' });
       } catch (e) {
-        try { console.debug(e) } catch {}
+        try { console.debug(e); } catch {}
       }
     }
+  </script>
+  <!-- on load, delayed, e.g. if you're using GTM -->
+  <script>
+    setTimeout(function handlePurchase() {
+      try {
+        let logger = logary.getLogger('Cart checkout page');
+        logger.event('Purchase made', { amount: 20.3, currency: 'USD' });
+      } catch (e) {
+        try { console.debug(e) } catch {}
+      }
+    }, 1000);
   </script>
 </head>
 
