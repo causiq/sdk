@@ -17,9 +17,12 @@
   </script>
   <script>
     function handlePurchase(e) {
-      if (!('getLogger' in logary)) return;
-      let logger = logary.getLogger('Cart checkout page');
-      logger.event('Purchase made', { amount: 20.3, currency: 'USD' });
+      try {
+        let logger = logary.getLogger('Cart checkout page');
+        logger.event('Purchase made', { amount: 20.3, currency: 'USD' });
+      } catch (e) {
+        try { console.debug(e) } catch {}
+      }
     }
   </script>
 </head>
