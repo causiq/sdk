@@ -19,7 +19,11 @@
     function handlePurchase(e) {
       try {
         let logger = logary.getLogger('Cart checkout page');
-        logger.event('Purchase made', { amount: 20.3, currency: 'USD' });
+        logger.event('Purchase made', {
+          amount: 20.3, currency: 'USD'
+        }, {
+          orderId: '123456789'
+        });
       } catch (e) {
         try { console.debug(e); } catch {}
       }
