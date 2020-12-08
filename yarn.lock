@@ -2214,17 +2214,6 @@
     "@opentelemetry/tracing" "^0.12.0"
     "@opentelemetry/web" "^0.12.0"
 
-"@opentelemetry/plugin-http@^0.12.0":
-  version "0.12.0"
-  resolved "https://registry.yarnpkg.com/@opentelemetry/plugin-http/-/plugin-http-0.12.0.tgz#03a1a6f481d21a6f83d6520297df19dabc1e69c8"
-  integrity sha512-jWUZfdAfTPFmVKjFS9dlge58qU+W3T2KJurQEeC1V26WtvTpM1DaXbp4pZ586v5sviOzBTF1HdccGjZIal165Q==
-  dependencies:
-    "@opentelemetry/api" "^0.12.0"
-    "@opentelemetry/core" "^0.12.0"
-    "@opentelemetry/semantic-conventions" "^0.12.0"
-    semver "^7.1.3"
-    shimmer "^1.2.1"
-
 "@opentelemetry/plugin-http@^0.13.0":
   version "0.13.0"
   resolved "https://registry.yarnpkg.com/@opentelemetry/plugin-http/-/plugin-http-0.13.0.tgz#bf28213abae527c6c75a6684df1fbedb5f030bcd"
