@@ -2304,17 +2304,6 @@
     "@opentelemetry/resources" "^0.14.0"
     "@opentelemetry/semantic-conventions" "^0.14.0"
 
-"@opentelemetry/web@^0.12.0":
-  version "0.12.0"
-  resolved "https://registry.yarnpkg.com/@opentelemetry/web/-/web-0.12.0.tgz#0dfa4ed444f5cbb1772e9370e0d869e31e728937"
-  integrity sha512-dClftM0ZKLUHi/zsU0r43DC1fCfVTUgc9CC+J/kvvpW33SaruvjksFqhW2NdicivtxTN+OjwVUEJLBQUTL4UUA==
-  dependencies:
-    "@opentelemetry/api" "^0.12.0"
-    "@opentelemetry/context-base" "^0.12.0"
-    "@opentelemetry/core" "^0.12.0"
-    "@opentelemetry/semantic-conventions" "^0.12.0"
-    "@opentelemetry/tracing" "^0.12.0"
-
 "@opentelemetry/web@^0.14.0":
   version "0.14.0"
   resolved "https://registry.yarnpkg.com/@opentelemetry/web/-/web-0.14.0.tgz#b0785a99a3c99d8896188172c3b127850e38980f"
