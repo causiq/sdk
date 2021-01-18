@@ -10,7 +10,7 @@
     "@logary/plugin-nextjs": "6.0.0-beta.8",
     "@logary/plugin-node": "6.0.0-beta.8",
     "@logary/plugin-react": "6.0.0-beta.8",
-    "@opentelemetry/api": "^0.12.0",
+    "@opentelemetry/api": "^0.14.0",
     "@opentelemetry/core": "^0.12.0",
     "@opentelemetry/node": "^0.12.0",
     "@opentelemetry/plugin-http": "^0.14.0",
