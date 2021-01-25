@@ -18,7 +18,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.12.0",
+    "@opentelemetry/api": "^0.15.0",
     "@opentelemetry/core": "^0.12.0",
     "@opentelemetry/tracing": "^0.12.0",
     "@opentelemetry/web": "^0.12.0",
