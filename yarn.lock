@@ -2263,9 +2263,9 @@
     semver "^7.1.3"
 
 "@opentelemetry/plugin-document-load@^0.13.0":
-  version "0.13.0"
-  resolved "https://registry.yarnpkg.com/@opentelemetry/plugin-document-load/-/plugin-document-load-0.13.0.tgz#96986f245bfb3db09fc319b3510e389c14deffea"
-  integrity sha512-vU+H1G09Lp2YTEqSNYP5h0YfKypUyFR/8D9H2lcO6aBWzieUVtSQpt5sL2LNBaJhcVAalQPdhLzwbFqK7GXT5w==
+  version "0.13.1"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/plugin-document-load/-/plugin-document-load-0.13.1.tgz#c4e21d451d7189aaf12d6a5592acd83962b277f5"
+  integrity sha512-DlSuslUEkA9EfCu4me1Xlyi55uYgLFRyqGUOisR6gJejD9zeULkHrgHPAOBPeeGiF8GcYVQpqEfaxM0KJT18yQ==
   dependencies:
     "@opentelemetry/api" "^0.15.0"
     "@opentelemetry/core" "^0.15.0"
