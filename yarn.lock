@@ -2279,6 +2279,14 @@
     "@opentelemetry/api" "^0.15.0"
     "@opentelemetry/core" "^0.15.0"
 
+"@opentelemetry/resources@^0.17.0":
+  version "0.17.0"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/resources/-/resources-0.17.0.tgz#1087d12178c69fb13125767b363a313dc4e31621"
+  integrity sha512-0f+RryxBh+m+8zrZ1x36CihK21KME/1pIFcPCH9095hDx9yHiAv1h3AGrR/knWpgA5j84Icr5ymlALarmpWSbg==
+  dependencies:
+    "@opentelemetry/api" "^0.17.0"
+    "@opentelemetry/core" "^0.17.0"
+
 "@opentelemetry/semantic-conventions@^0.12.0":
   version "0.12.0"
   resolved "https://registry.yarnpkg.com/@opentelemetry/semantic-conventions/-/semantic-conventions-0.12.0.tgz#7e392aecdbdbd5d737d3995998b120dc17589ab0"
@@ -2317,16 +2325,17 @@
     "@opentelemetry/semantic-conventions" "^0.15.0"
     lodash.merge "^4.6.2"
 
-"@opentelemetry/web@^0.12.0":
-  version "0.12.0"
-  resolved "https://registry.yarnpkg.com/@opentelemetry/web/-/web-0.12.0.tgz#0dfa4ed444f5cbb1772e9370e0d869e31e728937"
-  integrity sha512-dClftM0ZKLUHi/zsU0r43DC1fCfVTUgc9CC+J/kvvpW33SaruvjksFqhW2NdicivtxTN+OjwVUEJLBQUTL4UUA==
+"@opentelemetry/tracing@^0.17.0":
+  version "0.17.0"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/tracing/-/tracing-0.17.0.tgz#124934e9ef62ee624e69a44b22681b1c03a080d6"
+  integrity sha512-fnhG6PsDyxpssNGvxx90UNHlsBtPJM0Ouegq7xqQidC33JsQRCFGL0XFMoRltXbuOjT+uKnOti/0o+AxwLnuJA==
   dependencies:
-    "@opentelemetry/api" "^0.12.0"
-    "@opentelemetry/context-base" "^0.12.0"
-    "@opentelemetry/core" "^0.12.0"
-    "@opentelemetry/semantic-conventions" "^0.12.0"
-    "@opentelemetry/tracing" "^0.12.0"
+    "@opentelemetry/api" "^0.17.0"
+    "@opentelemetry/context-base" "^0.17.0"
+    "@opentelemetry/core" "^0.17.0"
+    "@opentelemetry/resources" "^0.17.0"
+    "@opentelemetry/semantic-conventions" "^0.17.0"
+    lodash.merge "^4.6.2"
 
 "@opentelemetry/web@^0.15.0":
   version "0.15.0"
@@ -2339,6 +2348,17 @@
     "@opentelemetry/instrumentation" "^0.15.0"
     "@opentelemetry/semantic-conventions" "^0.15.0"
     "@opentelemetry/tracing" "^0.15.0"
+
+"@opentelemetry/web@^0.17.0":
+  version "0.17.0"
+  resolved "https://registry.yarnpkg.com/@opentelemetry/web/-/web-0.17.0.tgz#92a2130a920a12906f48ace16a01b035a4057ad6"
+  integrity sha512-pKnWBNpAFVvyGzKIs9d4wJpN+MDTXa+XRm6jX/B3km5Q1PmmbZ8xvnQxtDzu//Qxl6QP/p3G+KiRfozWOi5KUw==
+  dependencies:
+    "@opentelemetry/api" "^0.17.0"
+    "@opentelemetry/context-base" "^0.17.0"
+    "@opentelemetry/core" "^0.17.0"
+    "@opentelemetry/semantic-conventions" "^0.17.0"
+    "@opentelemetry/tracing" "^0.17.0"
 
 "@samverschueren/stream-to-observable@^0.3.0":
   version "0.3.1"
