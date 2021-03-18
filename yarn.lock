@@ -7583,9 +7583,9 @@ nice-try@^1.0.4:
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
 node-abort-controller@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/node-abort-controller/-/node-abort-controller-1.1.0.tgz#8a734a631b022af29963be7245c1483cbb9e070d"
-  integrity sha512-dEYmUqjtbivotqjraOe8UvhT/poFfog1BQRNsZm/MSEDDESk2cQ1tvD8kGyuN07TM/zoW+n42odL8zTeJupYdQ==
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/node-abort-controller/-/node-abort-controller-1.2.0.tgz#97b7f4b20f32403e1448c9e65df9d5c91ade832b"
+  integrity sha512-x6Pv6ACfOUmYGDW/SRjSKBJs7waJRxRPQ9FeXFqfBtEtvJQBfuPl5P74p0Ow+vl0w6WURvXwn+xq/3S95Z7e5Q==
 
 node-fetch@2.6.1, node-fetch@^2.6.1:
   version "2.6.1"
