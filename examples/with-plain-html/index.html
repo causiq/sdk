@@ -29,6 +29,54 @@
         try { console.debug(e); } catch {}
       }
     }
+    function handleViewProduct(e) {
+      try {
+        let logger = logary.getLogger('Product view');
+        logger.event('View product', {
+          productID: '10000-10L',
+          productName: 'Pants',
+          productBrand: 'Divine',
+          productCategory: 'Men'
+        });
+      } catch (e) {
+        try { console.debug(e); } catch {}
+      }
+    }
+    function handleAddToCart(e) {
+      try {
+        let logger = logary.getLogger('Add to cart');
+        logger.event('Add to cart', {
+          amount: 20.3,
+          currency: 'USD',
+          productID: '10000-10L',
+          productName: 'Pants',
+          productBrand: 'Divine',
+          productCategory: 'Men'
+        });
+      } catch (e) {
+        try { console.debug(e); } catch {}
+      }
+    }
+    function handleCheckout(e) {
+      try {
+        let logger = logary.getLogger('Cart checkout page');
+        logger.event('Checkout view', {
+          amount: 20.3,
+          currency: 'USD',
+          items: [
+            {
+              price: 5,
+              productID: '10000-10L',
+              productName: 'Pants',
+              productBrand: 'Divine',
+              productCategory: 'Men'
+            }
+          ]
+        });
+      } catch (e) {
+        try { console.debug(e); } catch {}
+      }
+    }
   </script>
   <!-- on load, delayed, e.g. if you're using GTM -->
   <script>
